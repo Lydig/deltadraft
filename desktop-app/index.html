@@ -1,4 +1,3 @@
-<!-- desktop-app/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,73 +40,10 @@
     <script>
         const allChampions = ["Aatrox", "Ahri", "Akali", "Alistar", "Amumu", "Anivia", "Annie", "Aphelios", "Ashe", "Azir", "Bard", "Blitzcrank", "Brand", "Braum", "Caitlyn", "Camille", "Cassiopeia", "Chogath", "Corki", "Darius", "Diana", "Draven", "DrMundo", "Ekko", "Elise", "Evelynn", "Ezreal", "Fiddlesticks", "Fiora", "Fizz", "Galio", "Gangplank", "Garen", "Gnar", "Gragas", "Graves", "Gwen", "Hecarim", "Heimerdinger", "Illaoi", "Irelia", "Ivern", "Janna", "JarvanIV", "Jax", "Jayce", "Jhin", "Jinx", "Kaisa", "Kalista", "Karma", "Karthus", "Kassadin", "Katarina", "Kayle", "Kayn", "Kennen", "Khazix", "Kindred", "Kled", "KogMaw", "Leblanc", "LeeSin", "Leona", "Lillia", "Lissandra", "Lucian", "Lulu", "Lux", "Malphite", "Malzahar", "Maokai", "MasterYi", "MissFortune", "MonkeyKing", "Mordekaiser", "Morgana", "Nami", "Nasus", "Nautilus", "Neeko", "Nidalee", "Nocturne", "Nunu", "Olaf", "Orianna", "Ornn", "Pantheon", "Poppy", "Pyke", "Qiyana", "Quinn", "Rakan", "Rammus", "RekSai", "Rell", "Renata", "Renekton", "Rengar", "Riven", "Rumble", "Ryze", "Samira", "Sejuani", "Senna", "Seraphine", "Sett", "Shaco", "Shen", "Shyvana", "Singed", "Sion", "Sivir", "Skarner", "Sona", "Soraka", "Swain", "Sylas", "Syndra", "TahmKench", "Taliyah", "Talon", "Taric", "Teemo", "Thresh", "Tristana", "Trundle", "Tryndamere", "TwistedFate", "Twitch", "Udyr", "Urgot", "Varus", "Vayne", "Veigar", "Velkoz", "Vex", "Vi", "Viego", "Viktor", "Vladimir", "Volibear", "Warwick", "Xayah", "Xerath", "XinZhao", "Yasuo", "Yone", "Yorick", "Yuumi", "Zac", "Zed", "Zeri", "Ziggs", "Zilean", "Zoe", "Zyra", "Ambessa", "Mel", "Aurora"];
         const roles = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
-        let champIdToName = {}; // Will be populated later if needed
+        let champIdToName = {};
+        let roleProbabilities = {};
 
-        function createRolePicker(role, teamClass) { /* ... same as before ... */ }
-        roles.forEach(role => { /* ... same as before ... */ });
-
-        // --- LCU TRACKING LOGIC ---
-        let lcuIntervalId = null;
-        const liveTrackingBtn = document.getElementById('live-tracking-btn');
-        const liveIndicator = document.getElementById('live-indicator');
-
-        liveTrackingBtn.addEventListener('click', () => {
-            if (lcuIntervalId) { // If it's running, stop it
-                clearInterval(lcuIntervalId);
-                lcuIntervalId = null;
-                liveIndicator.classList.remove('active');
-                liveTrackingBtn.innerHTML = '<span id="live-indicator" class="live-indicator"></span>Start Live Tracking';
-            } else { // If it's not running, start it
-                updateFromLiveGame(); // Run once immediately
-                lcuIntervalId = setInterval(updateFromLiveGame, 1000); // Poll every second
-                liveIndicator.classList.add('active');
-                liveTrackingBtn.innerHTML = '<span id="live-indicator" class="live-indicator active"></span>Stop Live Tracking';
-            }
-        });
-
-        async function updateFromLiveGame() {
-            const session = await window.electronAPI.getChampSelect();
-            if (!session) {
-                // Not in champ select, do nothing.
-                return;
-            }
-
-            // A very simplified update logic
-            const allPicks = session.myTeam.concat(session.theirTeam);
-            
-            // We need a mapping from Champion ID to Name to update the UI
-            // This is a simplified version. A real app might load this from a file.
-            if (Object.keys(champIdToName).length === 0) {
-                 const response = await fetch('https://ddragon.leagueoflegends.com/cdn/14.13.1/data/en_US/champion.json');
-                 const champData = await response.json();
-                 for (const champ in champData.data) {
-                     champIdToName[champData.data[champ].key] = champData.data[champ].id;
-                 }
-            }
-            
-            for (const player of allPicks) {
-                const teamClass = session.myTeam.includes(player) ? 'my-team' : 'enemy-team';
-                // Note: The LCU API does not explicitly provide the role (TOP, JNG, etc.)
-                // The original repo uses complex logic to infer it. We will use the assignedPosition for now.
-                const role = player.assignedPosition.toUpperCase() || 'UTILITY'; // Default to something
-                
-                if (roles.includes(role)) {
-                    const selectElement = document.getElementById(`${teamClass}-${role}`);
-                    if (selectElement) {
-                        const champName = champIdToName[player.championId];
-                        if (champName) {
-                            selectElement.value = champName;
-                        }
-                    }
-                }
-            }
-        }
-        // --- END OF LCU LOGIC ---
-        
-        // --- RECOMMENDATION LOGIC (no changes) ---
-        document.getElementById('get-recs-btn').addEventListener('click', async () => { /* ... same as before ... */ });
-        
-        // Helper to create the UI elements (no changes)
+        // --- UI SETUP ---
         function createRolePicker(role, teamClass) {
             const container = document.querySelector(`.${teamClass}`);
             const pickerDiv = document.createElement('div');
@@ -130,6 +66,7 @@
             pickerDiv.appendChild(select);
             container.appendChild(pickerDiv);
         }
+
         roles.forEach(role => {
             createRolePicker(role, 'my-team');
             createRolePicker(role, 'enemy-team');
@@ -139,6 +76,8 @@
             option.textContent = role;
             targetRoleSelect.appendChild(option);
         });
+
+        // --- MANUAL RECOMMENDATION LOGIC ---
         document.getElementById('get-recs-btn').addEventListener('click', async () => {
             const myTeam = {};
             const enemyTeam = {};
@@ -148,6 +87,10 @@
             });
             
             const targetRole = document.getElementById('target-role').value;
+            if (!targetRole) {
+                alert("Please select a role to get recommendations for.");
+                return;
+            }
 
             const response = await fetch('http://127.0.0.1:5000/recommend', {
                 method: 'POST',
@@ -158,7 +101,7 @@
             const recommendations = await response.json();
             
             const listElement = document.getElementById('recommendation-list');
-            listElement.innerHTML = ''; // Clear previous results
+            listElement.innerHTML = '';
             
             recommendations.forEach(pick => {
                 const listItem = document.createElement('li');
@@ -168,6 +111,110 @@
                 listElement.appendChild(listItem);
             });
         });
+        
+        // --- LCU TRACKING & ROLE INFERENCE LOGIC ---
+        let lcuIntervalId = null;
+        const liveTrackingBtn = document.getElementById('live-tracking-btn');
+        const liveIndicator = document.getElementById('live-indicator');
+
+        liveTrackingBtn.addEventListener('click', async () => {
+            if (lcuIntervalId) {
+                clearInterval(lcuIntervalId);
+                lcuIntervalId = null;
+                liveIndicator.classList.remove('active');
+                liveTrackingBtn.innerHTML = '<span id="live-indicator" class="live-indicator"></span>Start Live Tracking';
+            } else {
+                await initializeLCUData();
+                if (Object.keys(roleProbabilities).length === 0) {
+                    alert("Error: Could not load role probability data from backend. Is the Python server running?");
+                    return;
+                }
+                updateFromLiveGame();
+                lcuIntervalId = setInterval(updateFromLiveGame, 1000);
+                liveIndicator.classList.add('active');
+                liveTrackingBtn.innerHTML = '<span id="live-indicator" class="live-indicator active"></span>Stop Live Tracking';
+            }
+        });
+
+        async function initializeLCUData() {
+            if (Object.keys(champIdToName).length === 0) {
+                const response = await fetch('https://ddragon.leagueoflegends.com/cdn/14.13.1/data/en_US/champion.json');
+                const champData = await response.json();
+                for (const champ in champData.data) {
+                    champIdToName[champData.data[champ].key] = champData.data[champ].id;
+                }
+                champIdToName[799] = 'Ambessa'; champIdToName[800] = 'Mel'; champIdToName[893] = 'Aurora';
+            }
+            if (Object.keys(roleProbabilities).length === 0) {
+                 try {
+                    const response = await fetch('http://127.0.0.1:5000/role_data');
+                    const data = await response.json();
+                    data.forEach(item => {
+                        if (!roleProbabilities[item.champion]) {
+                            roleProbabilities[item.champion] = {};
+                        }
+                        roleProbabilities[item.champion][item.role] = item.pick_rate;
+                    });
+                 } catch (e) {
+                     console.error("Failed to fetch role data:", e);
+                 }
+            }
+        }
+
+        async function updateFromLiveGame() {
+            const session = await window.electronAPI.getChampSelect();
+            if (!session) return;
+
+            session.myTeam.forEach(player => {
+                const role = player.assignedPosition.toUpperCase();
+                if (roles.includes(role)) {
+                    const champName = champIdToName[player.championId];
+                    if (champName) {
+                        document.getElementById(`my-team-${role}`).value = champName;
+                    }
+                }
+            });
+
+            const enemyPicks = session.theirTeam
+                .map(player => champIdToName[player.championId])
+                .filter(name => name);
+
+            if (enemyPicks.length > 0) {
+                const inferredRoles = inferEnemyRoles(enemyPicks);
+                roles.forEach(role => {
+                    document.getElementById(`enemy-team-${role}`).value = inferredRoles[role] || "";
+                });
+            }
+        }
+
+        function inferEnemyRoles(enemyPicks) {
+            let availableRoles = [...roles];
+            let availableChamps = [...enemyPicks];
+            let assignments = {};
+            let possibilities = [];
+            
+            availableChamps.forEach(champ => {
+                availableRoles.forEach(role => {
+                    const prob = (roleProbabilities[champ] && roleProbabilities[champ][role]) || 0.0001; 
+                    possibilities.push({ champ, role, prob });
+                });
+            });
+
+            possibilities.sort((a, b) => b.prob - a.prob);
+
+            while (availableChamps.length > 0 && availableRoles.length > 0) {
+                let bestPickIndex = possibilities.findIndex(p => 
+                    availableChamps.includes(p.champ) && availableRoles.includes(p.role)
+                );
+                if (bestPickIndex === -1) break;
+                
+                const bestPick = possibilities[bestPickIndex];
+                assignments[bestPick.role] = bestPick.champ;
+                availableChamps = availableChamps.filter(c => c !== bestPick.champ);
+                availableRoles = availableRoles.filter(r => r !== bestPick.role);
+            }
+            return assignments;
+        }
     </script>
 </body>
 </html>

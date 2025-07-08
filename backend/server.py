@@ -88,6 +88,17 @@ def recommend():
     # Return the results as JSON
     return jsonify(recommendations)
 
+# --- 4.1. NEW: Endpoint to serve role probabilities ---
+@app.route('/role_data', methods=['GET'])
+def role_data():
+    # Serve the valid_champion_roles.json file
+    try:
+        with open(VALID_ROLES_FILE, 'r') as f:
+            data = json.load(f)
+        return jsonify(data)
+    except FileNotFoundError:
+        return jsonify({"error": "Role data file not found"}), 404
+
 # --- 5. RUN THE SERVER ---
 if __name__ == '__main__':
     # The host='0.0.0.0' makes it accessible from your local network
