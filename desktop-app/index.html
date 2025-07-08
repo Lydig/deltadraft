@@ -35,15 +35,13 @@
         .rec-name { font-weight: bold; }
         .rec-stats { font-size: 0.8rem; color: var(--text-secondary); }
         .delta-pos { color: var(--green-pos); } .delta-neg { color: var(--red-neg); }
-        
-        /* --- Tooltip Styles --- */
         #delta-tooltip { position: fixed; background-color: #020617; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; z-index: 100; width: 320px; pointer-events: none; opacity: 0; transition: opacity 0.1s; }
         #delta-tooltip h4 { margin: 0 0 10px 0; color: var(--accent-color); font-size: 1rem; text-align: center; }
         .tooltip-columns { display: flex; justify-content: space-between; gap: 15px; }
         .tooltip-col { flex: 1; }
         .tooltip-col h5 { margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 3px; }
         .tooltip-col div { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 2px; height: 20px; align-items: center;}
-        .delta-neutral { color: var(--text-secondary); font-style: italic; }
+        .delta-neutral { color: var(--text-secondary); font-style: italic; font-size: 0.8rem;}
     </style>
 </head>
 <body>
@@ -59,7 +57,7 @@
             <div class="center-column">
                 <input type="text" id="search-champion" placeholder="Search for a champion...">
                 <div id="champion-grid"></div>
-                <div id="results"><h3>Recommendations:</h3><ol id="recommendation-list"></ol></div>
+                <div id="results"><h3 id="recs-header">Recommendations:</h3><ol id="recommendation-list"></ol></div>
             </div>
             <div class="team-panel" id="red-team"></div>
         </div>
@@ -73,10 +71,12 @@
         let roleProbabilities = {};
         let selectedRoleSlot = null;
         let lcuIntervalId = null;
+        let recommendationTarget = null;
 
         const championGrid = document.getElementById('champion-grid');
         const searchInput = document.getElementById('search-champion');
         const recommendationList = document.getElementById('recommendation-list');
+        const recsHeader = document.getElementById('recs-header');
         const liveTrackingBtn = document.getElementById('live-tracking-btn');
         const resetBtn = document.getElementById('reset-btn');
         const getRecsBtn = document.getElementById('get-recs-btn');
@@ -91,8 +91,12 @@
                 allChampions.push({id: 'Aurora', name: 'Aurora', image: {full: 'Aurora.png'}});
                 allChampions.push({id: 'Mel', name: 'Mel', image: {full: 'Mel.png'}});
                 
-                allChampions.forEach(champ => { champIdToName[champ.key] = champ.id; });
-                champIdToName[799] = 'Ambessa'; champIdToName[800] = 'Mel'; champIdToName[893] = 'Aurora';
+                allChampions.forEach(champ => {
+                    champIdToName[champ.key] = champ.id;
+                });
+                champIdToName[799] = 'Ambessa';
+                champIdToName[800] = 'Mel';
+                champIdToName[893] = 'Aurora';
 
             } catch (e) { console.error("Could not fetch champion list from Data Dragon", e); }
             
@@ -137,7 +141,9 @@
                     slot.appendChild(portrait);
                     slot.dataset.champion = championName;
                 }
-            } else { delete slot.dataset.champion; }
+            } else {
+                 delete slot.dataset.champion;
+            }
         }
 
         function resetDraft() {
@@ -150,16 +156,20 @@
             recommendationList.innerHTML = '';
             getRecsBtn.disabled = true;
             getRecsBtn.textContent = "Get Recommendations";
+            recsHeader.textContent = "Recommendations:";
             selectedRoleSlot = null;
+            recommendationTarget = null;
         }
 
-        async function getRecommendations() {
-            if (!selectedRoleSlot) return;
-            getRecsBtn.disabled = true;
-            getRecsBtn.textContent = "Calculating...";
+        async function updateRecommendations() {
+            if (!recommendationTarget) return;
 
-            const myTeamIsBlue = selectedRoleSlot.side === 'blue';
-            const myTeam = {}; const enemyTeam = {};
+            recsHeader.textContent = `Recommendations for ${recommendationTarget.side.toUpperCase()} ${recommendationTarget.role}:`;
+            recommendationList.innerHTML = '<li>Calculating...</li>';
+            
+            const myTeamIsBlue = recommendationTarget.side === 'blue';
+            const myTeam = {};
+            const enemyTeam = {};
             roles.forEach(role => {
                 const blueChamp = document.querySelector(`[data-side='blue'][data-role='${role}']`).dataset.champion;
                 const redChamp = document.querySelector(`[data-side='red'][data-role='${role}']`).dataset.champion;
@@ -170,7 +180,7 @@
             try {
                 const response = await fetch('http://127.0.0.1:5000/recommend', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ my_team: myTeam, enemy_team: enemyTeam, target_role: selectedRoleSlot.role })
+                    body: JSON.stringify({ my_team: myTeam, enemy_team: enemyTeam, target_role: recommendationTarget.role })
                 });
                 if (!response.ok) throw new Error("Backend server error");
                 const recommendations = await response.json();
@@ -186,8 +196,10 @@
                     li.innerHTML = `<img class="rec-img" src="./assets/champions/${champData.image.full}"><div class="rec-info"><div class="rec-name">${pick.champion}</div><div class="rec-stats"><span>Delta: <b class="${pick.total_delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> | <span>Base WR: ${baseWrStr}</span> | <span>Role Rate: ${pickRateStr}</span></div></div>`;
                     recommendationList.appendChild(li);
                 });
-            } catch (error) { console.error("Failed to get recommendations:", error); alert("Could not get recommendations. Is the Python backend server running?"); } 
-            finally { getRecsBtn.disabled = false; getRecsBtn.textContent = `Get Recs for ${selectedRoleSlot.side.toUpperCase()} ${selectedRoleSlot.role}`; }
+            } catch (error) {
+                console.error("Failed to get recommendations:", error);
+                recommendationList.innerHTML = '<li>Error fetching recommendations.</li>';
+            }
         }
         
         document.addEventListener('click', e => {
@@ -207,24 +219,25 @@
                     selectedRoleSlot = null;
                     getRecsBtn.disabled = true;
                     getRecsBtn.textContent = "Get Recommendations";
+                    if (recommendationTarget) updateRecommendations();
                 }
             } else if (championTile && selectedRoleSlot) {
                 setChampionForSlot(selectedRoleSlot.side, selectedRoleSlot.role, championTile.dataset.championName);
-                document.querySelector(`[data-side='${selectedRoleSlot.side}'][data-role='${selectedRoleSlot.role}']`).classList.remove('selected');
-                selectedRoleSlot = null;
-                getRecsBtn.disabled = true;
-                getRecsBtn.textContent = "Get Recommendations";
+                if (recommendationTarget) updateRecommendations();
             }
         });
 
         liveTrackingBtn.addEventListener('click', () => {
             const indicator = document.getElementById('live-indicator');
             if (lcuIntervalId) {
-                clearInterval(lcuIntervalId); lcuIntervalId = null; indicator.classList.remove('active');
+                clearInterval(lcuIntervalId);
+                lcuIntervalId = null;
+                indicator.classList.remove('active');
             } else {
                 indicator.classList.add('active');
                 initializeLCUData().then(() => {
-                    updateFromLiveGame(); lcuIntervalId = setInterval(updateFromLiveGame, 1000);
+                    updateFromLiveGame();
+                    lcuIntervalId = setInterval(updateFromLiveGame, 1000);
                 }).catch(() => indicator.classList.remove('active'));
             }
         });
@@ -253,11 +266,15 @@
                 setChampionForSlot('blue', role, blueAssignments[role]);
                 setChampionForSlot('red', role, redAssignments[role]);
             });
+            if (recommendationTarget) updateRecommendations();
         }
 
         function inferRoles(picks) {
-            let assignments = {}; if (picks.length === 0) return assignments;
-            let availableRoles = [...roles]; let availableChamps = [...picks]; let possibilities = [];
+            let assignments = {};
+            if (picks.length === 0) return assignments;
+            let availableRoles = [...roles];
+            let availableChamps = [...picks];
+            let possibilities = [];
             availableChamps.forEach(champ => {
                 availableRoles.forEach(role => {
                     const prob = (roleProbabilities[champ] && roleProbabilities[champ][role]) || 0.0001;
@@ -278,25 +295,24 @@
 
         searchInput.addEventListener('input', populateChampionGrid);
         resetBtn.addEventListener('click', resetDraft);
-        getRecsBtn.addEventListener('click', getRecommendations);
+        getRecsBtn.addEventListener('click', () => {
+            if (selectedRoleSlot) {
+                recommendationTarget = selectedRoleSlot;
+                updateRecommendations();
+            }
+        });
         
-        // --- NEW TOOLTIP LOGIC ---
         recommendationList.addEventListener('mouseover', e => {
             const li = e.target.closest('li');
             if (!li || !li.dataset.breakdown) return;
-            
             const breakdown = JSON.parse(li.dataset.breakdown);
             const breakdownMap = Object.fromEntries(breakdown.map(item => [item.source, item.delta]));
-            
             let blueHTML = '<h5>Blue Side</h5>';
             let redHTML = '<h5>Red Side</h5>';
-            
             roles.forEach(role => {
                 const blueChamp = document.querySelector(`[data-side="blue"][data-role="${role}"]`).dataset.champion;
                 const redChamp = document.querySelector(`[data-side="red"][data-role="${role}"]`).dataset.champion;
-
-                // Build Blue Side Column
-                if (selectedRoleSlot && selectedRoleSlot.side === 'blue' && selectedRoleSlot.role === role) {
+                if (recommendationTarget && recommendationTarget.side === 'blue' && recommendationTarget.role === role) {
                     blueHTML += `<div><span class="delta-neutral">RECOMMENDING</span></div>`;
                 } else if (blueChamp) {
                     const delta = (breakdownMap[blueChamp] || 0) * 100;
@@ -305,9 +321,7 @@
                 } else {
                     blueHTML += `<div><span class="delta-neutral">BLUE ${role} MISSING</span></div>`;
                 }
-                
-                // Build Red Side Column
-                if (selectedRoleSlot && selectedRoleSlot.side === 'red' && selectedRoleSlot.role === role) {
+                if (recommendationTarget && recommendationTarget.side === 'red' && recommendationTarget.role === role) {
                     redHTML += `<div><span class="delta-neutral">RECOMMENDING</span></div>`;
                 } else if (redChamp) {
                     const delta = (breakdownMap[redChamp] || 0) * 100;
@@ -317,16 +331,13 @@
                     redHTML += `<div><span class="delta-neutral">RED ${role} MISSING</span></div>`;
                 }
             });
-            
             tooltip.innerHTML = `<h4>Delta Breakdown</h4><div class="tooltip-columns"><div class="tooltip-col">${blueHTML}</div><div class="tooltip-col">${redHTML}</div></div>`;
             tooltip.style.opacity = '1';
         });
-
         document.addEventListener('mousemove', e => {
             tooltip.style.left = `${e.pageX + 20}px`;
             tooltip.style.top = `${e.pageY + 20}px`;
         });
-        
         recommendationList.addEventListener('mouseout', () => {
             tooltip.style.opacity = '0';
         });
