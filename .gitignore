@@ -42,4 +42,6 @@ Thumbs.db
 
 # 6. Project-Specific Exclusions
 # Ignore the cloned reference repository as requested.
-/workspace/
+/workspace/loldraftai/
+/workspace/safe/backend/
+/workspace/safe/desktop-app/

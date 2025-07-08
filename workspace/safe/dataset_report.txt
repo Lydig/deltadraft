@@ -1,0 +1,5452 @@
+--- Data Profiling Report ---
+Dataset: master_dataset_final.parquet
+Total Rows: 35,856,088
+Total Columns: 422
+==================================================
+
+Column: averageDivision
+----------------------------------------
+  Data Type:       string
+  Missing Values:  0 (0.00%)
+  Unique Values:   4
+
+==================================================
+
+Column: averageTier
+----------------------------------------
+  Data Type:       string
+  Missing Values:  0 (0.00%)
+  Unique Values:   8
+
+==================================================
+
+Column: gameDuration
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3,411
+  Mean:            1,706.46
+  Median (50%):    1,783.00
+  Std Dev:         405.88
+  Min:             865.00
+  Max:             9,674.00
+
+==================================================
+
+Column: gameStartTimestamp
+----------------------------------------
+  Data Type:       datetime64[ns, UTC]
+  Missing Values:  0 (0.00%)
+  Unique Values:   35,831,692
+
+==================================================
+
+Column: gameVersionMajorPatch
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            14.55
+  Median (50%):    15.00
+  Std Dev:         0.56
+  Min:             13.00
+  Max:             15.00
+
+==================================================
+
+Column: gameVersionMinorPatch
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   24
+  Mean:            10.37
+  Median (50%):    10.00
+  Std Dev:         7.22
+  Min:             1.00
+  Max:             24.00
+
+==================================================
+
+Column: id
+----------------------------------------
+  Data Type:       string
+  Missing Values:  0 (0.00%)
+  Unique Values:   35,856,088
+
+==================================================
+
+Column: matchId
+----------------------------------------
+  Data Type:       string
+  Missing Values:  0 (0.00%)
+  Unique Values:   35,856,088
+
+==================================================
+
+Column: queueId
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   1
+  Mean:            420.00
+  Median (50%):    420.00
+  Std Dev:         0.00
+  Min:             420.00
+  Max:             420.00
+
+==================================================
+
+Column: region
+----------------------------------------
+  Data Type:       string
+  Missing Values:  0 (0.00%)
+  Unique Values:   4
+
+==================================================
+
+Column: team_100_BOTTOM_assists_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   28
+  Mean:            3.39
+  Median (50%):    3.00
+  Std Dev:         2.30
+  Min:             0.00
+  Max:             27.00
+
+==================================================
+
+Column: team_100_BOTTOM_assists_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   34
+  Mean:            4.66
+  Median (50%):    5.00
+  Std Dev:         2.94
+  Min:             0.00
+  Max:             33.00
+
+==================================================
+
+Column: team_100_BOTTOM_assists_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   37
+  Mean:            5.43
+  Median (50%):    5.00
+  Std Dev:         3.43
+  Min:             0.00
+  Max:             38.00
+
+==================================================
+
+Column: team_100_BOTTOM_assists_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   22
+  Mean:            2.15
+  Median (50%):    2.00
+  Std Dev:         1.72
+  Min:             0.00
+  Max:             24.00
+
+==================================================
+
+Column: team_100_BOTTOM_championId
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   170
+  Mean:            177.26
+  Median (50%):    145.00
+  Std Dev:         199.35
+  Min:             1.00
+  Max:             950.00
+
+==================================================
+
+Column: team_100_BOTTOM_creepScore_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   264
+  Mean:            142.98
+  Median (50%):    151.00
+  Std Dev:         24.27
+  Min:             0.00
+  Max:             270.00
+
+==================================================
+
+Column: team_100_BOTTOM_creepScore_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   339
+  Mean:            168.03
+  Median (50%):    177.00
+  Std Dev:         34.66
+  Min:             0.00
+  Max:             350.00
+
+==================================================
+
+Column: team_100_BOTTOM_creepScore_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   418
+  Mean:            182.58
+  Median (50%):    190.00
+  Std Dev:         44.62
+  Min:             0.00
+  Max:             438.00
+
+==================================================
+
+Column: team_100_BOTTOM_creepScore_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   186
+  Mean:            109.15
+  Median (50%):    114.00
+  Std Dev:         16.59
+  Min:             0.00
+  Max:             187.00
+
+==================================================
+
+Column: team_100_BOTTOM_deaths_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   32
+  Mean:            3.52
+  Median (50%):    4.00
+  Std Dev:         2.03
+  Min:             0.00
+  Max:             35.00
+
+==================================================
+
+Column: team_100_BOTTOM_deaths_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   34
+  Mean:            4.38
+  Median (50%):    5.00
+  Std Dev:         2.40
+  Min:             0.00
+  Max:             43.00
+
+==================================================
+
+Column: team_100_BOTTOM_deaths_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   36
+  Mean:            4.89
+  Median (50%):    5.00
+  Std Dev:         2.67
+  Min:             0.00
+  Max:             43.00
+
+==================================================
+
+Column: team_100_BOTTOM_deaths_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   30
+  Mean:            2.51
+  Median (50%):    2.00
+  Std Dev:         1.65
+  Min:             0.00
+  Max:             30.00
+
+==================================================
+
+Column: team_100_BOTTOM_kills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   39
+  Mean:            4.18
+  Median (50%):    4.00
+  Std Dev:         2.96
+  Min:             0.00
+  Max:             40.00
+
+==================================================
+
+Column: team_100_BOTTOM_kills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   44
+  Mean:            5.32
+  Median (50%):    5.00
+  Std Dev:         3.59
+  Min:             0.00
+  Max:             48.00
+
+==================================================
+
+Column: team_100_BOTTOM_kills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   47
+  Mean:            6.03
+  Median (50%):    6.00
+  Std Dev:         4.03
+  Min:             0.00
+  Max:             48.00
+
+==================================================
+
+Column: team_100_BOTTOM_kills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   34
+  Mean:            2.96
+  Median (50%):    3.00
+  Std Dev:         2.31
+  Min:             0.00
+  Max:             33.00
+
+==================================================
+
+Column: team_100_BOTTOM_level_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   16
+  Mean:            10.90
+  Median (50%):    11.00
+  Std Dev:         1.02
+  Min:             1.00
+  Max:             16.00
+
+==================================================
+
+Column: team_100_BOTTOM_level_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            12.38
+  Median (50%):    13.00
+  Std Dev:         1.63
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_100_BOTTOM_level_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            13.18
+  Median (50%):    14.00
+  Std Dev:         2.18
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_100_BOTTOM_level_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   13
+  Mean:            8.94
+  Median (50%):    9.00
+  Std Dev:         0.67
+  Min:             1.00
+  Max:             13.00
+
+==================================================
+
+Column: team_100_BOTTOM_magicDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   29,410
+  Mean:            1,949.52
+  Median (50%):    1,320.00
+  Std Dev:         2,808.07
+  Min:             0.00
+  Max:             57,598.00
+
+==================================================
+
+Column: team_100_BOTTOM_magicDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   41,179
+  Mean:            2,810.72
+  Median (50%):    1,780.00
+  Std Dev:         4,141.16
+  Min:             0.00
+  Max:             67,199.00
+
+==================================================
+
+Column: team_100_BOTTOM_magicDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   52,103
+  Mean:            3,442.35
+  Median (50%):    1,979.00
+  Std Dev:         5,249.26
+  Min:             0.00
+  Max:             90,700.00
+
+==================================================
+
+Column: team_100_BOTTOM_magicDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18,869
+  Mean:            1,200.70
+  Median (50%):    778.00
+  Std Dev:         1,702.29
+  Min:             0.00
+  Max:             31,464.00
+
+==================================================
+
+Column: team_100_BOTTOM_physicalDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   36,277
+  Mean:            8,861.54
+  Median (50%):    9,071.00
+  Std Dev:         4,215.21
+  Min:             0.00
+  Max:             62,684.00
+
+==================================================
+
+Column: team_100_BOTTOM_physicalDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   49,220
+  Mean:            12,014.54
+  Median (50%):    12,242.00
+  Std Dev:         6,169.81
+  Min:             0.00
+  Max:             79,756.00
+
+==================================================
+
+Column: team_100_BOTTOM_physicalDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   60,948
+  Mean:            14,228.80
+  Median (50%):    14,495.00
+  Std Dev:         8,030.76
+  Min:             0.00
+  Max:             100,512.00
+
+==================================================
+
+Column: team_100_BOTTOM_physicalDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   23,667
+  Mean:            5,826.92
+  Median (50%):    6,122.00
+  Std Dev:         2,670.62
+  Min:             0.00
+  Max:             45,296.00
+
+==================================================
+
+Column: team_100_BOTTOM_totalGold_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   15,257
+  Mean:            7,915.17
+  Median (50%):    8,239.50
+  Std Dev:         1,487.49
+  Min:             1,210.00
+  Max:             22,719.00
+
+==================================================
+
+Column: team_100_BOTTOM_totalGold_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18,383
+  Mean:            9,622.43
+  Median (50%):    10,182.00
+  Std Dev:         2,152.10
+  Min:             1,420.00
+  Max:             26,897.00
+
+==================================================
+
+Column: team_100_BOTTOM_totalGold_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   21,060
+  Mean:            10,705.89
+  Median (50%):    11,190.00
+  Std Dev:         2,863.65
+  Min:             2,112.00
+  Max:             27,448.00
+
+==================================================
+
+Column: team_100_BOTTOM_totalGold_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   11,441
+  Mean:            5,844.04
+  Median (50%):    5,915.00
+  Std Dev:         1,020.43
+  Min:             1,099.00
+  Max:             18,955.00
+
+==================================================
+
+Column: team_100_BOTTOM_trueDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   8,367
+  Mean:            252.55
+  Median (50%):    99.00
+  Std Dev:         522.88
+  Min:             0.00
+  Max:             15,303.00
+
+==================================================
+
+Column: team_100_BOTTOM_trueDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   12,590
+  Mean:            427.52
+  Median (50%):    235.00
+  Std Dev:         794.72
+  Min:             0.00
+  Max:             24,865.00
+
+==================================================
+
+Column: team_100_BOTTOM_trueDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   16,958
+  Mean:            578.04
+  Median (50%):    326.00
+  Std Dev:         1,055.86
+  Min:             0.00
+  Max:             34,299.00
+
+==================================================
+
+Column: team_100_BOTTOM_trueDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   5,386
+  Mean:            127.11
+  Median (50%):    0.00
+  Std Dev:         313.90
+  Min:             0.00
+  Max:             8,850.00
+
+==================================================
+
+Column: team_100_JUNGLE_assists_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   31
+  Mean:            4.24
+  Median (50%):    4.00
+  Std Dev:         2.59
+  Min:             0.00
+  Max:             31.00
+
+==================================================
+
+Column: team_100_JUNGLE_assists_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   36
+  Mean:            5.66
+  Median (50%):    6.00
+  Std Dev:         3.33
+  Min:             0.00
+  Max:             35.00
+
+==================================================
+
+Column: team_100_JUNGLE_assists_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   41
+  Mean:            6.54
+  Median (50%):    7.00
+  Std Dev:         3.92
+  Min:             0.00
+  Max:             45.00
+
+==================================================
+
+Column: team_100_JUNGLE_assists_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   23
+  Mean:            2.77
+  Median (50%):    3.00
+  Std Dev:         1.94
+  Min:             0.00
+  Max:             22.00
+
+==================================================
+
+Column: team_100_JUNGLE_championId
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   170
+  Mean:            155.82
+  Median (50%):    107.00
+  Std Dev:         198.42
+  Min:             1.00
+  Max:             950.00
+
+==================================================
+
+Column: team_100_JUNGLE_creepScore_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   279
+  Mean:            124.45
+  Median (50%):    131.00
+  Std Dev:         22.88
+  Min:             0.00
+  Max:             285.00
+
+==================================================
+
+Column: team_100_JUNGLE_creepScore_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   351
+  Mean:            147.86
+  Median (50%):    157.00
+  Std Dev:         33.16
+  Min:             0.00
+  Max:             388.00
+
+==================================================
+
+Column: team_100_JUNGLE_creepScore_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   421
+  Mean:            160.64
+  Median (50%):    169.00
+  Std Dev:         41.95
+  Min:             0.00
+  Max:             523.00
+
+==================================================
+
+Column: team_100_JUNGLE_creepScore_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   203
+  Mean:            94.38
+  Median (50%):    98.00
+  Std Dev:         15.12
+  Min:             0.00
+  Max:             209.00
+
+==================================================
+
+Column: team_100_JUNGLE_deaths_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   39
+  Mean:            3.20
+  Median (50%):    3.00
+  Std Dev:         1.94
+  Min:             0.00
+  Max:             39.00
+
+==================================================
+
+Column: team_100_JUNGLE_deaths_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   43
+  Mean:            4.10
+  Median (50%):    4.00
+  Std Dev:         2.35
+  Min:             0.00
+  Max:             47.00
+
+==================================================
+
+Column: team_100_JUNGLE_deaths_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   44
+  Mean:            4.64
+  Median (50%):    5.00
+  Std Dev:         2.66
+  Min:             0.00
+  Max:             54.00
+
+==================================================
+
+Column: team_100_JUNGLE_deaths_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   31
+  Mean:            2.21
+  Median (50%):    2.00
+  Std Dev:         1.53
+  Min:             0.00
+  Max:             30.00
+
+==================================================
+
+Column: team_100_JUNGLE_kills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   35
+  Mean:            4.41
+  Median (50%):    4.00
+  Std Dev:         2.80
+  Min:             0.00
+  Max:             36.00
+
+==================================================
+
+Column: team_100_JUNGLE_kills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   39
+  Mean:            5.45
+  Median (50%):    5.00
+  Std Dev:         3.39
+  Min:             0.00
+  Max:             38.00
+
+==================================================
+
+Column: team_100_JUNGLE_kills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   43
+  Mean:            6.03
+  Median (50%):    6.00
+  Std Dev:         3.79
+  Min:             0.00
+  Max:             42.00
+
+==================================================
+
+Column: team_100_JUNGLE_kills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   28
+  Mean:            3.16
+  Median (50%):    3.00
+  Std Dev:         2.18
+  Min:             0.00
+  Max:             29.00
+
+==================================================
+
+Column: team_100_JUNGLE_level_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17
+  Mean:            11.42
+  Median (50%):    12.00
+  Std Dev:         1.14
+  Min:             1.00
+  Max:             17.00
+
+==================================================
+
+Column: team_100_JUNGLE_level_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            12.97
+  Median (50%):    14.00
+  Std Dev:         1.80
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_100_JUNGLE_level_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            13.76
+  Median (50%):    15.00
+  Std Dev:         2.33
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_100_JUNGLE_level_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14
+  Mean:            9.31
+  Median (50%):    9.00
+  Std Dev:         0.73
+  Min:             1.00
+  Max:             14.00
+
+==================================================
+
+Column: team_100_JUNGLE_magicDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   28,570
+  Mean:            2,985.75
+  Median (50%):    1,809.00
+  Std Dev:         358,650.01
+  Min:             -2,147,483,648.00
+  Max:             44,366.00
+
+==================================================
+
+Column: team_100_JUNGLE_magicDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   40,720
+  Mean:            4,381.18
+  Median (50%):    2,529.00
+  Std Dev:         360,031.21
+  Min:             -2,147,483,648.00
+  Max:             187,082,528.00
+
+==================================================
+
+Column: team_100_JUNGLE_magicDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   52,371
+  Mean:            5,334.99
+  Median (50%):    2,936.00
+  Std Dev:         360,056.02
+  Min:             -2,147,483,648.00
+  Max:             187,084,736.00
+
+==================================================
+
+Column: team_100_JUNGLE_magicDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18,065
+  Mean:            1,751.12
+  Median (50%):    1,102.00
+  Std Dev:         2,031.35
+  Min:             0.00
+  Max:             28,804.00
+
+==================================================
+
+Column: team_100_JUNGLE_physicalDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   27,600
+  Mean:            5,311.03
+  Median (50%):    5,747.00
+  Std Dev:         3,956.44
+  Min:             0.00
+  Max:             47,459.00
+
+==================================================
+
+Column: team_100_JUNGLE_physicalDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   39,662
+  Mean:            7,358.91
+  Median (50%):    7,699.00
+  Std Dev:         5,816.43
+  Min:             0.00
+  Max:             67,300.00
+
+==================================================
+
+Column: team_100_JUNGLE_physicalDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   50,720
+  Mean:            8,702.15
+  Median (50%):    8,669.00
+  Std Dev:         7,323.62
+  Min:             0.00
+  Max:             93,466.00
+
+==================================================
+
+Column: team_100_JUNGLE_physicalDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17,170
+  Mean:            3,257.26
+  Median (50%):    3,576.00
+  Std Dev:         2,356.76
+  Min:             0.00
+  Max:             26,762.00
+
+==================================================
+
+Column: team_100_JUNGLE_totalGold_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   13,417
+  Mean:            7,863.39
+  Median (50%):    8,156.00
+  Std Dev:         1,380.30
+  Min:             1,469.00
+  Max:             19,199.00
+
+==================================================
+
+Column: team_100_JUNGLE_totalGold_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17,079
+  Mean:            9,494.05
+  Median (50%):    9,961.00
+  Std Dev:         2,067.55
+  Min:             1,508.00
+  Max:             22,523.00
+
+==================================================
+
+Column: team_100_JUNGLE_totalGold_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   20,068
+  Mean:            10,449.95
+  Median (50%):    11,077.00
+  Std Dev:         2,718.58
+  Min:             1,570.00
+  Max:             27,489.00
+
+==================================================
+
+Column: team_100_JUNGLE_totalGold_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   9,341
+  Mean:            5,834.09
+  Median (50%):    5,964.00
+  Std Dev:         881.50
+  Min:             1,196.00
+  Max:             13,781.00
+
+==================================================
+
+Column: team_100_JUNGLE_trueDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   8,564
+  Mean:            685.47
+  Median (50%):    572.00
+  Std Dev:         621.56
+  Min:             0.00
+  Max:             14,237.00
+
+==================================================
+
+Column: team_100_JUNGLE_trueDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   12,403
+  Mean:            1,007.44
+  Median (50%):    835.00
+  Std Dev:         934.97
+  Min:             0.00
+  Max:             22,425.00
+
+==================================================
+
+Column: team_100_JUNGLE_trueDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   15,758
+  Mean:            1,218.81
+  Median (50%):    973.00
+  Std Dev:         1,194.67
+  Min:             0.00
+  Max:             29,798.00
+
+==================================================
+
+Column: team_100_JUNGLE_trueDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   5,148
+  Mean:            384.94
+  Median (50%):    320.00
+  Std Dev:         361.94
+  Min:             0.00
+  Max:             8,807.00
+
+==================================================
+
+Column: team_100_MIDDLE_assists_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   29
+  Mean:            3.03
+  Median (50%):    3.00
+  Std Dev:         2.25
+  Min:             0.00
+  Max:             29.00
+
+==================================================
+
+Column: team_100_MIDDLE_assists_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   34
+  Mean:            4.29
+  Median (50%):    4.00
+  Std Dev:         2.94
+  Min:             0.00
+  Max:             35.00
+
+==================================================
+
+Column: team_100_MIDDLE_assists_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   39
+  Mean:            5.10
+  Median (50%):    5.00
+  Std Dev:         3.48
+  Min:             0.00
+  Max:             41.00
+
+==================================================
+
+Column: team_100_MIDDLE_assists_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   24
+  Mean:            1.82
+  Median (50%):    2.00
+  Std Dev:         1.63
+  Min:             0.00
+  Max:             29.00
+
+==================================================
+
+Column: team_100_MIDDLE_championId
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   170
+  Mean:            225.01
+  Median (50%):    127.00
+  Std Dev:         272.38
+  Min:             1.00
+  Max:             950.00
+
+==================================================
+
+Column: team_100_MIDDLE_creepScore_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   276
+  Mean:            139.74
+  Median (50%):    149.00
+  Std Dev:         25.27
+  Min:             0.00
+  Max:             317.00
+
+==================================================
+
+Column: team_100_MIDDLE_creepScore_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   340
+  Mean:            162.21
+  Median (50%):    173.00
+  Std Dev:         34.73
+  Min:             0.00
+  Max:             409.00
+
+==================================================
+
+Column: team_100_MIDDLE_creepScore_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   403
+  Mean:            174.66
+  Median (50%):    184.00
+  Std Dev:         43.09
+  Min:             0.00
+  Max:             419.00
+
+==================================================
+
+Column: team_100_MIDDLE_creepScore_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   204
+  Mean:            108.14
+  Median (50%):    115.00
+  Std Dev:         17.47
+  Min:             0.00
+  Max:             237.00
+
+==================================================
+
+Column: team_100_MIDDLE_deaths_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   39
+  Mean:            3.31
+  Median (50%):    3.00
+  Std Dev:         2.02
+  Min:             0.00
+  Max:             44.00
+
+==================================================
+
+Column: team_100_MIDDLE_deaths_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   42
+  Mean:            4.18
+  Median (50%):    4.00
+  Std Dev:         2.40
+  Min:             0.00
+  Max:             44.00
+
+==================================================
+
+Column: team_100_MIDDLE_deaths_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   41
+  Mean:            4.71
+  Median (50%):    5.00
+  Std Dev:         2.68
+  Min:             0.00
+  Max:             44.00
+
+==================================================
+
+Column: team_100_MIDDLE_deaths_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   31
+  Mean:            2.31
+  Median (50%):    2.00
+  Std Dev:         1.63
+  Min:             0.00
+  Max:             31.00
+
+==================================================
+
+Column: team_100_MIDDLE_kills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   38
+  Mean:            3.78
+  Median (50%):    4.00
+  Std Dev:         2.70
+  Min:             0.00
+  Max:             53.00
+
+==================================================
+
+Column: team_100_MIDDLE_kills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   44
+  Mean:            4.81
+  Median (50%):    5.00
+  Std Dev:         3.28
+  Min:             0.00
+  Max:             53.00
+
+==================================================
+
+Column: team_100_MIDDLE_kills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   46
+  Mean:            5.42
+  Median (50%):    5.00
+  Std Dev:         3.68
+  Min:             0.00
+  Max:             53.00
+
+==================================================
+
+Column: team_100_MIDDLE_kills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   35
+  Mean:            2.59
+  Median (50%):    2.00
+  Std Dev:         2.06
+  Min:             0.00
+  Max:             37.00
+
+==================================================
+
+Column: team_100_MIDDLE_level_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17
+  Mean:            12.25
+  Median (50%):    12.00
+  Std Dev:         1.05
+  Min:             1.00
+  Max:             17.00
+
+==================================================
+
+Column: team_100_MIDDLE_level_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            13.63
+  Median (50%):    14.00
+  Std Dev:         1.63
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_100_MIDDLE_level_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            14.35
+  Median (50%):    15.00
+  Std Dev:         2.10
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_100_MIDDLE_level_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14
+  Mean:            10.40
+  Median (50%):    10.00
+  Std Dev:         0.69
+  Min:             1.00
+  Max:             14.00
+
+==================================================
+
+Column: team_100_MIDDLE_magicDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   32,429
+  Mean:            7,693.60
+  Median (50%):    8,772.00
+  Std Dev:         4,957.64
+  Min:             0.00
+  Max:             50,919.00
+
+==================================================
+
+Column: team_100_MIDDLE_magicDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   45,541
+  Mean:            10,727.55
+  Median (50%):    12,341.00
+  Std Dev:         7,263.01
+  Min:             0.00
+  Max:             70,293.00
+
+==================================================
+
+Column: team_100_MIDDLE_magicDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   57,438
+  Mean:            12,799.52
+  Median (50%):    14,015.00
+  Std Dev:         9,254.64
+  Min:             0.00
+  Max:             90,920.00
+
+==================================================
+
+Column: team_100_MIDDLE_magicDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   20,558
+  Mean:            4,782.24
+  Median (50%):    5,352.00
+  Std Dev:         3,041.24
+  Min:             0.00
+  Max:             33,456.00
+
+==================================================
+
+Column: team_100_MIDDLE_physicalDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   30,194
+  Mean:            3,267.24
+  Median (50%):    1,338.00
+  Std Dev:         4,331.23
+  Min:             0.00
+  Max:             50,614.00
+
+==================================================
+
+Column: team_100_MIDDLE_physicalDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   41,499
+  Mean:            4,230.65
+  Median (50%):    1,484.00
+  Std Dev:         5,971.68
+  Min:             0.00
+  Max:             67,100.00
+
+==================================================
+
+Column: team_100_MIDDLE_physicalDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   51,741
+  Mean:            4,853.42
+  Median (50%):    1,543.00
+  Std Dev:         7,195.58
+  Min:             0.00
+  Max:             89,321.00
+
+==================================================
+
+Column: team_100_MIDDLE_physicalDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   19,890
+  Mean:            2,245.71
+  Median (50%):    1,120.00
+  Std Dev:         2,769.38
+  Min:             0.00
+  Max:             34,994.00
+
+==================================================
+
+Column: team_100_MIDDLE_totalGold_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   13,735
+  Mean:            7,620.09
+  Median (50%):    7,967.00
+  Std Dev:         1,380.03
+  Min:             1,939.00
+  Max:             19,529.00
+
+==================================================
+
+Column: team_100_MIDDLE_totalGold_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17,009
+  Mean:            9,227.24
+  Median (50%):    9,820.00
+  Std Dev:         2,036.16
+  Min:             1,978.00
+  Max:             23,054.00
+
+==================================================
+
+Column: team_100_MIDDLE_totalGold_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   19,737
+  Mean:            10,218.26
+  Median (50%):    10,732.00
+  Std Dev:         2,700.48
+  Min:             2,099.00
+  Max:             25,745.00
+
+==================================================
+
+Column: team_100_MIDDLE_totalGold_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   9,958
+  Mean:            5,635.89
+  Median (50%):    5,755.00
+  Std Dev:         894.64
+  Min:             1,849.00
+  Max:             15,885.00
+
+==================================================
+
+Column: team_100_MIDDLE_trueDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   9,017
+  Mean:            593.85
+  Median (50%):    397.00
+  Std Dev:         793.90
+  Min:             0.00
+  Max:             20,576.00
+
+==================================================
+
+Column: team_100_MIDDLE_trueDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   12,800
+  Mean:            828.57
+  Median (50%):    557.00
+  Std Dev:         1,111.69
+  Min:             0.00
+  Max:             22,193.00
+
+==================================================
+
+Column: team_100_MIDDLE_trueDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   16,530
+  Mean:            1,007.80
+  Median (50%):    657.00
+  Std Dev:         1,377.14
+  Min:             0.00
+  Max:             32,257.00
+
+==================================================
+
+Column: team_100_MIDDLE_trueDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   5,851
+  Mean:            374.55
+  Median (50%):    234.00
+  Std Dev:         505.73
+  Min:             0.00
+  Max:             8,634.00
+
+==================================================
+
+Column: team_100_TOP_assists_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   29
+  Mean:            2.17
+  Median (50%):    2.00
+  Std Dev:         1.89
+  Min:             0.00
+  Max:             28.00
+
+==================================================
+
+Column: team_100_TOP_assists_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   37
+  Mean:            3.31
+  Median (50%):    3.00
+  Std Dev:         2.60
+  Min:             0.00
+  Max:             37.00
+
+==================================================
+
+Column: team_100_TOP_assists_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   42
+  Mean:            4.06
+  Median (50%):    4.00
+  Std Dev:         3.16
+  Min:             0.00
+  Max:             44.00
+
+==================================================
+
+Column: team_100_TOP_assists_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   22
+  Mean:            1.18
+  Median (50%):    1.00
+  Std Dev:         1.28
+  Min:             0.00
+  Max:             22.00
+
+==================================================
+
+Column: team_100_TOP_championId
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   170
+  Mean:            206.02
+  Median (50%):    92.00
+  Std Dev:         273.88
+  Min:             1.00
+  Max:             950.00
+
+==================================================
+
+Column: team_100_TOP_creepScore_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   291
+  Mean:            137.77
+  Median (50%):    146.00
+  Std Dev:         26.44
+  Min:             0.00
+  Max:             360.00
+
+==================================================
+
+Column: team_100_TOP_creepScore_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   358
+  Mean:            161.35
+  Median (50%):    171.00
+  Std Dev:         36.22
+  Min:             0.00
+  Max:             489.00
+
+==================================================
+
+Column: team_100_TOP_creepScore_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   421
+  Mean:            174.31
+  Median (50%):    183.00
+  Std Dev:         45.00
+  Min:             0.00
+  Max:             617.00
+
+==================================================
+
+Column: team_100_TOP_creepScore_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   218
+  Mean:            104.89
+  Median (50%):    110.00
+  Std Dev:         18.77
+  Min:             0.00
+  Max:             264.00
+
+==================================================
+
+Column: team_100_TOP_deaths_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   35
+  Mean:            3.46
+  Median (50%):    3.00
+  Std Dev:         2.08
+  Min:             0.00
+  Max:             39.00
+
+==================================================
+
+Column: team_100_TOP_deaths_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   37
+  Mean:            4.36
+  Median (50%):    4.00
+  Std Dev:         2.44
+  Min:             0.00
+  Max:             39.00
+
+==================================================
+
+Column: team_100_TOP_deaths_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   37
+  Mean:            4.89
+  Median (50%):    5.00
+  Std Dev:         2.72
+  Min:             0.00
+  Max:             42.00
+
+==================================================
+
+Column: team_100_TOP_deaths_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   31
+  Mean:            2.46
+  Median (50%):    2.00
+  Std Dev:         1.71
+  Min:             0.00
+  Max:             30.00
+
+==================================================
+
+Column: team_100_TOP_kills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   31
+  Mean:            3.15
+  Median (50%):    3.00
+  Std Dev:         2.38
+  Min:             0.00
+  Max:             30.00
+
+==================================================
+
+Column: team_100_TOP_kills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   35
+  Mean:            4.02
+  Median (50%):    4.00
+  Std Dev:         2.90
+  Min:             0.00
+  Max:             34.00
+
+==================================================
+
+Column: team_100_TOP_kills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   38
+  Mean:            4.55
+  Median (50%):    4.00
+  Std Dev:         3.26
+  Min:             0.00
+  Max:             37.00
+
+==================================================
+
+Column: team_100_TOP_kills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   25
+  Mean:            2.17
+  Median (50%):    2.00
+  Std Dev:         1.82
+  Min:             0.00
+  Max:             24.00
+
+==================================================
+
+Column: team_100_TOP_level_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            12.39
+  Median (50%):    13.00
+  Std Dev:         1.10
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_100_TOP_level_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            13.76
+  Median (50%):    14.00
+  Std Dev:         1.66
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_100_TOP_level_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            14.49
+  Median (50%):    15.00
+  Std Dev:         2.14
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_100_TOP_level_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14
+  Mean:            10.48
+  Median (50%):    11.00
+  Std Dev:         0.77
+  Min:             1.00
+  Max:             14.00
+
+==================================================
+
+Column: team_100_TOP_magicDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   29,832
+  Mean:            4,086.38
+  Median (50%):    2,681.00
+  Std Dev:         4,343.93
+  Min:             0.00
+  Max:             46,819.00
+
+==================================================
+
+Column: team_100_TOP_magicDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   41,762
+  Mean:            5,519.60
+  Median (50%):    3,584.00
+  Std Dev:         6,047.59
+  Min:             0.00
+  Max:             64,445.00
+
+==================================================
+
+Column: team_100_TOP_magicDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   53,078
+  Mean:            6,521.48
+  Median (50%):    4,178.00
+  Std Dev:         7,436.00
+  Min:             0.00
+  Max:             86,142.00
+
+==================================================
+
+Column: team_100_TOP_magicDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   19,150
+  Mean:            2,664.71
+  Median (50%):    1,791.00
+  Std Dev:         2,799.64
+  Min:             0.00
+  Max:             28,917.00
+
+==================================================
+
+Column: team_100_TOP_physicalDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   32,736
+  Mean:            7,069.01
+  Median (50%):    7,044.00
+  Std Dev:         4,649.83
+  Min:             0.00
+  Max:             58,597.00
+
+==================================================
+
+Column: team_100_TOP_physicalDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   44,804
+  Mean:            9,209.55
+  Median (50%):    9,029.00
+  Std Dev:         6,391.14
+  Min:             0.00
+  Max:             76,767.00
+
+==================================================
+
+Column: team_100_TOP_physicalDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   55,764
+  Mean:            10,611.86
+  Median (50%):    10,155.00
+  Std Dev:         7,805.39
+  Min:             0.00
+  Max:             85,815.00
+
+==================================================
+
+Column: team_100_TOP_physicalDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   21,306
+  Mean:            4,819.54
+  Median (50%):    4,940.00
+  Std Dev:         3,053.13
+  Min:             0.00
+  Max:             34,453.00
+
+==================================================
+
+Column: team_100_TOP_totalGold_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   13,744
+  Mean:            7,500.01
+  Median (50%):    7,749.00
+  Std Dev:         1,489.45
+  Min:             1,380.00
+  Max:             19,017.00
+
+==================================================
+
+Column: team_100_TOP_totalGold_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   16,947
+  Mean:            9,129.65
+  Median (50%):    9,587.00
+  Std Dev:         2,139.80
+  Min:             1,761.00
+  Max:             24,582.00
+
+==================================================
+
+Column: team_100_TOP_totalGold_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   19,854
+  Mean:            10,135.90
+  Median (50%):    10,646.00
+  Std Dev:         2,807.21
+  Min:             1,809.00
+  Max:             26,107.00
+
+==================================================
+
+Column: team_100_TOP_totalGold_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   9,957
+  Mean:            5,495.20
+  Median (50%):    5,515.00
+  Std Dev:         995.61
+  Min:             1,093.00
+  Max:             14,846.00
+
+==================================================
+
+Column: team_100_TOP_trueDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   11,257
+  Mean:            676.77
+  Median (50%):    305.00
+  Std Dev:         1,073.62
+  Min:             0.00
+  Max:             17,615.00
+
+==================================================
+
+Column: team_100_TOP_trueDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   16,323
+  Mean:            982.72
+  Median (50%):    446.00
+  Std Dev:         1,547.31
+  Min:             0.00
+  Max:             29,579.00
+
+==================================================
+
+Column: team_100_TOP_trueDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   21,317
+  Mean:            1,228.91
+  Median (50%):    556.00
+  Std Dev:         1,957.26
+  Min:             0.00
+  Max:             40,373.00
+
+==================================================
+
+Column: team_100_TOP_trueDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   7,025
+  Mean:            404.51
+  Median (50%):    152.00
+  Std Dev:         651.80
+  Min:             0.00
+  Max:             10,846.00
+
+==================================================
+
+Column: team_100_UTILITY_assists_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   40
+  Mean:            6.97
+  Median (50%):    7.00
+  Std Dev:         3.72
+  Min:             0.00
+  Max:             39.00
+
+==================================================
+
+Column: team_100_UTILITY_assists_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   48
+  Mean:            9.28
+  Median (50%):    10.00
+  Std Dev:         4.80
+  Min:             0.00
+  Max:             47.00
+
+==================================================
+
+Column: team_100_UTILITY_assists_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   51
+  Mean:            10.68
+  Median (50%):    11.00
+  Std Dev:         5.64
+  Min:             0.00
+  Max:             54.00
+
+==================================================
+
+Column: team_100_UTILITY_assists_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   34
+  Mean:            4.53
+  Median (50%):    5.00
+  Std Dev:         2.76
+  Min:             0.00
+  Max:             34.00
+
+==================================================
+
+Column: team_100_UTILITY_championId
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   170
+  Mean:            220.01
+  Median (50%):    143.00
+  Std Dev:         224.19
+  Min:             1.00
+  Max:             950.00
+
+==================================================
+
+Column: team_100_UTILITY_creepScore_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   181
+  Mean:            24.41
+  Median (50%):    25.00
+  Std Dev:         9.53
+  Min:             0.00
+  Max:             185.00
+
+==================================================
+
+Column: team_100_UTILITY_creepScore_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   229
+  Mean:            28.11
+  Median (50%):    29.00
+  Std Dev:         12.17
+  Min:             0.00
+  Max:             247.00
+
+==================================================
+
+Column: team_100_UTILITY_creepScore_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   270
+  Mean:            30.41
+  Median (50%):    30.00
+  Std Dev:         14.42
+  Min:             0.00
+  Max:             295.00
+
+==================================================
+
+Column: team_100_UTILITY_creepScore_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   134
+  Mean:            19.93
+  Median (50%):    20.00
+  Std Dev:         7.19
+  Min:             0.00
+  Max:             152.00
+
+==================================================
+
+Column: team_100_UTILITY_deaths_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   39
+  Mean:            3.56
+  Median (50%):    4.00
+  Std Dev:         2.09
+  Min:             0.00
+  Max:             39.00
+
+==================================================
+
+Column: team_100_UTILITY_deaths_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   42
+  Mean:            4.45
+  Median (50%):    5.00
+  Std Dev:         2.49
+  Min:             0.00
+  Max:             42.00
+
+==================================================
+
+Column: team_100_UTILITY_deaths_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   43
+  Mean:            4.98
+  Median (50%):    5.00
+  Std Dev:         2.79
+  Min:             0.00
+  Max:             50.00
+
+==================================================
+
+Column: team_100_UTILITY_deaths_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   30
+  Mean:            2.54
+  Median (50%):    3.00
+  Std Dev:         1.68
+  Min:             0.00
+  Max:             29.00
+
+==================================================
+
+Column: team_100_UTILITY_kills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   30
+  Mean:            1.77
+  Median (50%):    1.00
+  Std Dev:         1.79
+  Min:             0.00
+  Max:             35.00
+
+==================================================
+
+Column: team_100_UTILITY_kills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   34
+  Mean:            2.11
+  Median (50%):    2.00
+  Std Dev:         2.10
+  Min:             0.00
+  Max:             38.00
+
+==================================================
+
+Column: team_100_UTILITY_kills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   37
+  Mean:            2.31
+  Median (50%):    2.00
+  Std Dev:         2.30
+  Min:             0.00
+  Max:             38.00
+
+==================================================
+
+Column: team_100_UTILITY_kills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   23
+  Mean:            1.32
+  Median (50%):    1.00
+  Std Dev:         1.42
+  Min:             0.00
+  Max:             35.00
+
+==================================================
+
+Column: team_100_UTILITY_level_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   15
+  Mean:            9.38
+  Median (50%):    10.00
+  Std Dev:         0.97
+  Min:             1.00
+  Max:             15.00
+
+==================================================
+
+Column: team_100_UTILITY_level_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17
+  Mean:            10.76
+  Median (50%):    11.00
+  Std Dev:         1.53
+  Min:             1.00
+  Max:             17.00
+
+==================================================
+
+Column: team_100_UTILITY_level_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            11.53
+  Median (50%):    12.00
+  Std Dev:         2.04
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_100_UTILITY_level_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   12
+  Mean:            7.70
+  Median (50%):    8.00
+  Std Dev:         0.68
+  Min:             1.00
+  Max:             12.00
+
+==================================================
+
+Column: team_100_UTILITY_magicDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   23,368
+  Mean:            4,457.18
+  Median (50%):    4,224.00
+  Std Dev:         3,013.99
+  Min:             0.00
+  Max:             40,054.00
+
+==================================================
+
+Column: team_100_UTILITY_magicDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   33,301
+  Mean:            5,945.50
+  Median (50%):    5,597.00
+  Std Dev:         4,352.33
+  Min:             0.00
+  Max:             53,756.00
+
+==================================================
+
+Column: team_100_UTILITY_magicDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   42,878
+  Mean:            6,947.75
+  Median (50%):    6,482.00
+  Std Dev:         5,516.37
+  Min:             0.00
+  Max:             75,936.00
+
+==================================================
+
+Column: team_100_UTILITY_magicDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14,556
+  Mean:            2,882.22
+  Median (50%):    2,803.00
+  Std Dev:         1,824.77
+  Min:             0.00
+  Max:             22,011.00
+
+==================================================
+
+Column: team_100_UTILITY_physicalDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   22,890
+  Mean:            1,797.85
+  Median (50%):    1,216.00
+  Std Dev:         2,218.12
+  Min:             0.00
+  Max:             44,443.00
+
+==================================================
+
+Column: team_100_UTILITY_physicalDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   31,463
+  Mean:            2,195.89
+  Median (50%):    1,337.00
+  Std Dev:         3,001.02
+  Min:             0.00
+  Max:             59,368.00
+
+==================================================
+
+Column: team_100_UTILITY_physicalDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   38,758
+  Mean:            2,440.10
+  Median (50%):    1,384.00
+  Std Dev:         3,568.42
+  Min:             0.00
+  Max:             75,465.00
+
+==================================================
+
+Column: team_100_UTILITY_physicalDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14,811
+  Mean:            1,325.72
+  Median (50%):    1,010.00
+  Std Dev:         1,427.04
+  Min:             0.00
+  Max:             21,659.00
+
+==================================================
+
+Column: team_100_UTILITY_totalGold_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   9,959
+  Mean:            5,630.47
+  Median (50%):    5,670.00
+  Std Dev:         958.15
+  Min:             2,087.00
+  Max:             16,577.00
+
+==================================================
+
+Column: team_100_UTILITY_totalGold_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   12,579
+  Mean:            6,715.01
+  Median (50%):    6,912.00
+  Std Dev:         1,386.95
+  Min:             2,087.00
+  Max:             19,027.00
+
+==================================================
+
+Column: team_100_UTILITY_totalGold_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14,852
+  Mean:            7,374.26
+  Median (50%):    7,782.00
+  Std Dev:         1,828.78
+  Min:             2,087.00
+  Max:             22,912.00
+
+==================================================
+
+Column: team_100_UTILITY_totalGold_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   7,197
+  Mean:            4,318.64
+  Median (50%):    4,276.00
+  Std Dev:         668.05
+  Min:             2,087.00
+  Max:             12,469.00
+
+==================================================
+
+Column: team_100_UTILITY_trueDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   7,667
+  Mean:            413.15
+  Median (50%):    366.00
+  Std Dev:         520.37
+  Min:             0.00
+  Max:             11,524.00
+
+==================================================
+
+Column: team_100_UTILITY_trueDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   10,877
+  Mean:            562.85
+  Median (50%):    472.00
+  Std Dev:         722.32
+  Min:             0.00
+  Max:             21,471.00
+
+==================================================
+
+Column: team_100_UTILITY_trueDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14,112
+  Mean:            680.46
+  Median (50%):    552.00
+  Std Dev:         892.38
+  Min:             0.00
+  Max:             26,711.00
+
+==================================================
+
+Column: team_100_UTILITY_trueDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   4,979
+  Mean:            268.74
+  Median (50%):    256.00
+  Std Dev:         331.33
+  Min:             0.00
+  Max:             7,545.00
+
+==================================================
+
+Column: team_100_baronKills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   2
+  Mean:            0.00
+  Median (50%):    0.00
+  Std Dev:         0.00
+  Min:             0.00
+  Max:             1.00
+
+==================================================
+
+Column: team_100_baronKills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   2
+  Mean:            0.09
+  Median (50%):    0.00
+  Std Dev:         0.28
+  Min:             0.00
+  Max:             1.00
+
+==================================================
+
+Column: team_100_baronKills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.23
+  Median (50%):    0.00
+  Std Dev:         0.44
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_100_baronKills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   1
+  Mean:            0.00
+  Median (50%):    0.00
+  Std Dev:         0.00
+  Min:             0.00
+  Max:             0.00
+
+==================================================
+
+Column: team_100_dragonKills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   4
+  Mean:            1.04
+  Median (50%):    1.00
+  Std Dev:         0.88
+  Min:             0.00
+  Max:             3.00
+
+==================================================
+
+Column: team_100_dragonKills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   5
+  Mean:            1.35
+  Median (50%):    1.00
+  Std Dev:         1.05
+  Min:             0.00
+  Max:             4.00
+
+==================================================
+
+Column: team_100_dragonKills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   6
+  Mean:            1.53
+  Median (50%):    2.00
+  Std Dev:         1.15
+  Min:             0.00
+  Max:             5.00
+
+==================================================
+
+Column: team_100_dragonKills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.68
+  Median (50%):    1.00
+  Std Dev:         0.70
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_100_inhibitorKills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   6
+  Mean:            0.03
+  Median (50%):    0.00
+  Std Dev:         0.21
+  Min:             0.00
+  Max:             5.00
+
+==================================================
+
+Column: team_100_inhibitorKills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   8
+  Mean:            0.17
+  Median (50%):    0.00
+  Std Dev:         0.50
+  Min:             0.00
+  Max:             7.00
+
+==================================================
+
+Column: team_100_inhibitorKills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   9
+  Mean:            0.33
+  Median (50%):    0.00
+  Std Dev:         0.72
+  Min:             0.00
+  Max:             8.00
+
+==================================================
+
+Column: team_100_inhibitorKills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   4
+  Mean:            0.00
+  Median (50%):    0.00
+  Std Dev:         0.03
+  Min:             0.00
+  Max:             3.00
+
+==================================================
+
+Column: team_100_riftHeraldKills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.49
+  Median (50%):    1.00
+  Std Dev:         0.52
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_100_riftHeraldKills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.52
+  Median (50%):    1.00
+  Std Dev:         0.52
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_100_riftHeraldKills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.52
+  Median (50%):    1.00
+  Std Dev:         0.52
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_100_riftHeraldKills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.06
+  Median (50%):    0.00
+  Std Dev:         0.25
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_100_towerKills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14
+  Mean:            2.30
+  Median (50%):    3.00
+  Std Dev:         1.71
+  Min:             0.00
+  Max:             13.00
+
+==================================================
+
+Column: team_100_towerKills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   16
+  Mean:            3.41
+  Median (50%):    4.00
+  Std Dev:         2.33
+  Min:             0.00
+  Max:             15.00
+
+==================================================
+
+Column: team_100_towerKills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17
+  Mean:            4.06
+  Median (50%):    4.00
+  Std Dev:         2.75
+  Min:             0.00
+  Max:             16.00
+
+==================================================
+
+Column: team_100_towerKills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   13
+  Mean:            0.68
+  Median (50%):    1.00
+  Std Dev:         0.89
+  Min:             0.00
+  Max:             12.00
+
+==================================================
+
+Column: team_100_win
+----------------------------------------
+  Data Type:       bool
+  Missing Values:  0 (0.00%)
+  Unique Values:   2
+
+==================================================
+
+Column: team_200_BOTTOM_assists_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   27
+  Mean:            3.37
+  Median (50%):    3.00
+  Std Dev:         2.29
+  Min:             0.00
+  Max:             26.00
+
+==================================================
+
+Column: team_200_BOTTOM_assists_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   34
+  Mean:            4.63
+  Median (50%):    5.00
+  Std Dev:         2.94
+  Min:             0.00
+  Max:             33.00
+
+==================================================
+
+Column: team_200_BOTTOM_assists_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   39
+  Mean:            5.40
+  Median (50%):    5.00
+  Std Dev:         3.44
+  Min:             0.00
+  Max:             39.00
+
+==================================================
+
+Column: team_200_BOTTOM_assists_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   21
+  Mean:            2.15
+  Median (50%):    2.00
+  Std Dev:         1.71
+  Min:             0.00
+  Max:             21.00
+
+==================================================
+
+Column: team_200_BOTTOM_championId
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   170
+  Mean:            177.07
+  Median (50%):    145.00
+  Std Dev:         198.09
+  Min:             1.00
+  Max:             950.00
+
+==================================================
+
+Column: team_200_BOTTOM_creepScore_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   262
+  Mean:            141.58
+  Median (50%):    151.00
+  Std Dev:         24.87
+  Min:             0.00
+  Max:             268.00
+
+==================================================
+
+Column: team_200_BOTTOM_creepScore_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   338
+  Mean:            166.82
+  Median (50%):    177.00
+  Std Dev:         35.41
+  Min:             0.00
+  Max:             370.00
+
+==================================================
+
+Column: team_200_BOTTOM_creepScore_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   413
+  Mean:            181.53
+  Median (50%):    190.00
+  Std Dev:         45.45
+  Min:             0.00
+  Max:             461.00
+
+==================================================
+
+Column: team_200_BOTTOM_creepScore_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   188
+  Mean:            107.75
+  Median (50%):    114.00
+  Std Dev:         16.99
+  Min:             0.00
+  Max:             193.00
+
+==================================================
+
+Column: team_200_BOTTOM_deaths_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   34
+  Mean:            3.60
+  Median (50%):    4.00
+  Std Dev:         2.05
+  Min:             0.00
+  Max:             36.00
+
+==================================================
+
+Column: team_200_BOTTOM_deaths_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   36
+  Mean:            4.47
+  Median (50%):    5.00
+  Std Dev:         2.40
+  Min:             0.00
+  Max:             40.00
+
+==================================================
+
+Column: team_200_BOTTOM_deaths_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   37
+  Mean:            4.98
+  Median (50%):    5.00
+  Std Dev:         2.67
+  Min:             0.00
+  Max:             40.00
+
+==================================================
+
+Column: team_200_BOTTOM_deaths_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   29
+  Mean:            2.57
+  Median (50%):    3.00
+  Std Dev:         1.67
+  Min:             0.00
+  Max:             33.00
+
+==================================================
+
+Column: team_200_BOTTOM_kills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   42
+  Mean:            4.09
+  Median (50%):    4.00
+  Std Dev:         2.94
+  Min:             0.00
+  Max:             43.00
+
+==================================================
+
+Column: team_200_BOTTOM_kills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   45
+  Mean:            5.22
+  Median (50%):    5.00
+  Std Dev:         3.58
+  Min:             0.00
+  Max:             45.00
+
+==================================================
+
+Column: team_200_BOTTOM_kills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   46
+  Mean:            5.92
+  Median (50%):    6.00
+  Std Dev:         4.04
+  Min:             0.00
+  Max:             45.00
+
+==================================================
+
+Column: team_200_BOTTOM_kills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   36
+  Mean:            2.90
+  Median (50%):    3.00
+  Std Dev:         2.28
+  Min:             0.00
+  Max:             43.00
+
+==================================================
+
+Column: team_200_BOTTOM_level_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   15
+  Mean:            10.88
+  Median (50%):    11.00
+  Std Dev:         1.03
+  Min:             1.00
+  Max:             15.00
+
+==================================================
+
+Column: team_200_BOTTOM_level_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            12.36
+  Median (50%):    13.00
+  Std Dev:         1.66
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_200_BOTTOM_level_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            13.17
+  Median (50%):    14.00
+  Std Dev:         2.22
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_200_BOTTOM_level_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   12
+  Mean:            8.92
+  Median (50%):    9.00
+  Std Dev:         0.67
+  Min:             1.00
+  Max:             12.00
+
+==================================================
+
+Column: team_200_BOTTOM_magicDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   29,554
+  Mean:            1,922.22
+  Median (50%):    1,319.00
+  Std Dev:         2,766.21
+  Min:             0.00
+  Max:             54,519.00
+
+==================================================
+
+Column: team_200_BOTTOM_magicDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   41,229
+  Mean:            2,769.70
+  Median (50%):    1,773.00
+  Std Dev:         4,083.32
+  Min:             0.00
+  Max:             71,201.00
+
+==================================================
+
+Column: team_200_BOTTOM_magicDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   51,989
+  Mean:            3,394.00
+  Median (50%):    1,974.00
+  Std Dev:         5,182.33
+  Min:             0.00
+  Max:             86,832.00
+
+==================================================
+
+Column: team_200_BOTTOM_magicDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   19,007
+  Mean:            1,186.22
+  Median (50%):    781.00
+  Std Dev:         1,678.13
+  Min:             0.00
+  Max:             37,761.00
+
+==================================================
+
+Column: team_200_BOTTOM_physicalDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   36,322
+  Mean:            8,720.31
+  Median (50%):    8,854.00
+  Std Dev:         4,183.29
+  Min:             0.00
+  Max:             72,505.00
+
+==================================================
+
+Column: team_200_BOTTOM_physicalDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   49,411
+  Mean:            11,817.53
+  Median (50%):    11,947.00
+  Std Dev:         6,135.36
+  Min:             0.00
+  Max:             84,552.00
+
+==================================================
+
+Column: team_200_BOTTOM_physicalDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   60,955
+  Mean:            14,002.08
+  Median (50%):    14,164.00
+  Std Dev:         7,990.55
+  Min:             0.00
+  Max:             96,281.00
+
+==================================================
+
+Column: team_200_BOTTOM_physicalDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   23,647
+  Mean:            5,743.56
+  Median (50%):    5,977.00
+  Std Dev:         2,650.85
+  Min:             0.00
+  Max:             72,505.00
+
+==================================================
+
+Column: team_200_BOTTOM_totalGold_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   15,289
+  Mean:            7,827.47
+  Median (50%):    8,227.00
+  Std Dev:         1,504.52
+  Min:             1,388.00
+  Max:             21,771.00
+
+==================================================
+
+Column: team_200_BOTTOM_totalGold_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18,513
+  Mean:            9,529.51
+  Median (50%):    10,177.00
+  Std Dev:         2,189.60
+  Min:             1,673.00
+  Max:             25,867.00
+
+==================================================
+
+Column: team_200_BOTTOM_totalGold_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   21,204
+  Mean:            10,618.84
+  Median (50%):    11,193.00
+  Std Dev:         2,912.11
+  Min:             1,867.00
+  Max:             29,148.00
+
+==================================================
+
+Column: team_200_BOTTOM_totalGold_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   11,492
+  Mean:            5,778.46
+  Median (50%):    5,900.00
+  Std Dev:         1,019.55
+  Min:             964.00
+  Max:             21,771.00
+
+==================================================
+
+Column: team_200_BOTTOM_trueDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   8,362
+  Mean:            247.79
+  Median (50%):    87.00
+  Std Dev:         521.52
+  Min:             0.00
+  Max:             17,305.00
+
+==================================================
+
+Column: team_200_BOTTOM_trueDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   12,543
+  Mean:            420.57
+  Median (50%):    224.00
+  Std Dev:         790.88
+  Min:             0.00
+  Max:             27,859.00
+
+==================================================
+
+Column: team_200_BOTTOM_trueDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   16,878
+  Mean:            571.47
+  Median (50%):    317.00
+  Std Dev:         1,050.07
+  Min:             0.00
+  Max:             33,746.00
+
+==================================================
+
+Column: team_200_BOTTOM_trueDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   5,419
+  Mean:            128.09
+  Median (50%):    0.00
+  Std Dev:         314.88
+  Min:             0.00
+  Max:             8,938.00
+
+==================================================
+
+Column: team_200_JUNGLE_assists_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   29
+  Mean:            4.20
+  Median (50%):    4.00
+  Std Dev:         2.58
+  Min:             0.00
+  Max:             28.00
+
+==================================================
+
+Column: team_200_JUNGLE_assists_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   37
+  Mean:            5.62
+  Median (50%):    6.00
+  Std Dev:         3.34
+  Min:             0.00
+  Max:             38.00
+
+==================================================
+
+Column: team_200_JUNGLE_assists_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   43
+  Mean:            6.50
+  Median (50%):    7.00
+  Std Dev:         3.95
+  Min:             0.00
+  Max:             44.00
+
+==================================================
+
+Column: team_200_JUNGLE_assists_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   22
+  Mean:            2.74
+  Median (50%):    3.00
+  Std Dev:         1.92
+  Min:             0.00
+  Max:             21.00
+
+==================================================
+
+Column: team_200_JUNGLE_championId
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   170
+  Mean:            154.95
+  Median (50%):    106.00
+  Std Dev:         195.84
+  Min:             1.00
+  Max:             950.00
+
+==================================================
+
+Column: team_200_JUNGLE_creepScore_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   281
+  Mean:            124.55
+  Median (50%):    131.00
+  Std Dev:         23.09
+  Min:             0.00
+  Max:             308.00
+
+==================================================
+
+Column: team_200_JUNGLE_creepScore_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   352
+  Mean:            147.98
+  Median (50%):    157.00
+  Std Dev:         33.66
+  Min:             0.00
+  Max:             466.00
+
+==================================================
+
+Column: team_200_JUNGLE_creepScore_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   418
+  Mean:            160.82
+  Median (50%):    169.00
+  Std Dev:         42.62
+  Min:             0.00
+  Max:             621.00
+
+==================================================
+
+Column: team_200_JUNGLE_creepScore_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   205
+  Mean:            94.39
+  Median (50%):    98.00
+  Std Dev:         15.06
+  Min:             0.00
+  Max:             218.00
+
+==================================================
+
+Column: team_200_JUNGLE_deaths_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   38
+  Mean:            3.29
+  Median (50%):    3.00
+  Std Dev:         1.95
+  Min:             0.00
+  Max:             39.00
+
+==================================================
+
+Column: team_200_JUNGLE_deaths_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   43
+  Mean:            4.19
+  Median (50%):    4.00
+  Std Dev:         2.35
+  Min:             0.00
+  Max:             48.00
+
+==================================================
+
+Column: team_200_JUNGLE_deaths_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   43
+  Mean:            4.73
+  Median (50%):    5.00
+  Std Dev:         2.64
+  Min:             0.00
+  Max:             48.00
+
+==================================================
+
+Column: team_200_JUNGLE_deaths_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   30
+  Mean:            2.27
+  Median (50%):    2.00
+  Std Dev:         1.54
+  Min:             0.00
+  Max:             30.00
+
+==================================================
+
+Column: team_200_JUNGLE_kills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   34
+  Mean:            4.35
+  Median (50%):    4.00
+  Std Dev:         2.79
+  Min:             0.00
+  Max:             33.00
+
+==================================================
+
+Column: team_200_JUNGLE_kills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   41
+  Mean:            5.38
+  Median (50%):    5.00
+  Std Dev:         3.40
+  Min:             0.00
+  Max:             41.00
+
+==================================================
+
+Column: team_200_JUNGLE_kills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   45
+  Mean:            5.97
+  Median (50%):    6.00
+  Std Dev:         3.81
+  Min:             0.00
+  Max:             45.00
+
+==================================================
+
+Column: team_200_JUNGLE_kills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   28
+  Mean:            3.11
+  Median (50%):    3.00
+  Std Dev:         2.16
+  Min:             0.00
+  Max:             29.00
+
+==================================================
+
+Column: team_200_JUNGLE_level_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17
+  Mean:            11.40
+  Median (50%):    12.00
+  Std Dev:         1.15
+  Min:             1.00
+  Max:             17.00
+
+==================================================
+
+Column: team_200_JUNGLE_level_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            12.95
+  Median (50%):    14.00
+  Std Dev:         1.83
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_200_JUNGLE_level_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            13.75
+  Median (50%):    15.00
+  Std Dev:         2.36
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_200_JUNGLE_level_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14
+  Mean:            9.30
+  Median (50%):    9.00
+  Std Dev:         0.73
+  Min:             1.00
+  Max:             14.00
+
+==================================================
+
+Column: team_200_JUNGLE_magicDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   28,832
+  Mean:            3,046.45
+  Median (50%):    1,798.00
+  Std Dev:         3,596.70
+  Min:             0.00
+  Max:             43,157.00
+
+==================================================
+
+Column: team_200_JUNGLE_magicDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   40,996
+  Mean:            4,430.74
+  Median (50%):    2,511.00
+  Std Dev:         5,412.69
+  Min:             0.00
+  Max:             66,021.00
+
+==================================================
+
+Column: team_200_JUNGLE_magicDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   52,689
+  Mean:            5,324.80
+  Median (50%):    2,908.00
+  Std Dev:         358,697.97
+  Min:             -2,147,483,648.00
+  Max:             89,389.00
+
+==================================================
+
+Column: team_200_JUNGLE_magicDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18,082
+  Mean:            1,751.83
+  Median (50%):    1,087.00
+  Std Dev:         2,031.25
+  Min:             0.00
+  Max:             27,914.00
+
+==================================================
+
+Column: team_200_JUNGLE_physicalDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   27,662
+  Mean:            5,289.32
+  Median (50%):    5,718.00
+  Std Dev:         3,965.45
+  Min:             0.00
+  Max:             40,823.00
+
+==================================================
+
+Column: team_200_JUNGLE_physicalDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   39,948
+  Mean:            7,322.12
+  Median (50%):    7,592.00
+  Std Dev:         5,833.84
+  Min:             0.00
+  Max:             64,641.00
+
+==================================================
+
+Column: team_200_JUNGLE_physicalDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   51,084
+  Mean:            8,663.75
+  Median (50%):    8,536.00
+  Std Dev:         7,356.48
+  Min:             0.00
+  Max:             86,504.00
+
+==================================================
+
+Column: team_200_JUNGLE_physicalDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17,145
+  Mean:            3,240.30
+  Median (50%):    3,531.50
+  Std Dev:         2,352.16
+  Min:             0.00
+  Max:             27,279.00
+
+==================================================
+
+Column: team_200_JUNGLE_totalGold_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   13,424
+  Mean:            7,804.83
+  Median (50%):    8,120.00
+  Std Dev:         1,387.55
+  Min:             1,051.00
+  Max:             19,685.00
+
+==================================================
+
+Column: team_200_JUNGLE_totalGold_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17,183
+  Mean:            9,428.33
+  Median (50%):    9,927.00
+  Std Dev:         2,090.44
+  Min:             1,190.00
+  Max:             22,926.00
+
+==================================================
+
+Column: team_200_JUNGLE_totalGold_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   20,163
+  Mean:            10,389.95
+  Median (50%):    11,025.00
+  Std Dev:         2,754.22
+  Min:             1,238.00
+  Max:             26,985.00
+
+==================================================
+
+Column: team_200_JUNGLE_totalGold_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   9,314
+  Mean:            5,799.93
+  Median (50%):    5,908.00
+  Std Dev:         879.68
+  Min:             1,011.00
+  Max:             14,774.00
+
+==================================================
+
+Column: team_200_JUNGLE_trueDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   8,573
+  Mean:            677.88
+  Median (50%):    554.00
+  Std Dev:         619.82
+  Min:             0.00
+  Max:             15,002.00
+
+==================================================
+
+Column: team_200_JUNGLE_trueDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   12,539
+  Mean:            998.11
+  Median (50%):    816.00
+  Std Dev:         933.81
+  Min:             0.00
+  Max:             23,457.00
+
+==================================================
+
+Column: team_200_JUNGLE_trueDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   15,898
+  Mean:            1,210.77
+  Median (50%):    967.00
+  Std Dev:         1,195.29
+  Min:             0.00
+  Max:             26,429.00
+
+==================================================
+
+Column: team_200_JUNGLE_trueDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   5,146
+  Mean:            378.85
+  Median (50%):    304.00
+  Std Dev:         360.01
+  Min:             0.00
+  Max:             8,518.00
+
+==================================================
+
+Column: team_200_MIDDLE_assists_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   30
+  Mean:            2.99
+  Median (50%):    3.00
+  Std Dev:         2.23
+  Min:             0.00
+  Max:             29.00
+
+==================================================
+
+Column: team_200_MIDDLE_assists_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   35
+  Mean:            4.24
+  Median (50%):    4.00
+  Std Dev:         2.93
+  Min:             0.00
+  Max:             34.00
+
+==================================================
+
+Column: team_200_MIDDLE_assists_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   43
+  Mean:            5.05
+  Median (50%):    5.00
+  Std Dev:         3.49
+  Min:             0.00
+  Max:             46.00
+
+==================================================
+
+Column: team_200_MIDDLE_assists_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   22
+  Mean:            1.80
+  Median (50%):    2.00
+  Std Dev:         1.61
+  Min:             0.00
+  Max:             22.00
+
+==================================================
+
+Column: team_200_MIDDLE_championId
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   170
+  Mean:            222.65
+  Median (50%):    127.00
+  Std Dev:         270.18
+  Min:             1.00
+  Max:             950.00
+
+==================================================
+
+Column: team_200_MIDDLE_creepScore_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   281
+  Mean:            140.71
+  Median (50%):    151.00
+  Std Dev:         25.56
+  Min:             0.00
+  Max:             343.00
+
+==================================================
+
+Column: team_200_MIDDLE_creepScore_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   345
+  Mean:            163.45
+  Median (50%):    174.00
+  Std Dev:         35.28
+  Min:             0.00
+  Max:             463.00
+
+==================================================
+
+Column: team_200_MIDDLE_creepScore_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   412
+  Mean:            176.12
+  Median (50%):    186.00
+  Std Dev:         43.84
+  Min:             0.00
+  Max:             545.00
+
+==================================================
+
+Column: team_200_MIDDLE_creepScore_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   209
+  Mean:            108.79
+  Median (50%):    116.00
+  Std Dev:         17.49
+  Min:             0.00
+  Max:             239.00
+
+==================================================
+
+Column: team_200_MIDDLE_deaths_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   36
+  Mean:            3.35
+  Median (50%):    3.00
+  Std Dev:         2.03
+  Min:             0.00
+  Max:             39.00
+
+==================================================
+
+Column: team_200_MIDDLE_deaths_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   38
+  Mean:            4.23
+  Median (50%):    4.00
+  Std Dev:         2.39
+  Min:             0.00
+  Max:             47.00
+
+==================================================
+
+Column: team_200_MIDDLE_deaths_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   39
+  Mean:            4.75
+  Median (50%):    5.00
+  Std Dev:         2.66
+  Min:             0.00
+  Max:             47.00
+
+==================================================
+
+Column: team_200_MIDDLE_deaths_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   30
+  Mean:            2.35
+  Median (50%):    2.00
+  Std Dev:         1.64
+  Min:             0.00
+  Max:             32.00
+
+==================================================
+
+Column: team_200_MIDDLE_kills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   38
+  Mean:            3.72
+  Median (50%):    4.00
+  Std Dev:         2.69
+  Min:             0.00
+  Max:             42.00
+
+==================================================
+
+Column: team_200_MIDDLE_kills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   44
+  Mean:            4.76
+  Median (50%):    5.00
+  Std Dev:         3.29
+  Min:             0.00
+  Max:             43.00
+
+==================================================
+
+Column: team_200_MIDDLE_kills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   44
+  Mean:            5.37
+  Median (50%):    5.00
+  Std Dev:         3.71
+  Min:             0.00
+  Max:             43.00
+
+==================================================
+
+Column: team_200_MIDDLE_kills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   33
+  Mean:            2.54
+  Median (50%):    2.00
+  Std Dev:         2.04
+  Min:             0.00
+  Max:             40.00
+
+==================================================
+
+Column: team_200_MIDDLE_level_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17
+  Mean:            12.26
+  Median (50%):    13.00
+  Std Dev:         1.06
+  Min:             1.00
+  Max:             17.00
+
+==================================================
+
+Column: team_200_MIDDLE_level_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            13.65
+  Median (50%):    14.00
+  Std Dev:         1.65
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_200_MIDDLE_level_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            14.38
+  Median (50%):    15.00
+  Std Dev:         2.14
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_200_MIDDLE_level_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14
+  Mean:            10.40
+  Median (50%):    10.00
+  Std Dev:         0.69
+  Min:             1.00
+  Max:             14.00
+
+==================================================
+
+Column: team_200_MIDDLE_magicDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   32,568
+  Mean:            7,659.20
+  Median (50%):    8,648.00
+  Std Dev:         4,948.13
+  Min:             0.00
+  Max:             70,608.00
+
+==================================================
+
+Column: team_200_MIDDLE_magicDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   45,828
+  Mean:            10,688.05
+  Median (50%):    12,173.50
+  Std Dev:         7,269.38
+  Min:             0.00
+  Max:             73,373.00
+
+==================================================
+
+Column: team_200_MIDDLE_magicDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   57,810
+  Mean:            12,767.82
+  Median (50%):    13,791.00
+  Std Dev:         9,284.60
+  Min:             0.00
+  Max:             102,188.00
+
+==================================================
+
+Column: team_200_MIDDLE_magicDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   20,523
+  Mean:            4,761.92
+  Median (50%):    5,260.00
+  Std Dev:         3,030.49
+  Min:             0.00
+  Max:             33,518.00
+
+==================================================
+
+Column: team_200_MIDDLE_physicalDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   30,136
+  Mean:            3,245.21
+  Median (50%):    1,331.00
+  Std Dev:         4,316.01
+  Min:             0.00
+  Max:             52,436.00
+
+==================================================
+
+Column: team_200_MIDDLE_physicalDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   41,576
+  Mean:            4,207.14
+  Median (50%):    1,482.00
+  Std Dev:         5,964.22
+  Min:             0.00
+  Max:             68,283.00
+
+==================================================
+
+Column: team_200_MIDDLE_physicalDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   52,059
+  Mean:            4,832.65
+  Median (50%):    1,545.00
+  Std Dev:         7,202.72
+  Min:             0.00
+  Max:             83,423.00
+
+==================================================
+
+Column: team_200_MIDDLE_physicalDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   19,778
+  Mean:            2,228.56
+  Median (50%):    1,110.00
+  Std Dev:         2,756.39
+  Min:             0.00
+  Max:             32,228.00
+
+==================================================
+
+Column: team_200_MIDDLE_totalGold_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   13,859
+  Mean:            7,603.94
+  Median (50%):    7,993.00
+  Std Dev:         1,395.62
+  Min:             1,562.00
+  Max:             20,349.00
+
+==================================================
+
+Column: team_200_MIDDLE_totalGold_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17,165
+  Mean:            9,217.25
+  Median (50%):    9,871.00
+  Std Dev:         2,075.35
+  Min:             2,095.00
+  Max:             23,166.00
+
+==================================================
+
+Column: team_200_MIDDLE_totalGold_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   19,878
+  Mean:            10,222.18
+  Median (50%):    10,794.00
+  Std Dev:         2,758.50
+  Min:             2,095.00
+  Max:             26,389.00
+
+==================================================
+
+Column: team_200_MIDDLE_totalGold_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   9,930
+  Mean:            5,621.81
+  Median (50%):    5,758.00
+  Std Dev:         890.79
+  Min:             918.00
+  Max:             14,910.00
+
+==================================================
+
+Column: team_200_MIDDLE_trueDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   8,977
+  Mean:            593.08
+  Median (50%):    402.00
+  Std Dev:         788.20
+  Min:             0.00
+  Max:             14,825.00
+
+==================================================
+
+Column: team_200_MIDDLE_trueDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   12,771
+  Mean:            828.13
+  Median (50%):    563.50
+  Std Dev:         1,104.72
+  Min:             0.00
+  Max:             21,306.00
+
+==================================================
+
+Column: team_200_MIDDLE_trueDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   16,555
+  Mean:            1,009.58
+  Median (50%):    669.00
+  Std Dev:         1,371.32
+  Min:             0.00
+  Max:             27,712.00
+
+==================================================
+
+Column: team_200_MIDDLE_trueDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   5,816
+  Mean:            374.73
+  Median (50%):    239.00
+  Std Dev:         502.84
+  Min:             0.00
+  Max:             9,862.00
+
+==================================================
+
+Column: team_200_TOP_assists_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   29
+  Mean:            2.04
+  Median (50%):    2.00
+  Std Dev:         1.84
+  Min:             0.00
+  Max:             28.00
+
+==================================================
+
+Column: team_200_TOP_assists_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   38
+  Mean:            3.15
+  Median (50%):    3.00
+  Std Dev:         2.55
+  Min:             0.00
+  Max:             37.00
+
+==================================================
+
+Column: team_200_TOP_assists_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   40
+  Mean:            3.90
+  Median (50%):    4.00
+  Std Dev:         3.11
+  Min:             0.00
+  Max:             39.00
+
+==================================================
+
+Column: team_200_TOP_assists_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   22
+  Mean:            1.10
+  Median (50%):    1.00
+  Std Dev:         1.23
+  Min:             0.00
+  Max:             22.00
+
+==================================================
+
+Column: team_200_TOP_championId
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   170
+  Mean:            199.91
+  Median (50%):    92.00
+  Std Dev:         269.58
+  Min:             1.00
+  Max:             950.00
+
+==================================================
+
+Column: team_200_TOP_creepScore_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   294
+  Mean:            139.14
+  Median (50%):    148.00
+  Std Dev:         26.50
+  Min:             0.00
+  Max:             352.00
+
+==================================================
+
+Column: team_200_TOP_creepScore_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   360
+  Mean:            163.05
+  Median (50%):    173.00
+  Std Dev:         36.71
+  Min:             0.00
+  Max:             428.00
+
+==================================================
+
+Column: team_200_TOP_creepScore_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   415
+  Mean:            176.26
+  Median (50%):    185.00
+  Std Dev:         45.78
+  Min:             0.00
+  Max:             461.00
+
+==================================================
+
+Column: team_200_TOP_creepScore_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   228
+  Mean:            105.78
+  Median (50%):    111.00
+  Std Dev:         18.53
+  Min:             0.00
+  Max:             256.00
+
+==================================================
+
+Column: team_200_TOP_deaths_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   32
+  Mean:            3.53
+  Median (50%):    3.00
+  Std Dev:         2.08
+  Min:             0.00
+  Max:             34.00
+
+==================================================
+
+Column: team_200_TOP_deaths_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   32
+  Mean:            4.43
+  Median (50%):    4.00
+  Std Dev:         2.43
+  Min:             0.00
+  Max:             34.00
+
+==================================================
+
+Column: team_200_TOP_deaths_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   33
+  Mean:            4.95
+  Median (50%):    5.00
+  Std Dev:         2.69
+  Min:             0.00
+  Max:             34.00
+
+==================================================
+
+Column: team_200_TOP_deaths_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   28
+  Mean:            2.52
+  Median (50%):    2.00
+  Std Dev:         1.71
+  Min:             0.00
+  Max:             27.00
+
+==================================================
+
+Column: team_200_TOP_kills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   29
+  Mean:            3.09
+  Median (50%):    3.00
+  Std Dev:         2.38
+  Min:             0.00
+  Max:             29.00
+
+==================================================
+
+Column: team_200_TOP_kills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   35
+  Mean:            3.97
+  Median (50%):    4.00
+  Std Dev:         2.90
+  Min:             0.00
+  Max:             34.00
+
+==================================================
+
+Column: team_200_TOP_kills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   38
+  Mean:            4.51
+  Median (50%):    4.00
+  Std Dev:         3.28
+  Min:             0.00
+  Max:             37.00
+
+==================================================
+
+Column: team_200_TOP_kills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   27
+  Mean:            2.13
+  Median (50%):    2.00
+  Std Dev:         1.81
+  Min:             0.00
+  Max:             27.00
+
+==================================================
+
+Column: team_200_TOP_level_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17
+  Mean:            12.41
+  Median (50%):    13.00
+  Std Dev:         1.11
+  Min:             1.00
+  Max:             17.00
+
+==================================================
+
+Column: team_200_TOP_level_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            13.80
+  Median (50%):    14.00
+  Std Dev:         1.68
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_200_TOP_level_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            14.53
+  Median (50%):    15.00
+  Std Dev:         2.18
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_200_TOP_level_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14
+  Mean:            10.50
+  Median (50%):    11.00
+  Std Dev:         0.76
+  Min:             1.00
+  Max:             14.00
+
+==================================================
+
+Column: team_200_TOP_magicDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   29,715
+  Mean:            4,113.07
+  Median (50%):    2,727.00
+  Std Dev:         4,334.99
+  Min:             0.00
+  Max:             46,799.00
+
+==================================================
+
+Column: team_200_TOP_magicDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   41,733
+  Mean:            5,559.42
+  Median (50%):    3,651.00
+  Std Dev:         6,043.41
+  Min:             0.00
+  Max:             65,421.00
+
+==================================================
+
+Column: team_200_TOP_magicDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   53,000
+  Mean:            6,579.38
+  Median (50%):    4,260.00
+  Std Dev:         7,453.46
+  Min:             0.00
+  Max:             85,079.00
+
+==================================================
+
+Column: team_200_TOP_magicDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   19,057
+  Mean:            2,686.58
+  Median (50%):    1,821.00
+  Std Dev:         2,798.57
+  Min:             0.00
+  Max:             27,402.00
+
+==================================================
+
+Column: team_200_TOP_physicalDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   32,902
+  Mean:            7,024.05
+  Median (50%):    6,986.00
+  Std Dev:         4,649.59
+  Min:             0.00
+  Max:             50,060.00
+
+==================================================
+
+Column: team_200_TOP_physicalDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   45,266
+  Mean:            9,154.45
+  Median (50%):    9,019.00
+  Std Dev:         6,405.83
+  Min:             0.00
+  Max:             75,671.00
+
+==================================================
+
+Column: team_200_TOP_physicalDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   56,448
+  Mean:            10,560.19
+  Median (50%):    10,070.00
+  Std Dev:         7,844.21
+  Min:             0.00
+  Max:             90,203.00
+
+==================================================
+
+Column: team_200_TOP_physicalDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   21,490
+  Mean:            4,800.03
+  Median (50%):    4,905.00
+  Std Dev:         3,054.62
+  Min:             0.00
+  Max:             32,902.00
+
+==================================================
+
+Column: team_200_TOP_totalGold_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   13,825
+  Mean:            7,465.71
+  Median (50%):    7,725.00
+  Std Dev:         1,483.54
+  Min:             2,096.00
+  Max:             19,487.00
+
+==================================================
+
+Column: team_200_TOP_totalGold_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17,107
+  Mean:            9,103.55
+  Median (50%):    9,581.00
+  Std Dev:         2,164.28
+  Min:             2,112.00
+  Max:             23,934.00
+
+==================================================
+
+Column: team_200_TOP_totalGold_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   20,022
+  Mean:            10,126.01
+  Median (50%):    10,668.00
+  Std Dev:         2,857.44
+  Min:             2,112.00
+  Max:             28,032.00
+
+==================================================
+
+Column: team_200_TOP_totalGold_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   9,965
+  Mean:            5,467.50
+  Median (50%):    5,467.00
+  Std Dev:         975.27
+  Min:             1,951.00
+  Max:             16,263.00
+
+==================================================
+
+Column: team_200_TOP_trueDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   11,328
+  Mean:            690.81
+  Median (50%):    306.00
+  Std Dev:         1,089.00
+  Min:             0.00
+  Max:             18,769.00
+
+==================================================
+
+Column: team_200_TOP_trueDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   16,584
+  Mean:            1,003.70
+  Median (50%):    453.00
+  Std Dev:         1,570.07
+  Min:             0.00
+  Max:             28,875.00
+
+==================================================
+
+Column: team_200_TOP_trueDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   21,755
+  Mean:            1,256.73
+  Median (50%):    569.00
+  Std Dev:         1,989.60
+  Min:             0.00
+  Max:             39,842.00
+
+==================================================
+
+Column: team_200_TOP_trueDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   7,024
+  Mean:            410.67
+  Median (50%):    144.00
+  Std Dev:         662.04
+  Min:             0.00
+  Max:             11,632.00
+
+==================================================
+
+Column: team_200_UTILITY_assists_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   41
+  Mean:            6.91
+  Median (50%):    8.00
+  Std Dev:         3.71
+  Min:             0.00
+  Max:             41.00
+
+==================================================
+
+Column: team_200_UTILITY_assists_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   46
+  Mean:            9.20
+  Median (50%):    10.00
+  Std Dev:         4.82
+  Min:             0.00
+  Max:             45.00
+
+==================================================
+
+Column: team_200_UTILITY_assists_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   50
+  Mean:            10.62
+  Median (50%):    11.00
+  Std Dev:         5.70
+  Min:             0.00
+  Max:             49.00
+
+==================================================
+
+Column: team_200_UTILITY_assists_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   36
+  Mean:            4.51
+  Median (50%):    5.00
+  Std Dev:         2.73
+  Min:             0.00
+  Max:             41.00
+
+==================================================
+
+Column: team_200_UTILITY_championId
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   170
+  Mean:            220.02
+  Median (50%):    143.00
+  Std Dev:         223.73
+  Min:             1.00
+  Max:             950.00
+
+==================================================
+
+Column: team_200_UTILITY_creepScore_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   182
+  Mean:            24.36
+  Median (50%):    25.00
+  Std Dev:         9.51
+  Min:             0.00
+  Max:             194.00
+
+==================================================
+
+Column: team_200_UTILITY_creepScore_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   231
+  Mean:            28.02
+  Median (50%):    28.00
+  Std Dev:         12.13
+  Min:             0.00
+  Max:             241.00
+
+==================================================
+
+Column: team_200_UTILITY_creepScore_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   275
+  Mean:            30.30
+  Median (50%):    30.00
+  Std Dev:         14.36
+  Min:             0.00
+  Max:             302.00
+
+==================================================
+
+Column: team_200_UTILITY_creepScore_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   138
+  Mean:            19.91
+  Median (50%):    20.00
+  Std Dev:         7.17
+  Min:             0.00
+  Max:             142.00
+
+==================================================
+
+Column: team_200_UTILITY_deaths_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   36
+  Mean:            3.59
+  Median (50%):    4.00
+  Std Dev:         2.10
+  Min:             0.00
+  Max:             35.00
+
+==================================================
+
+Column: team_200_UTILITY_deaths_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   37
+  Mean:            4.49
+  Median (50%):    5.00
+  Std Dev:         2.49
+  Min:             0.00
+  Max:             36.00
+
+==================================================
+
+Column: team_200_UTILITY_deaths_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   38
+  Mean:            5.01
+  Median (50%):    5.00
+  Std Dev:         2.78
+  Min:             0.00
+  Max:             38.00
+
+==================================================
+
+Column: team_200_UTILITY_deaths_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   31
+  Mean:            2.55
+  Median (50%):    3.00
+  Std Dev:         1.69
+  Min:             0.00
+  Max:             34.00
+
+==================================================
+
+Column: team_200_UTILITY_kills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   30
+  Mean:            1.72
+  Median (50%):    1.00
+  Std Dev:         1.76
+  Min:             0.00
+  Max:             32.00
+
+==================================================
+
+Column: team_200_UTILITY_kills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   35
+  Mean:            2.06
+  Median (50%):    2.00
+  Std Dev:         2.07
+  Min:             0.00
+  Max:             35.00
+
+==================================================
+
+Column: team_200_UTILITY_kills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   37
+  Mean:            2.26
+  Median (50%):    2.00
+  Std Dev:         2.28
+  Min:             0.00
+  Max:             42.00
+
+==================================================
+
+Column: team_200_UTILITY_kills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   24
+  Mean:            1.29
+  Median (50%):    1.00
+  Std Dev:         1.40
+  Min:             0.00
+  Max:             24.00
+
+==================================================
+
+Column: team_200_UTILITY_level_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   15
+  Mean:            9.35
+  Median (50%):    10.00
+  Std Dev:         0.98
+  Min:             1.00
+  Max:             15.00
+
+==================================================
+
+Column: team_200_UTILITY_level_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            10.73
+  Median (50%):    11.00
+  Std Dev:         1.55
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_200_UTILITY_level_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   18
+  Mean:            11.51
+  Median (50%):    12.00
+  Std Dev:         2.07
+  Min:             1.00
+  Max:             18.00
+
+==================================================
+
+Column: team_200_UTILITY_level_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   12
+  Mean:            7.67
+  Median (50%):    8.00
+  Std Dev:         0.69
+  Min:             1.00
+  Max:             12.00
+
+==================================================
+
+Column: team_200_UTILITY_magicDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   23,152
+  Mean:            4,376.71
+  Median (50%):    4,136.00
+  Std Dev:         2,966.41
+  Min:             0.00
+  Max:             37,876.00
+
+==================================================
+
+Column: team_200_UTILITY_magicDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   32,965
+  Mean:            5,836.14
+  Median (50%):    5,470.50
+  Std Dev:         4,282.65
+  Min:             0.00
+  Max:             59,364.00
+
+==================================================
+
+Column: team_200_UTILITY_magicDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   42,514
+  Mean:            6,821.77
+  Median (50%):    6,339.00
+  Std Dev:         5,429.38
+  Min:             0.00
+  Max:             66,800.00
+
+==================================================
+
+Column: team_200_UTILITY_magicDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14,446
+  Mean:            2,832.04
+  Median (50%):    2,756.00
+  Std Dev:         1,797.13
+  Min:             0.00
+  Max:             25,584.00
+
+==================================================
+
+Column: team_200_UTILITY_physicalDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   22,646
+  Mean:            1,770.70
+  Median (50%):    1,207.00
+  Std Dev:         2,179.08
+  Min:             0.00
+  Max:             38,554.00
+
+==================================================
+
+Column: team_200_UTILITY_physicalDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   31,189
+  Mean:            2,161.40
+  Median (50%):    1,326.00
+  Std Dev:         2,948.82
+  Min:             0.00
+  Max:             53,019.00
+
+==================================================
+
+Column: team_200_UTILITY_physicalDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   38,476
+  Mean:            2,402.34
+  Median (50%):    1,371.00
+  Std Dev:         3,509.09
+  Min:             0.00
+  Max:             70,184.00
+
+==================================================
+
+Column: team_200_UTILITY_physicalDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14,671
+  Mean:            1,307.19
+  Median (50%):    998.00
+  Std Dev:         1,402.48
+  Min:             0.00
+  Max:             24,367.00
+
+==================================================
+
+Column: team_200_UTILITY_totalGold_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   9,932
+  Mean:            5,586.39
+  Median (50%):    5,647.00
+  Std Dev:         957.12
+  Min:             1,247.00
+  Max:             17,804.00
+
+==================================================
+
+Column: team_200_UTILITY_totalGold_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   12,548
+  Mean:            6,664.95
+  Median (50%):    6,871.00
+  Std Dev:         1,396.26
+  Min:             1,521.00
+  Max:             21,175.00
+
+==================================================
+
+Column: team_200_UTILITY_totalGold_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14,868
+  Mean:            7,327.27
+  Median (50%):    7,752.00
+  Std Dev:         1,846.25
+  Min:             1,699.00
+  Max:             21,672.00
+
+==================================================
+
+Column: team_200_UTILITY_totalGold_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   7,155
+  Mean:            4,291.40
+  Median (50%):    4,248.00
+  Std Dev:         660.93
+  Min:             891.00
+  Max:             12,767.00
+
+==================================================
+
+Column: team_200_UTILITY_trueDamageDoneToChampions_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   7,624
+  Mean:            411.32
+  Median (50%):    370.00
+  Std Dev:         515.33
+  Min:             0.00
+  Max:             11,953.00
+
+==================================================
+
+Column: team_200_UTILITY_trueDamageDoneToChampions_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   10,813
+  Mean:            560.11
+  Median (50%):    468.00
+  Std Dev:         715.90
+  Min:             0.00
+  Max:             17,855.00
+
+==================================================
+
+Column: team_200_UTILITY_trueDamageDoneToChampions_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   13,992
+  Mean:            678.28
+  Median (50%):    550.00
+  Std Dev:         885.46
+  Min:             0.00
+  Max:             25,119.00
+
+==================================================
+
+Column: team_200_UTILITY_trueDamageDoneToChampions_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   4,951
+  Mean:            268.35
+  Median (50%):    260.00
+  Std Dev:         328.20
+  Min:             0.00
+  Max:             7,387.00
+
+==================================================
+
+Column: team_200_baronKills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   2
+  Mean:            0.00
+  Median (50%):    0.00
+  Std Dev:         0.00
+  Min:             0.00
+  Max:             1.00
+
+==================================================
+
+Column: team_200_baronKills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   2
+  Mean:            0.09
+  Median (50%):    0.00
+  Std Dev:         0.29
+  Min:             0.00
+  Max:             1.00
+
+==================================================
+
+Column: team_200_baronKills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.24
+  Median (50%):    0.00
+  Std Dev:         0.46
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_200_baronKills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   1
+  Mean:            0.00
+  Median (50%):    0.00
+  Std Dev:         0.00
+  Min:             0.00
+  Max:             0.00
+
+==================================================
+
+Column: team_200_dragonKills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   4
+  Mean:            1.24
+  Median (50%):    1.00
+  Std Dev:         0.91
+  Min:             0.00
+  Max:             3.00
+
+==================================================
+
+Column: team_200_dragonKills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   5
+  Mean:            1.56
+  Median (50%):    2.00
+  Std Dev:         1.09
+  Min:             0.00
+  Max:             4.00
+
+==================================================
+
+Column: team_200_dragonKills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   6
+  Mean:            1.75
+  Median (50%):    2.00
+  Std Dev:         1.19
+  Min:             0.00
+  Max:             5.00
+
+==================================================
+
+Column: team_200_dragonKills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.85
+  Median (50%):    1.00
+  Std Dev:         0.72
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_200_inhibitorKills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   6
+  Mean:            0.04
+  Median (50%):    0.00
+  Std Dev:         0.24
+  Min:             0.00
+  Max:             5.00
+
+==================================================
+
+Column: team_200_inhibitorKills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   7
+  Mean:            0.19
+  Median (50%):    0.00
+  Std Dev:         0.53
+  Min:             0.00
+  Max:             6.00
+
+==================================================
+
+Column: team_200_inhibitorKills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   10
+  Mean:            0.37
+  Median (50%):    0.00
+  Std Dev:         0.75
+  Min:             0.00
+  Max:             9.00
+
+==================================================
+
+Column: team_200_inhibitorKills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   5
+  Mean:            0.00
+  Median (50%):    0.00
+  Std Dev:         0.04
+  Min:             0.00
+  Max:             4.00
+
+==================================================
+
+Column: team_200_riftHeraldKills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.38
+  Median (50%):    0.00
+  Std Dev:         0.50
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_200_riftHeraldKills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.41
+  Median (50%):    0.00
+  Std Dev:         0.51
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_200_riftHeraldKills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.41
+  Median (50%):    0.00
+  Std Dev:         0.51
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_200_riftHeraldKills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   3
+  Mean:            0.05
+  Median (50%):    0.00
+  Std Dev:         0.22
+  Min:             0.00
+  Max:             2.00
+
+==================================================
+
+Column: team_200_towerKills_at_1200000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   14
+  Mean:            2.46
+  Median (50%):    3.00
+  Std Dev:         1.77
+  Min:             0.00
+  Max:             13.00
+
+==================================================
+
+Column: team_200_towerKills_at_1500000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   16
+  Mean:            3.61
+  Median (50%):    4.00
+  Std Dev:         2.36
+  Min:             0.00
+  Max:             15.00
+
+==================================================
+
+Column: team_200_towerKills_at_1800000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   17
+  Mean:            4.24
+  Median (50%):    4.00
+  Std Dev:         2.75
+  Min:             0.00
+  Max:             16.00
+
+==================================================
+
+Column: team_200_towerKills_at_900000
+----------------------------------------
+  Data Type:       int64
+  Missing Values:  0 (0.00%)
+  Unique Values:   13
+  Mean:            0.75
+  Median (50%):    1.00
+  Std Dev:         0.94
+  Min:             0.00
+  Max:             12.00
+
+==================================================
+
+Column: team_200_win
+----------------------------------------
+  Data Type:       bool
+  Missing Values:  0 (0.00%)
+  Unique Values:   2
+
+==================================================
+
