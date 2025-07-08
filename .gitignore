@@ -1,0 +1,45 @@
+# ===================================================================
+# Deltadraft .gitignore
+# ===================================================================
+
+# 1. Large Data Files & Generated Artifacts
+# These are the massive files we generated. They should never be in Git.
+*.parquet
+base_winrates.json
+matchup_winrates.json
+
+# 2. Node.js / Electron Dependencies
+# This is the most important one. The 'node_modules' folder is huge
+# and can be perfectly recreated by running 'npm install'.
+/desktop-app/node_modules/
+npm-debug.log*
+yarn-error.log
+
+# 3. Python / Conda Environment & Cache
+# Ignore virtual environment folders
+/venv/
+/env/
+/.venv/
+# Ignore Python's bytecode cache
+/__pycache__/
+*.pyc
+*.pyo
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# 4. Log Files and Temporary Files
+# Ignore general log files and the specific ones from our cluster jobs
+*.log
+log_*.txt
+# Ignore the temporary directory from our data processing scripts
+/temp_partitions/
+
+# 5. OS and Editor Specific Files
+# Ignore system-specific files that don't belong in a shared project.
+.DS_Store
+Thumbs.db
+.vscode/
+
+# 6. Project-Specific Exclusions
+# Ignore the cloned reference repository as requested.
+/workspace/
