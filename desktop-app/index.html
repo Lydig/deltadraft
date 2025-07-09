@@ -19,6 +19,7 @@
         .team-panel { width: 150px; display: flex; flex-direction: column; gap: 10px; }
         .role-slot { width: 100%; height: 100px; background-color: var(--bg-secondary); border: 2px dashed var(--border-color); border-radius: 8px; position: relative; cursor: pointer; transition: border-color 0.2s; overflow: hidden; }
         .role-slot.selected { border-color: var(--accent-color); border-style: solid; }
+        .role-slot.swap-source { border-color: var(--yellow-warn); border-style: solid; }
         .role-icon { width: 50%; height: 50%; opacity: 0.2; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .champion-portrait { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; pointer-events: none; }
         .center-column { flex-grow: 1; display: flex; flex-direction: column; }
@@ -74,7 +75,7 @@
             let allChampions = []; let champIdToName = {}; let roleProbabilities = {};
             let selectedRoleSlot = null; let lcuIntervalId = null;
             let recommendationTarget = null; let validRolesSet = new Set();
-            let lastKnownDraftState = ''; // --- NEW: For preventing unnecessary updates ---
+            let lastKnownDraftState = ''; let swapSourceSlot = null;
 
             const championGrid = document.getElementById('champion-grid');
             const searchInput = document.getElementById('search-champion');
@@ -165,7 +166,7 @@
                     const warning = slot.querySelector('.warning-icon');
                     if(warning) warning.remove();
                     delete slot.dataset.champion;
-                    slot.classList.remove('selected');
+                    slot.classList.remove('selected', 'swap-source');
                 });
                 recommendationList.innerHTML = '';
                 getRecsBtn.disabled = true;
@@ -173,6 +174,7 @@
                 recsHeader.textContent = "Recommendations:";
                 selectedRoleSlot = null;
                 recommendationTarget = null;
+                swapSourceSlot = null;
             }
 
             async function updateRecommendations() {
@@ -210,29 +212,70 @@
                 } catch (error) { console.error("Failed to get recommendations:", error); recommendationList.innerHTML = '<li>Error fetching recommendations.</li>'; }
             }
             
-            document.addEventListener('click', e => {
-                const roleSlot = e.target.closest('.role-slot');
-                const championTile = e.target.closest('.champion-tile');
-                if (roleSlot) {
-                    document.querySelectorAll('.role-slot').forEach(s => s.classList.remove('selected'));
-                    if (!roleSlot.dataset.champion) {
-                        roleSlot.classList.add('selected');
-                        selectedRoleSlot = { side: roleSlot.dataset.side, role: roleSlot.dataset.role };
+            function handleRoleSlotClick(slot) {
+                const clickedSlotInfo = { side: slot.dataset.side, role: slot.dataset.role };
+                if (swapSourceSlot) {
+                    if (swapSourceSlot.side === clickedSlotInfo.side && swapSourceSlot.role === clickedSlotInfo.role) {
+                        clearSelections(); return;
+                    }
+                    performSwap(swapSourceSlot, clickedSlotInfo);
+                    clearSelections();
+                } else {
+                    clearSelections();
+                    if (!slot.dataset.champion) {
+                        slot.classList.add('selected');
+                        selectedRoleSlot = clickedSlotInfo;
                         getRecsBtn.disabled = false;
                         getRecsBtn.textContent = `Get Recs for ${selectedRoleSlot.side.toUpperCase()} ${selectedRoleSlot.role}`;
                     } else {
-                        delete roleSlot.dataset.champion;
-                        const portrait = roleSlot.querySelector('.champion-portrait');
-                        if (portrait) portrait.remove();
-                        const warning = roleSlot.querySelector('.warning-icon');
-                        if(warning) warning.remove();
-                        selectedRoleSlot = null;
-                        getRecsBtn.disabled = true;
-                        getRecsBtn.textContent = "Get Recommendations";
-                        if (recommendationTarget) updateRecommendations();
+                        slot.classList.add('swap-source');
+                        swapSourceSlot = clickedSlotInfo;
                     }
-                } else if (championTile && selectedRoleSlot) {
-                    setChampionForSlot(selectedRoleSlot.side, selectedRoleSlot.role, championTile.dataset.championName);
+                }
+            }
+
+            function handleChampionTileClick(tile) {
+                const targetSlot = swapSourceSlot || selectedRoleSlot;
+                if (targetSlot) {
+                    setChampionForSlot(targetSlot.side, targetSlot.role, tile.dataset.championName);
+                    if (recommendationTarget) updateRecommendations();
+                    clearSelections();
+                }
+            }
+            
+            function performSwap(source, destination) {
+                const sourceEl = document.querySelector(`[data-side='${source.side}'][data-role='${source.role}']`);
+                const destEl = document.querySelector(`[data-side='${destination.side}'][data-role='${destination.role}']`);
+                const sourceChamp = sourceEl.dataset.champion;
+                const destChamp = destEl.dataset.champion;
+                setChampionForSlot(source.side, source.role, destChamp);
+                setChampionForSlot(destination.side, destination.role, sourceChamp);
+                if (recommendationTarget) updateRecommendations();
+            }
+
+            function clearSelections() {
+                document.querySelectorAll('.role-slot').forEach(s => s.classList.remove('selected', 'swap-source'));
+                selectedRoleSlot = null;
+                swapSourceSlot = null;
+                if (!recommendationTarget) {
+                    getRecsBtn.disabled = true;
+                    getRecsBtn.textContent = 'Get Recommendations';
+                }
+            }
+
+            draftArea.addEventListener('click', e => {
+                const roleSlotEl = e.target.closest('.role-slot');
+                const championTileEl = e.target.closest('.champion-tile');
+                if (roleSlotEl) handleRoleSlotClick(roleSlotEl);
+                else if (championTileEl) handleChampionTileClick(championTileEl);
+                else clearSelections();
+            });
+
+            draftArea.addEventListener('contextmenu', e => {
+                e.preventDefault();
+                const roleSlot = e.target.closest('.role-slot');
+                if (roleSlot && roleSlot.dataset.champion) {
+                    setChampionForSlot(roleSlot.dataset.side, roleSlot.dataset.role, null);
                     if (recommendationTarget) updateRecommendations();
                 }
             });
@@ -253,12 +296,10 @@
                 if (!session) return;
                 const blueAssignments = inferRoles(session.myTeam.map(p => champIdToName[p.championId]).filter(Boolean));
                 const redAssignments = inferRoles(session.theirTeam.map(p => champIdToName[p.championId]).filter(Boolean));
-                
                 let currentDraftState = '';
                 roles.forEach(role => {
                     currentDraftState += (blueAssignments[role] || '') + (redAssignments[role] || '');
                 });
-                
                 if (currentDraftState !== lastKnownDraftState) {
                     lastKnownDraftState = currentDraftState;
                     roles.forEach(role => {
@@ -302,10 +343,15 @@
             
             recommendationList.addEventListener('mousemove', e => {
                 const li = e.target.closest('li');
-                if (!li || !li.dataset.breakdown) {
-                    deltaTooltip.style.opacity = '0';
-                    return;
+                if (li) {
+                    deltaTooltip.style.left = `${e.clientX + 20}px`;
+                    deltaTooltip.style.top = `${e.clientY + 20}px`;
                 }
+            });
+
+            recommendationList.addEventListener('mouseover', e => {
+                const li = e.target.closest('li');
+                if (!li || !li.dataset.breakdown) return;
                 const breakdown = JSON.parse(li.dataset.breakdown);
                 const breakdownMap = Object.fromEntries(breakdown.map(item => [item.source, item.delta]));
                 let blueHTML = '<h5>Blue Side</h5>';
@@ -329,10 +375,9 @@
                     } else { redHTML += `<div><span class="delta-neutral">RED ${role} MISSING</span></div>`; }
                 });
                 deltaTooltip.innerHTML = `<h4>${li.dataset.championName} Breakdown</h4><div class="tooltip-columns"><div class="tooltip-col">${blueHTML}</div><div class="tooltip-col">${redHTML}</div></div>`;
-                deltaTooltip.style.left = `${e.clientX + 20}px`;
-                deltaTooltip.style.top = `${e.clientY + 20}px`;
                 deltaTooltip.style.opacity = '1';
             });
+            
             recommendationList.addEventListener('mouseout', () => { deltaTooltip.style.opacity = '0'; });
 
             draftArea.addEventListener('mouseover', e => {
@@ -353,4 +398,4 @@
         });
     </script>
 </body>
-</html>```
+</html>
