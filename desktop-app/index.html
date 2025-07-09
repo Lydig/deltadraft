@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Delta Draft</title>
     <style>
-        :root { --bg-primary: #0f172a; --bg-secondary: #1e293b; --border-color: #334155; --text-primary: #e2e8f0; --text-secondary: #94a3b8; --accent-color: #60a5fa; --green-pos: #22c55e; --red-neg: #ef4444; }
+        :root { --bg-primary: #0f172a; --bg-secondary: #1e293b; --border-color: #334155; --text-primary: #e2e8f0; --text-secondary: #94a3b8; --accent-color: #60a5fa; --green-pos: #22c55e; --red-neg: #ef4444; --yellow-warn: #facc15; }
         body { font-family: system-ui, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); display: flex; justify-content: center; margin: 0; padding: 20px; }
         * { box-sizing: border-box; }
         .app-container { width: 100%; max-width: 1200px; }
@@ -35,8 +35,11 @@
         .rec-name { font-weight: bold; }
         .rec-stats { font-size: 0.8rem; color: var(--text-secondary); }
         .delta-pos { color: var(--green-pos); } .delta-neg { color: var(--red-neg); }
-        #delta-tooltip { position: fixed; background-color: #020617; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; z-index: 100; width: 320px; pointer-events: none; opacity: 0; transition: opacity 0.1s; }
-        #delta-tooltip h4 { margin: 0 0 10px 0; color: var(--accent-color); font-size: 1rem; text-align: center; }
+        .warning-icon { position: absolute; top: 5px; font-size: 1.2rem; color: var(--yellow-warn); text-shadow: 0 0 5px black; z-index: 2; }
+        .warning-icon.left { left: 5px; } .warning-icon.right { right: 5px; }
+        .tooltip { position: fixed; background-color: #020617; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.1s; }
+        #delta-tooltip { width: 320px; } #warning-tooltip { width: 250px; }
+        #delta-tooltip h4, #warning-tooltip h4 { margin: 0 0 10px 0; color: var(--accent-color); font-size: 1rem; text-align: center; }
         .tooltip-columns { display: flex; justify-content: space-between; gap: 15px; }
         .tooltip-col { flex: 1; }
         .tooltip-col h5 { margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 3px; }
@@ -52,7 +55,7 @@
             <button id="live-tracking-btn"><span id="live-indicator" class="live-indicator"></span>Start Live Tracking</button>
             <button id="get-recs-btn" disabled>Get Recommendations</button>
         </div>
-        <div class="draft-area">
+        <div class="draft-area" id="draft-area">
             <div class="team-panel" id="blue-team"></div>
             <div class="center-column">
                 <input type="text" id="search-champion" placeholder="Search for a champion...">
@@ -61,288 +64,293 @@
             </div>
             <div class="team-panel" id="red-team"></div>
         </div>
-        <div id="delta-tooltip"></div>
+        <div id="delta-tooltip" class="tooltip"></div>
+        <div id="warning-tooltip" class="tooltip">This champion/role combination has a very low pick rate (<1%) in our dataset. Its stats may not be reliable.</div>
     </div>
 
     <script>
-        const roles = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
-        let allChampions = [];
-        let champIdToName = {};
-        let roleProbabilities = {};
-        let selectedRoleSlot = null;
-        let lcuIntervalId = null;
-        let recommendationTarget = null;
+        document.addEventListener('DOMContentLoaded', () => {
+            const roles = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
+            let allChampions = []; let champIdToName = {}; let roleProbabilities = {};
+            let selectedRoleSlot = null; let lcuIntervalId = null;
+            let recommendationTarget = null; let validRolesSet = new Set();
+            let lastKnownDraftState = ''; // --- NEW: For preventing unnecessary updates ---
 
-        const championGrid = document.getElementById('champion-grid');
-        const searchInput = document.getElementById('search-champion');
-        const recommendationList = document.getElementById('recommendation-list');
-        const recsHeader = document.getElementById('recs-header');
-        const liveTrackingBtn = document.getElementById('live-tracking-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        const getRecsBtn = document.getElementById('get-recs-btn');
-        const tooltip = document.getElementById('delta-tooltip');
+            const championGrid = document.getElementById('champion-grid');
+            const searchInput = document.getElementById('search-champion');
+            const recommendationList = document.getElementById('recommendation-list');
+            const recsHeader = document.getElementById('recs-header');
+            const liveTrackingBtn = document.getElementById('live-tracking-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const getRecsBtn = document.getElementById('get-recs-btn');
+            const deltaTooltip = document.getElementById('delta-tooltip');
+            const warningTooltip = document.getElementById('warning-tooltip');
+            const draftArea = document.getElementById('draft-area');
 
-        async function initializeApp() {
-            try {
-                const response = await fetch('https://ddragon.leagueoflegends.com/cdn/14.13.1/data/en_US/champion.json');
-                const champData = await response.json();
-                allChampions = Object.values(champData.data);
-                allChampions.push({id: 'Ambessa', name: 'Ambessa', image: {full: 'Ambessa.png'}});
-                allChampions.push({id: 'Aurora', name: 'Aurora', image: {full: 'Aurora.png'}});
-                allChampions.push({id: 'Mel', name: 'Mel', image: {full: 'Mel.png'}});
-                
-                allChampions.forEach(champ => {
-                    champIdToName[champ.key] = champ.id;
-                });
-                champIdToName[799] = 'Ambessa';
-                champIdToName[800] = 'Mel';
-                champIdToName[893] = 'Aurora';
-
-            } catch (e) { console.error("Could not fetch champion list from Data Dragon", e); }
-            
-            createRoleSlots();
-            populateChampionGrid();
-        }
-
-        function createRoleSlots() {
-            const blueTeamPanel = document.getElementById('blue-team');
-            const redTeamPanel = document.getElementById('red-team');
-            blueTeamPanel.innerHTML = '<h2>Blue Side</h2>';
-            redTeamPanel.innerHTML = '<h2>Red Side</h2>';
-            roles.forEach(role => {
-                const iconSrc = `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-${role.toLowerCase()}.png`;
-                blueTeamPanel.innerHTML += `<div class="role-slot" data-side="blue" data-role="${role}"><img class="role-icon" src="${iconSrc}"></div>`;
-                redTeamPanel.innerHTML += `<div class="role-slot" data-side="red" data-role="${role}"><img class="role-icon" src="${iconSrc}"></div>`;
-            });
-        }
-
-        function populateChampionGrid() {
-            const query = searchInput.value.toLowerCase();
-            const filteredChamps = allChampions.filter(c => c.name.toLowerCase().includes(query));
-            championGrid.innerHTML = filteredChamps.sort((a,b) => a.name.localeCompare(b.name)).map(champ => `
-                <div class="champion-tile" data-champion-name="${champ.id}">
-                    <img src="./assets/champions/${champ.image.full}" title="${champ.name}">
-                </div>
-            `).join('');
-        }
-
-        function setChampionForSlot(side, role, championName) {
-            const slot = document.querySelector(`[data-side='${side}'][data-role='${role}']`);
-            if (!slot) return;
-            const existingPortrait = slot.querySelector('.champion-portrait');
-            if (existingPortrait) existingPortrait.remove();
-            
-            if (championName) {
-                const champData = allChampions.find(c => c.id === championName);
-                if (champData) {
-                    const portrait = document.createElement('img');
-                    portrait.className = 'champion-portrait';
-                    portrait.src = `./assets/champions/${champData.image.full}`;
-                    slot.appendChild(portrait);
-                    slot.dataset.champion = championName;
-                }
-            } else {
-                 delete slot.dataset.champion;
-            }
-        }
-
-        function resetDraft() {
-            document.querySelectorAll('.role-slot').forEach(slot => {
-                const portrait = slot.querySelector('.champion-portrait');
-                if (portrait) portrait.remove();
-                delete slot.dataset.champion;
-                slot.classList.remove('selected');
-            });
-            recommendationList.innerHTML = '';
-            getRecsBtn.disabled = true;
-            getRecsBtn.textContent = "Get Recommendations";
-            recsHeader.textContent = "Recommendations:";
-            selectedRoleSlot = null;
-            recommendationTarget = null;
-        }
-
-        async function updateRecommendations() {
-            if (!recommendationTarget) return;
-
-            recsHeader.textContent = `Recommendations for ${recommendationTarget.side.toUpperCase()} ${recommendationTarget.role}:`;
-            recommendationList.innerHTML = '<li>Calculating...</li>';
-            
-            const myTeamIsBlue = recommendationTarget.side === 'blue';
-            const myTeam = {};
-            const enemyTeam = {};
-            roles.forEach(role => {
-                const blueChamp = document.querySelector(`[data-side='blue'][data-role='${role}']`).dataset.champion;
-                const redChamp = document.querySelector(`[data-side='red'][data-role='${role}']`).dataset.champion;
-                myTeam[role] = (myTeamIsBlue ? blueChamp : redChamp) || null;
-                enemyTeam[role] = (myTeamIsBlue ? redChamp : blueChamp) || null;
-            });
-
-            try {
-                const response = await fetch('http://127.0.0.1:5000/recommend', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ my_team: myTeam, enemy_team: enemyTeam, target_role: recommendationTarget.role })
-                });
-                if (!response.ok) throw new Error("Backend server error");
-                const recommendations = await response.json();
-                recommendationList.innerHTML = '';
-                recommendations.forEach(pick => {
-                    const champData = allChampions.find(c => c.id === pick.champion);
-                    if (!champData) return;
-                    const li = document.createElement('li');
-                    li.dataset.breakdown = JSON.stringify(pick.breakdown);
-                    const deltaStr = (pick.total_delta >= 0 ? '+' : '') + (pick.total_delta * 100).toFixed(2) + '%';
-                    const baseWrStr = (pick.base_win_rate * 100).toFixed(2) + '%';
-                    const pickRateStr = (pick.pick_rate * 100).toFixed(2) + '%';
-                    li.innerHTML = `<img class="rec-img" src="./assets/champions/${champData.image.full}"><div class="rec-info"><div class="rec-name">${pick.champion}</div><div class="rec-stats"><span>Delta: <b class="${pick.total_delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> | <span>Base WR: ${baseWrStr}</span> | <span>Role Rate: ${pickRateStr}</span></div></div>`;
-                    recommendationList.appendChild(li);
-                });
-            } catch (error) {
-                console.error("Failed to get recommendations:", error);
-                recommendationList.innerHTML = '<li>Error fetching recommendations.</li>';
-            }
-        }
-        
-        document.addEventListener('click', e => {
-            const roleSlot = e.target.closest('.role-slot');
-            const championTile = e.target.closest('.champion-tile');
-            if (roleSlot) {
-                document.querySelectorAll('.role-slot').forEach(s => s.classList.remove('selected'));
-                if (!roleSlot.dataset.champion) {
-                    roleSlot.classList.add('selected');
-                    selectedRoleSlot = { side: roleSlot.dataset.side, role: roleSlot.dataset.role };
-                    getRecsBtn.disabled = false;
-                    getRecsBtn.textContent = `Get Recs for ${selectedRoleSlot.side.toUpperCase()} ${selectedRoleSlot.role}`;
-                } else {
-                    delete roleSlot.dataset.champion;
-                    const portrait = roleSlot.querySelector('.champion-portrait');
-                    if (portrait) portrait.remove();
-                    selectedRoleSlot = null;
-                    getRecsBtn.disabled = true;
-                    getRecsBtn.textContent = "Get Recommendations";
-                    if (recommendationTarget) updateRecommendations();
-                }
-            } else if (championTile && selectedRoleSlot) {
-                setChampionForSlot(selectedRoleSlot.side, selectedRoleSlot.role, championTile.dataset.championName);
-                if (recommendationTarget) updateRecommendations();
-            }
-        });
-
-        liveTrackingBtn.addEventListener('click', () => {
-            const indicator = document.getElementById('live-indicator');
-            if (lcuIntervalId) {
-                clearInterval(lcuIntervalId);
-                lcuIntervalId = null;
-                indicator.classList.remove('active');
-            } else {
-                indicator.classList.add('active');
-                initializeLCUData().then(() => {
-                    updateFromLiveGame();
-                    lcuIntervalId = setInterval(updateFromLiveGame, 1000);
-                }).catch(() => indicator.classList.remove('active'));
-            }
-        });
-
-        async function initializeLCUData() {
-            if (Object.keys(roleProbabilities).length === 0) {
-                 try {
-                    const response = await fetch('http://127.0.0.1:5000/role_data');
-                    const data = await response.json();
-                    data.forEach(item => {
+            async function initializeApp() {
+                try {
+                    const response = await fetch('https://ddragon.leagueoflegends.com/cdn/14.13.1/data/en_US/champion.json');
+                    const champData = await response.json();
+                    allChampions = Object.values(champData.data);
+                    allChampions.push({id: 'Ambessa', name: 'Ambessa', image: {full: 'Ambessa.png'}, key: '799'});
+                    allChampions.push({id: 'Aurora', name: 'Aurora', image: {full: 'Aurora.png'}, key: '893'});
+                    allChampions.push({id: 'Mel', name: 'Mel', image: {full: 'Mel.png'}, key: '800'});
+                    allChampions.forEach(champ => { champIdToName[champ.key] = champ.id; });
+                    const roleResponse = await fetch('http://127.0.0.1:5000/role_data');
+                    const roleData = await roleResponse.json();
+                    roleData.forEach(item => {
                         if (!roleProbabilities[item.champion]) roleProbabilities[item.champion] = {};
                         roleProbabilities[item.champion][item.role] = item.pick_rate;
+                        validRolesSet.add(`${item.champion}-${item.role}`);
                     });
-                 } catch (e) { console.error("Failed to fetch role data:", e); alert("Could not load role probability data from backend."); throw e; }
+                } catch (e) { console.error("Failed to initialize app data:", e); alert("Could not load necessary data. Please ensure the backend server is running and you have an internet connection."); }
+                createRoleSlots();
+                populateChampionGrid();
             }
-        }
 
-        async function updateFromLiveGame() {
-            const session = await window.electronAPI.getChampSelect();
-            if (!session) return;
-            const bluePicks = session.myTeam.map(p => champIdToName[p.championId]).filter(Boolean);
-            const redPicks = session.theirTeam.map(p => champIdToName[p.championId]).filter(Boolean);
-            const blueAssignments = inferRoles(bluePicks);
-            const redAssignments = inferRoles(redPicks);
-            roles.forEach(role => {
-                setChampionForSlot('blue', role, blueAssignments[role]);
-                setChampionForSlot('red', role, redAssignments[role]);
-            });
-            if (recommendationTarget) updateRecommendations();
-        }
-
-        function inferRoles(picks) {
-            let assignments = {};
-            if (picks.length === 0) return assignments;
-            let availableRoles = [...roles];
-            let availableChamps = [...picks];
-            let possibilities = [];
-            availableChamps.forEach(champ => {
-                availableRoles.forEach(role => {
-                    const prob = (roleProbabilities[champ] && roleProbabilities[champ][role]) || 0.0001;
-                    possibilities.push({ champ, role, prob });
+            function createRoleSlots() {
+                const blueTeamPanel = document.getElementById('blue-team');
+                const redTeamPanel = document.getElementById('red-team');
+                blueTeamPanel.innerHTML = '<h2>Blue Side</h2>';
+                redTeamPanel.innerHTML = '<h2>Red Side</h2>';
+                roles.forEach(role => {
+                    const iconSrc = `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-${role.toLowerCase()}.png`;
+                    blueTeamPanel.innerHTML += `<div class="role-slot" data-side="blue" data-role="${role}"><img class="role-icon" src="${iconSrc}"></div>`;
+                    redTeamPanel.innerHTML += `<div class="role-slot" data-side="red" data-role="${role}"><img class="role-icon" src="${iconSrc}"></div>`;
                 });
-            });
-            possibilities.sort((a, b) => b.prob - a.prob);
-            while (availableChamps.length > 0 && availableRoles.length > 0) {
-                let bestPickIndex = possibilities.findIndex(p => availableChamps.includes(p.champ) && availableRoles.includes(p.role));
-                if (bestPickIndex === -1) break;
-                const bestPick = possibilities[bestPickIndex];
-                assignments[bestPick.role] = bestPick.champ;
-                availableChamps = availableChamps.filter(c => c !== bestPick.champ);
-                availableRoles = availableRoles.filter(r => r !== bestPick.role);
             }
-            return assignments;
-        }
 
-        searchInput.addEventListener('input', populateChampionGrid);
-        resetBtn.addEventListener('click', resetDraft);
-        getRecsBtn.addEventListener('click', () => {
-            if (selectedRoleSlot) {
-                recommendationTarget = selectedRoleSlot;
-                updateRecommendations();
+            function populateChampionGrid() {
+                const query = searchInput.value.toLowerCase();
+                const filteredChamps = allChampions.filter(c => c.name.toLowerCase().includes(query));
+                championGrid.innerHTML = filteredChamps.sort((a,b) => a.name.localeCompare(b.name)).map(champ => `
+                    <div class="champion-tile" data-champion-name="${champ.id}">
+                        <img src="./assets/champions/${champ.image.full}" title="${champ.name}">
+                    </div>
+                `).join('');
             }
-        });
-        
-        recommendationList.addEventListener('mouseover', e => {
-            const li = e.target.closest('li');
-            if (!li || !li.dataset.breakdown) return;
-            const breakdown = JSON.parse(li.dataset.breakdown);
-            const breakdownMap = Object.fromEntries(breakdown.map(item => [item.source, item.delta]));
-            let blueHTML = '<h5>Blue Side</h5>';
-            let redHTML = '<h5>Red Side</h5>';
-            roles.forEach(role => {
-                const blueChamp = document.querySelector(`[data-side="blue"][data-role="${role}"]`).dataset.champion;
-                const redChamp = document.querySelector(`[data-side="red"][data-role="${role}"]`).dataset.champion;
-                if (recommendationTarget && recommendationTarget.side === 'blue' && recommendationTarget.role === role) {
-                    blueHTML += `<div><span class="delta-neutral">RECOMMENDING</span></div>`;
-                } else if (blueChamp) {
-                    const delta = (breakdownMap[blueChamp] || 0) * 100;
-                    const deltaClass = delta >= 0 ? 'delta-pos' : 'delta-neg';
-                    blueHTML += `<div><span>${blueChamp}</span><span class="${deltaClass}">${delta.toFixed(2)}%</span></div>`;
-                } else {
-                    blueHTML += `<div><span class="delta-neutral">BLUE ${role} MISSING</span></div>`;
-                }
-                if (recommendationTarget && recommendationTarget.side === 'red' && recommendationTarget.role === role) {
-                    redHTML += `<div><span class="delta-neutral">RECOMMENDING</span></div>`;
-                } else if (redChamp) {
-                    const delta = (breakdownMap[redChamp] || 0) * 100;
-                    const deltaClass = delta >= 0 ? 'delta-pos' : 'delta-neg';
-                    redHTML += `<div><span>${redChamp}</span><span class="${deltaClass}">${delta.toFixed(2)}%</span></div>`;
-                } else {
-                    redHTML += `<div><span class="delta-neutral">RED ${role} MISSING</span></div>`;
+
+            function setChampionForSlot(side, role, championName) {
+                const slot = document.querySelector(`[data-side='${side}'][data-role='${role}']`);
+                if (!slot) return;
+                slot.querySelector('.role-icon').style.display = 'block';
+                const existingPortrait = slot.querySelector('.champion-portrait');
+                if (existingPortrait) existingPortrait.remove();
+                const existingWarning = slot.querySelector('.warning-icon');
+                if (existingWarning) existingWarning.remove();
+                if (championName) {
+                    slot.querySelector('.role-icon').style.display = 'none';
+                    const champData = allChampions.find(c => c.id === championName);
+                    if (champData) {
+                        const portrait = document.createElement('img');
+                        portrait.className = 'champion-portrait';
+                        portrait.src = `./assets/champions/${champData.image.full}`;
+                        slot.appendChild(portrait);
+                        slot.dataset.champion = championName;
+                    }
+                    if (!validRolesSet.has(`${championName}-${role}`)) {
+                        const warningIcon = document.createElement('span');
+                        warningIcon.className = `warning-icon ${side === 'blue' ? 'left' : 'right'}`;
+                        warningIcon.textContent = '⚠️';
+                        slot.appendChild(warningIcon);
+                    }
+                } else { delete slot.dataset.champion; }
+            }
+
+            function resetDraft() {
+                document.querySelectorAll('.role-slot').forEach(slot => {
+                    slot.querySelector('.role-icon').style.display = 'block';
+                    const portrait = slot.querySelector('.champion-portrait');
+                    if (portrait) portrait.remove();
+                    const warning = slot.querySelector('.warning-icon');
+                    if(warning) warning.remove();
+                    delete slot.dataset.champion;
+                    slot.classList.remove('selected');
+                });
+                recommendationList.innerHTML = '';
+                getRecsBtn.disabled = true;
+                getRecsBtn.textContent = "Get Recommendations";
+                recsHeader.textContent = "Recommendations:";
+                selectedRoleSlot = null;
+                recommendationTarget = null;
+            }
+
+            async function updateRecommendations() {
+                if (!recommendationTarget) return;
+                recsHeader.textContent = `Recommendations for ${recommendationTarget.side.toUpperCase()} ${recommendationTarget.role}:`;
+                recommendationList.innerHTML = '<li>Calculating...</li>';
+                const myTeamIsBlue = recommendationTarget.side === 'blue';
+                const myTeam = {}; const enemyTeam = {};
+                roles.forEach(role => {
+                    const blueChamp = document.querySelector(`[data-side='blue'][data-role='${role}']`).dataset.champion;
+                    const redChamp = document.querySelector(`[data-side='red'][data-role='${role}']`).dataset.champion;
+                    myTeam[role] = (myTeamIsBlue ? blueChamp : redChamp) || null;
+                    enemyTeam[role] = (myTeamIsBlue ? redChamp : blueChamp) || null;
+                });
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/recommend', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ my_team: myTeam, enemy_team: enemyTeam, target_role: recommendationTarget.role })
+                    });
+                    if (!response.ok) throw new Error("Backend server error");
+                    const recommendations = await response.json();
+                    recommendationList.innerHTML = '';
+                    recommendations.forEach(pick => {
+                        const champData = allChampions.find(c => c.id === pick.champion);
+                        if (!champData) return;
+                        const li = document.createElement('li');
+                        li.dataset.championName = pick.champion;
+                        li.dataset.breakdown = JSON.stringify(pick.breakdown);
+                        const deltaStr = (pick.total_delta >= 0 ? '+' : '') + (pick.total_delta * 100).toFixed(2) + '%';
+                        const baseWrStr = (pick.base_win_rate * 100).toFixed(2) + '%';
+                        const pickRateStr = (pick.pick_rate * 100).toFixed(2) + '%';
+                        li.innerHTML = `<img class="rec-img" src="./assets/champions/${champData.image.full}"><div class="rec-info"><div class="rec-name">${pick.champion}</div><div class="rec-stats"><span>Delta: <b class="${pick.total_delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> | <span>Base WR: ${baseWrStr}</span> | <span>Role Rate: ${pickRateStr}</span></div></div>`;
+                        recommendationList.appendChild(li);
+                    });
+                } catch (error) { console.error("Failed to get recommendations:", error); recommendationList.innerHTML = '<li>Error fetching recommendations.</li>'; }
+            }
+            
+            document.addEventListener('click', e => {
+                const roleSlot = e.target.closest('.role-slot');
+                const championTile = e.target.closest('.champion-tile');
+                if (roleSlot) {
+                    document.querySelectorAll('.role-slot').forEach(s => s.classList.remove('selected'));
+                    if (!roleSlot.dataset.champion) {
+                        roleSlot.classList.add('selected');
+                        selectedRoleSlot = { side: roleSlot.dataset.side, role: roleSlot.dataset.role };
+                        getRecsBtn.disabled = false;
+                        getRecsBtn.textContent = `Get Recs for ${selectedRoleSlot.side.toUpperCase()} ${selectedRoleSlot.role}`;
+                    } else {
+                        delete roleSlot.dataset.champion;
+                        const portrait = roleSlot.querySelector('.champion-portrait');
+                        if (portrait) portrait.remove();
+                        const warning = roleSlot.querySelector('.warning-icon');
+                        if(warning) warning.remove();
+                        selectedRoleSlot = null;
+                        getRecsBtn.disabled = true;
+                        getRecsBtn.textContent = "Get Recommendations";
+                        if (recommendationTarget) updateRecommendations();
+                    }
+                } else if (championTile && selectedRoleSlot) {
+                    setChampionForSlot(selectedRoleSlot.side, selectedRoleSlot.role, championTile.dataset.championName);
+                    if (recommendationTarget) updateRecommendations();
                 }
             });
-            tooltip.innerHTML = `<h4>Delta Breakdown</h4><div class="tooltip-columns"><div class="tooltip-col">${blueHTML}</div><div class="tooltip-col">${redHTML}</div></div>`;
-            tooltip.style.opacity = '1';
+
+            liveTrackingBtn.addEventListener('click', () => {
+                const indicator = document.getElementById('live-indicator');
+                if (lcuIntervalId) {
+                    clearInterval(lcuIntervalId); lcuIntervalId = null; indicator.classList.remove('active');
+                } else {
+                    indicator.classList.add('active');
+                    updateFromLiveGame();
+                    lcuIntervalId = setInterval(updateFromLiveGame, 1000);
+                }
+            });
+
+            async function updateFromLiveGame() {
+                const session = await window.electronAPI.getChampSelect();
+                if (!session) return;
+                const blueAssignments = inferRoles(session.myTeam.map(p => champIdToName[p.championId]).filter(Boolean));
+                const redAssignments = inferRoles(session.theirTeam.map(p => champIdToName[p.championId]).filter(Boolean));
+                
+                let currentDraftState = '';
+                roles.forEach(role => {
+                    currentDraftState += (blueAssignments[role] || '') + (redAssignments[role] || '');
+                });
+                
+                if (currentDraftState !== lastKnownDraftState) {
+                    lastKnownDraftState = currentDraftState;
+                    roles.forEach(role => {
+                        setChampionForSlot('blue', role, blueAssignments[role]);
+                        setChampionForSlot('red', role, redAssignments[role]);
+                    });
+                    if (recommendationTarget) updateRecommendations();
+                }
+            }
+
+            function inferRoles(picks) {
+                let assignments = {};
+                if (picks.length === 0) return assignments;
+                let availableRoles = [...roles]; let availableChamps = [...picks]; let possibilities = [];
+                availableChamps.forEach(champ => {
+                    availableRoles.forEach(role => {
+                        const prob = (roleProbabilities[champ] && roleProbabilities[champ][role]) || 0.0001;
+                        possibilities.push({ champ, role, prob });
+                    });
+                });
+                possibilities.sort((a, b) => b.prob - a.prob);
+                while (availableChamps.length > 0 && availableRoles.length > 0) {
+                    let bestPickIndex = possibilities.findIndex(p => availableChamps.includes(p.champ) && availableRoles.includes(p.role));
+                    if (bestPickIndex === -1) break;
+                    const bestPick = possibilities[bestPickIndex];
+                    assignments[bestPick.role] = bestPick.champ;
+                    availableChamps = availableChamps.filter(c => c !== bestPick.champ);
+                    availableRoles = availableRoles.filter(r => r !== bestPick.role);
+                }
+                return assignments;
+            }
+
+            searchInput.addEventListener('input', populateChampionGrid);
+            resetBtn.addEventListener('click', resetDraft);
+            getRecsBtn.addEventListener('click', () => {
+                if (selectedRoleSlot) {
+                    recommendationTarget = selectedRoleSlot;
+                    updateRecommendations();
+                }
+            });
+            
+            recommendationList.addEventListener('mousemove', e => {
+                const li = e.target.closest('li');
+                if (!li || !li.dataset.breakdown) {
+                    deltaTooltip.style.opacity = '0';
+                    return;
+                }
+                const breakdown = JSON.parse(li.dataset.breakdown);
+                const breakdownMap = Object.fromEntries(breakdown.map(item => [item.source, item.delta]));
+                let blueHTML = '<h5>Blue Side</h5>';
+                let redHTML = '<h5>Red Side</h5>';
+                roles.forEach(role => {
+                    const blueChamp = document.querySelector(`[data-side="blue"][data-role="${role}"]`).dataset.champion;
+                    const redChamp = document.querySelector(`[data-side="red"][data-role="${role}"]`).dataset.champion;
+                    if (recommendationTarget && recommendationTarget.side === 'blue' && recommendationTarget.role === role) {
+                        blueHTML += `<div><span class="delta-neutral">RECOMMENDING</span></div>`;
+                    } else if (blueChamp) {
+                        const delta = (breakdownMap[blueChamp] || 0) * 100;
+                        const deltaClass = delta >= 0 ? 'delta-pos' : 'delta-neg';
+                        blueHTML += `<div><span>${blueChamp}</span><span class="${deltaClass}">${delta.toFixed(2)}%</span></div>`;
+                    } else { blueHTML += `<div><span class="delta-neutral">BLUE ${role} MISSING</span></div>`; }
+                    if (recommendationTarget && recommendationTarget.side === 'red' && recommendationTarget.role === role) {
+                        redHTML += `<div><span class="delta-neutral">RECOMMENDING</span></div>`;
+                    } else if (redChamp) {
+                        const delta = (breakdownMap[redChamp] || 0) * 100;
+                        const deltaClass = delta >= 0 ? 'delta-pos' : 'delta-neg';
+                        redHTML += `<div><span>${redChamp}</span><span class="${deltaClass}">${delta.toFixed(2)}%</span></div>`;
+                    } else { redHTML += `<div><span class="delta-neutral">RED ${role} MISSING</span></div>`; }
+                });
+                deltaTooltip.innerHTML = `<h4>${li.dataset.championName} Breakdown</h4><div class="tooltip-columns"><div class="tooltip-col">${blueHTML}</div><div class="tooltip-col">${redHTML}</div></div>`;
+                deltaTooltip.style.left = `${e.clientX + 20}px`;
+                deltaTooltip.style.top = `${e.clientY + 20}px`;
+                deltaTooltip.style.opacity = '1';
+            });
+            recommendationList.addEventListener('mouseout', () => { deltaTooltip.style.opacity = '0'; });
+
+            draftArea.addEventListener('mouseover', e => {
+                const warningIcon = e.target.closest('.warning-icon');
+                if (warningIcon) {
+                    warningTooltip.style.left = `${e.clientX + 15}px`;
+                    warningTooltip.style.top = `${e.clientY + 15}px`;
+                    warningTooltip.style.opacity = '1';
+                }
+            });
+            draftArea.addEventListener('mouseout', e => {
+                if (e.target.closest('.warning-icon')) {
+                    warningTooltip.style.opacity = '0';
+                }
+            });
+            
+            initializeApp();
         });
-        document.addEventListener('mousemove', e => {
-            tooltip.style.left = `${e.pageX + 20}px`;
-            tooltip.style.top = `${e.pageY + 20}px`;
-        });
-        recommendationList.addEventListener('mouseout', () => {
-            tooltip.style.opacity = '0';
-        });
-        
-        initializeApp();
     </script>
 </body>
-</html>
+</html>```
