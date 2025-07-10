@@ -18,6 +18,7 @@
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
         .draft-area { display: flex; justify-content: space-between; gap: 20px; }
         .team-panel { width: 150px; display: flex; flex-direction: column; gap: 10px; }
+        .team-panel h2 { text-align: center; margin: 0 0 10px 0; }
         .role-slot { width: 100%; height: 100px; background-color: var(--bg-secondary); border: 2px dashed var(--border-color); border-radius: 8px; position: relative; cursor: pointer; transition: border-color 0.2s; overflow: hidden; }
         .role-slot.selected { border-color: var(--accent-color); border-style: solid; }
         .role-slot.swap-source { border-color: var(--yellow-warn); border-style: solid; }
@@ -61,13 +62,13 @@
             <input type="number" id="role-rate-filter" placeholder="Min Role Rate %" min="0" max="100">
         </div>
         <div class="draft-area" id="draft-area">
-            <div class="team-panel" id="blue-team"></div>
+            <div class="team-panel" id="left-team-panel"></div>
             <div class="center-column">
                 <input type="text" id="search-champion" placeholder="Search for a champion...">
                 <div id="champion-grid"></div>
                 <div id="results"><h3 id="recs-header">Recommendations:</h3><ol id="recommendation-list"></ol></div>
             </div>
-            <div class="team-panel" id="red-team"></div>
+            <div class="team-panel" id="right-team-panel"></div>
         </div>
         <div id="delta-tooltip" class="tooltip"></div>
         <div id="warning-tooltip" class="tooltip">This champion/role combination has a very low pick rate (<1%) in our dataset. Its stats may not be reliable.</div>
@@ -76,12 +77,18 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const roles = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
-            let allChampions = []; let champIdToName = {}; let roleProbabilities = {};
+            let allChampions = [];
+            let champIdToName = {};
+            let roleProbabilities = {};
             let lcuIntervalId = null;
-            let recommendationTarget = null; let validRolesSet = new Set();
-            let lastKnownDraftState = ''; let swapSourceSlot = null;
-            let lastRecommendations = []; let isShiftPressed = false;
+            let recommendationTarget = null;
+            let validRolesSet = new Set();
+            let lastKnownDraftState = '';
+            let swapSourceSlot = null;
+            let lastRecommendations = [];
+            let isShiftPressed = false;
             let lastHoveredRec = null;
+            let blueSidePanel = null;
 
             const championGrid = document.getElementById('champion-grid');
             const searchInput = document.getElementById('search-champion');
@@ -94,6 +101,8 @@
             const deltaTooltip = document.getElementById('delta-tooltip');
             const warningTooltip = document.getElementById('warning-tooltip');
             const draftArea = document.getElementById('draft-area');
+            const leftTeamPanel = document.getElementById('left-team-panel');
+            const rightTeamPanel = document.getElementById('right-team-panel');
 
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'Shift' && !isShiftPressed) {
@@ -130,14 +139,12 @@
             }
 
             function createRoleSlots() {
-                const blueTeamPanel = document.getElementById('blue-team');
-                const redTeamPanel = document.getElementById('red-team');
-                blueTeamPanel.innerHTML = '<h2>Blue Side</h2>';
-                redTeamPanel.innerHTML = '<h2>Red Side</h2>';
+                leftTeamPanel.innerHTML = '<h2 id="left-team-header">Team 1</h2>';
+                rightTeamPanel.innerHTML = '<h2 id="right-team-header">Team 2</h2>';
                 roles.forEach(role => {
                     const iconSrc = `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-${role.toLowerCase()}.png`;
-                    blueTeamPanel.innerHTML += `<div class="role-slot" data-side="blue" data-role="${role}"><img class="role-icon" src="${iconSrc}"></div>`;
-                    redTeamPanel.innerHTML += `<div class="role-slot" data-side="red" data-role="${role}"><img class="role-icon" src="${iconSrc}"></div>`;
+                    leftTeamPanel.innerHTML += `<div class="role-slot" data-side="left" data-role="${role}"><img class="role-icon" src="${iconSrc}"></div>`;
+                    rightTeamPanel.innerHTML += `<div class="role-slot" data-side="right" data-role="${role}"><img class="role-icon" src="${iconSrc}"></div>`;
                 });
             }
 
@@ -171,7 +178,7 @@
                     }
                     if (!validRolesSet.has(`${championName}-${role}`)) {
                         const warningIcon = document.createElement('span');
-                        warningIcon.className = `warning-icon ${side === 'blue' ? 'left' : 'right'}`;
+                        warningIcon.className = `warning-icon ${side === 'left' ? 'left' : 'right'}`;
                         warningIcon.textContent = '⚠️';
                         slot.appendChild(warningIcon);
                     }
@@ -195,19 +202,21 @@
                 swapSourceSlot = null;
                 recommendationTarget = null;
                 roleRateFilter.value = '';
+                blueSidePanel = null;
+                updateTeamLabels();
             }
 
             async function updateRecommendations() {
                 if (!recommendationTarget) return;
-                recsHeader.textContent = `Recommendations for ${recommendationTarget.side.toUpperCase()} ${recommendationTarget.role}:`;
+                const recSideName = blueSidePanel ? (recommendationTarget.side === blueSidePanel ? "BLUE" : "RED") : `TEAM ${recommendationTarget.side === 'left' ? '1' : '2'}`;
+                recsHeader.textContent = `Recommendations for ${recSideName} ${recommendationTarget.role}:`;
                 recommendationList.innerHTML = '<li>Calculating...</li>';
-                const myTeamIsBlue = recommendationTarget.side === 'blue';
+                const myTeamPanelSide = recommendationTarget.side;
+                const enemyTeamPanelSide = myTeamPanelSide === 'left' ? 'right' : 'left';
                 const myTeam = {}; const enemyTeam = {};
                 roles.forEach(role => {
-                    const blueChamp = document.querySelector(`[data-side='blue'][data-role='${role}']`).dataset.champion;
-                    const redChamp = document.querySelector(`[data-side='red'][data-role='${role}']`).dataset.champion;
-                    myTeam[role] = (myTeamIsBlue ? blueChamp : redChamp) || null;
-                    enemyTeam[role] = (myTeamIsBlue ? redChamp : blueChamp) || null;
+                    myTeam[role] = document.querySelector(`[data-side='${myTeamPanelSide}'][data-role='${role}']`).dataset.champion || null;
+                    enemyTeam[role] = document.querySelector(`[data-side='${enemyTeamPanelSide}'][data-role='${role}']`).dataset.champion || null;
                 });
                 try {
                     const response = await fetch('http://127.0.0.1:5000/recommend', {
@@ -256,7 +265,8 @@
                     swapSourceSlot = clickedSlotInfo;
                     if (!slot.dataset.champion) {
                         getRecsBtn.disabled = false;
-                        getRecsBtn.textContent = `Get Recs for ${swapSourceSlot.side.toUpperCase()} ${swapSourceSlot.role}`;
+                        const sideName = blueSidePanel ? (swapSourceSlot.side === blueSidePanel ? 'BLUE' : 'RED') : `TEAM ${swapSourceSlot.side === 'left' ? '1' : '2'}`;
+                        getRecsBtn.textContent = `Get Recs for ${sideName} ${swapSourceSlot.role}`;
                     }
                 }
             }
@@ -307,6 +317,7 @@
                     clearInterval(lcuIntervalId); lcuIntervalId = null; indicator.classList.remove('active');
                 } else {
                     indicator.classList.add('active');
+                    resetDraft();
                     updateFromLiveGame();
                     lcuIntervalId = setInterval(updateFromLiveGame, 1000);
                 }
@@ -315,19 +326,42 @@
             async function updateFromLiveGame() {
                 const session = await window.electronAPI.getChampSelect();
                 if (!session) return;
+                
+                if (!blueSidePanel) {
+                    const firstPickAction = session.actions.flat().find(a => a.type === 'pick' && a.isInProgress === false && a.completed === true && a.championId !== 0);
+                    if (firstPickAction) {
+                        const cellId = firstPickAction.actorCellId;
+                        const isMyTeam = session.myTeam.some(p => p.cellId === cellId);
+                        blueSidePanel = isMyTeam ? 'left' : 'right';
+                        updateTeamLabels();
+                    }
+                }
+                
                 const blueAssignments = inferRoles(session.myTeam.map(p => champIdToName[p.championId]).filter(Boolean));
                 const redAssignments = inferRoles(session.theirTeam.map(p => champIdToName[p.championId]).filter(Boolean));
                 let currentDraftState = '';
                 roles.forEach(role => {
                     currentDraftState += (blueAssignments[role] || '') + (redAssignments[role] || '');
                 });
+
                 if (currentDraftState !== lastKnownDraftState) {
                     lastKnownDraftState = currentDraftState;
+                    const leftTeamIsBlue = blueSidePanel === 'left';
                     roles.forEach(role => {
-                        setChampionForSlot('blue', role, blueAssignments[role]);
-                        setChampionForSlot('red', role, redAssignments[role]);
+                        setChampionForSlot('left', role, leftTeamIsBlue ? blueAssignments[role] : redAssignments[role]);
+                        setChampionForSlot('right', role, leftTeamIsBlue ? redAssignments[role] : blueAssignments[role]);
                     });
                     if (recommendationTarget) updateRecommendations();
+                }
+            }
+            
+            function updateTeamLabels() {
+                if(blueSidePanel) {
+                    document.getElementById(blueSidePanel === 'left' ? 'left-team-header' : 'right-team-header').textContent = 'Blue Side';
+                    document.getElementById(blueSidePanel === 'left' ? 'right-team-header' : 'left-team-header').textContent = 'Red Side';
+                } else {
+                    document.getElementById('left-team-header').textContent = 'Team 1';
+                    document.getElementById('right-team-header').textContent = 'Team 2';
                 }
             }
 
@@ -372,8 +406,8 @@
                 let blueHTML = '<h5>Blue Side</h5>';
                 let redHTML = '<h5>Red Side</h5>';
                 roles.forEach(role => {
-                    const blueChamp = document.querySelector(`[data-side="blue"][data-role="${role}"]`).dataset.champion;
-                    const redChamp = document.querySelector(`[data-side="red"][data-role="${role}"]`).dataset.champion;
+                    const blueChamp = document.querySelector(`[data-side="${blueSidePanel || 'left'}"][data-role="${role}"]`).dataset.champion;
+                    const redChamp = document.querySelector(`[data-side="${blueSidePanel === 'left' ? 'right' : 'left'}"][data-role="${role}"]`).dataset.champion;
                     blueHTML += buildTooltipRow(blueChamp, 'blue', role, breakdownMap, shiftPressed);
                     redHTML += buildTooltipRow(redChamp, 'red', role, breakdownMap, shiftPressed);
                 });
@@ -386,7 +420,8 @@
             }
 
             function buildTooltipRow(champ, side, role, breakdownMap, showGames) {
-                if (recommendationTarget && recommendationTarget.side === side && recommendationTarget.role === role) {
+                const recSide = recommendationTarget ? (blueSidePanel === recommendationTarget.side ? 'blue' : 'red') : null;
+                if (recommendationTarget && recSide === side && recommendationTarget.role === role) {
                     return `<div><span class="delta-neutral">RECOMMENDING</span></div>`;
                 } else if (champ) {
                     const stats = breakdownMap[champ] || {delta: 0, games: 0};
