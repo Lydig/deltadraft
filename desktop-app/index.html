@@ -8,10 +8,11 @@
         body { font-family: system-ui, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); display: flex; justify-content: center; margin: 0; padding: 20px; }
         * { box-sizing: border-box; }
         .app-container { width: 100%; max-width: 1200px; }
-        .controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
-        button { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
+        .controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
+        button, input[type="number"] { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
         button:hover { background-color: var(--border-color); }
         button:disabled { background-color: #1e293b; color: #475569; cursor: not-allowed; }
+        input[type="number"] { width: 160px; }
         .live-indicator { width: 10px; height: 10px; border-radius: 50%; background-color: #64748b; margin-right: 8px; display: inline-block; transition: background-color 0.3s; }
         .live-indicator.active { background-color: var(--red-neg); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
@@ -55,6 +56,7 @@
             <button id="reset-btn">Reset Draft</button>
             <button id="live-tracking-btn"><span id="live-indicator" class="live-indicator"></span>Start Live Tracking</button>
             <button id="get-recs-btn" disabled>Get Recommendations</button>
+            <input type="number" id="role-rate-filter" placeholder="Min Role Rate %" min="0" max="100">
         </div>
         <div class="draft-area" id="draft-area">
             <div class="team-panel" id="blue-team"></div>
@@ -72,10 +74,16 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const roles = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
-            let allChampions = []; let champIdToName = {}; let roleProbabilities = {};
-            let selectedRoleSlot = null; let lcuIntervalId = null;
-            let recommendationTarget = null; let validRolesSet = new Set();
-            let lastKnownDraftState = ''; let swapSourceSlot = null;
+            let allChampions = [];
+            let champIdToName = {};
+            let roleProbabilities = {};
+            let selectedRoleSlot = null;
+            let lcuIntervalId = null;
+            let recommendationTarget = null;
+            let validRolesSet = new Set();
+            let lastKnownDraftState = '';
+            let swapSourceSlot = null;
+            let lastRecommendations = [];
 
             const championGrid = document.getElementById('champion-grid');
             const searchInput = document.getElementById('search-champion');
@@ -84,6 +92,7 @@
             const liveTrackingBtn = document.getElementById('live-tracking-btn');
             const resetBtn = document.getElementById('reset-btn');
             const getRecsBtn = document.getElementById('get-recs-btn');
+            const roleRateFilter = document.getElementById('role-rate-filter');
             const deltaTooltip = document.getElementById('delta-tooltip');
             const warningTooltip = document.getElementById('warning-tooltip');
             const draftArea = document.getElementById('draft-area');
@@ -175,6 +184,7 @@
                 selectedRoleSlot = null;
                 recommendationTarget = null;
                 swapSourceSlot = null;
+                roleRateFilter.value = '';
             }
 
             async function updateRecommendations() {
@@ -195,23 +205,33 @@
                         body: JSON.stringify({ my_team: myTeam, enemy_team: enemyTeam, target_role: recommendationTarget.role })
                     });
                     if (!response.ok) throw new Error("Backend server error");
-                    const recommendations = await response.json();
-                    recommendationList.innerHTML = '';
-                    recommendations.forEach(pick => {
-                        const champData = allChampions.find(c => c.id === pick.champion);
-                        if (!champData) return;
-                        const li = document.createElement('li');
-                        li.dataset.championName = pick.champion;
-                        li.dataset.breakdown = JSON.stringify(pick.breakdown);
-                        const deltaStr = (pick.total_delta >= 0 ? '+' : '') + (pick.total_delta * 100).toFixed(2) + '%';
-                        const baseWrStr = (pick.base_win_rate * 100).toFixed(2) + '%';
-                        const pickRateStr = (pick.pick_rate * 100).toFixed(2) + '%';
-                        li.innerHTML = `<img class="rec-img" src="./assets/champions/${champData.image.full}"><div class="rec-info"><div class="rec-name">${pick.champion}</div><div class="rec-stats"><span>Delta: <b class="${pick.total_delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> | <span>Base WR: ${baseWrStr}</span> | <span>Role Rate: ${pickRateStr}</span></div></div>`;
-                        recommendationList.appendChild(li);
-                    });
+                    lastRecommendations = await response.json();
+                    displayFilteredRecommendations();
                 } catch (error) { console.error("Failed to get recommendations:", error); recommendationList.innerHTML = '<li>Error fetching recommendations.</li>'; }
             }
             
+            function displayFilteredRecommendations() {
+                const threshold = parseFloat(roleRateFilter.value) || 0;
+                const filteredRecs = lastRecommendations.filter(pick => (pick.pick_rate * 100) >= threshold);
+                recommendationList.innerHTML = '';
+                if (filteredRecs.length === 0) {
+                    recommendationList.innerHTML = '<li>No champions meet the filter criteria.</li>';
+                    return;
+                }
+                filteredRecs.forEach(pick => {
+                    const champData = allChampions.find(c => c.id === pick.champion);
+                    if (!champData) return;
+                    const li = document.createElement('li');
+                    li.dataset.championName = pick.champion;
+                    li.dataset.breakdown = JSON.stringify(pick.breakdown);
+                    const deltaStr = (pick.total_delta >= 0 ? '+' : '') + (pick.total_delta * 100).toFixed(2) + '%';
+                    const baseWrStr = (pick.base_win_rate * 100).toFixed(2) + '%';
+                    const pickRateStr = (pick.pick_rate * 100).toFixed(2) + '%';
+                    li.innerHTML = `<img class="rec-img" src="./assets/champions/${champData.image.full}"><div class="rec-info"><div class="rec-name">${pick.champion}</div><div class="rec-stats"><span>Delta: <b class="${pick.total_delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> | <span>Base WR: ${baseWrStr}</span> | <span>Role Rate: ${pickRateStr}</span></div></div>`;
+                    recommendationList.appendChild(li);
+                });
+            }
+
             function handleRoleSlotClick(slot) {
                 const clickedSlotInfo = { side: slot.dataset.side, role: slot.dataset.role };
                 if (swapSourceSlot) {
@@ -222,14 +242,14 @@
                     clearSelections();
                 } else {
                     clearSelections();
-                    if (!slot.dataset.champion) {
+                    if (slot.dataset.champion) {
+                        slot.classList.add('swap-source');
+                        swapSourceSlot = clickedSlotInfo;
+                    } else {
                         slot.classList.add('selected');
                         selectedRoleSlot = clickedSlotInfo;
                         getRecsBtn.disabled = false;
                         getRecsBtn.textContent = `Get Recs for ${selectedRoleSlot.side.toUpperCase()} ${selectedRoleSlot.role}`;
-                    } else {
-                        slot.classList.add('swap-source');
-                        swapSourceSlot = clickedSlotInfo;
                     }
                 }
             }
@@ -242,7 +262,7 @@
                     clearSelections();
                 }
             }
-            
+
             function performSwap(source, destination) {
                 const sourceEl = document.querySelector(`[data-side='${source.side}'][data-role='${source.role}']`);
                 const destEl = document.querySelector(`[data-side='${destination.side}'][data-role='${destination.role}']`);
@@ -340,6 +360,7 @@
                     updateRecommendations();
                 }
             });
+            roleRateFilter.addEventListener('input', displayFilteredRecommendations);
             
             recommendationList.addEventListener('mousemove', e => {
                 const li = e.target.closest('li');
