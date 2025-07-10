@@ -9,10 +9,10 @@
         * { box-sizing: border-box; }
         .app-container { width: 100%; max-width: 1200px; }
         .controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
-        button, input[type="number"] { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
+        button, input[type="number"], input[type="text"] { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
         button:hover { background-color: var(--border-color); }
         button:disabled { background-color: #1e293b; color: #475569; cursor: not-allowed; }
-        input[type="number"] { width: 160px; }
+        input[type="number"], input[type="text"] { cursor: text; }
         .live-indicator { width: 10px; height: 10px; border-radius: 50%; background-color: #64748b; margin-right: 8px; display: inline-block; transition: background-color 0.3s; }
         .live-indicator.active { background-color: var(--red-neg); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
@@ -31,7 +31,7 @@
         .champion-tile img { width: 100%; display: block; border-radius: 4px; border: 2px solid transparent; transition: border-color 0.2s; }
         .champion-tile:hover img { border-color: var(--accent-color); }
         #results { background-color: var(--bg-secondary); padding: 15px; border-radius: 8px; flex-grow: 1; display: flex; flex-direction: column; }
-        #recommendation-list { list-style: none; padding: 0; flex-grow: 1; overflow-y: auto; }
+        #recommendation-list { list-style: none; padding: 0; margin-top: 10px; flex-grow: 1; overflow-y: auto; }
         #recommendation-list li { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid var(--border-color); position: relative; }
         .rec-img { width: 40px; height: 40px; border-radius: 4px; }
         .rec-info { flex-grow: 1; }
@@ -50,23 +50,37 @@
         .tooltip-col .champ-name { max-width: 70px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: middle; }
         .delta-neutral { color: var(--text-secondary); font-style: italic; font-size: 0.8rem;}
         .games-count { font-size: 0.75rem; color: var(--text-secondary); margin-left: 5px; }
+        
+        /* --- NEW: Styles for the controls inside the recommendation panel --- */
+        .recommendation-controls { display: flex; gap: 10px; margin-top: 10px; align-items: center; }
+        .recommendation-controls input[type="text"] { flex-grow: 1; font-size: 0.9rem; }
+        .recommendation-controls input[type="number"] { width: 160px; font-size: 0.9rem; flex-shrink: 0; }
+        .recommendation-controls button { flex-shrink: 0; }
     </style>
 </head>
 <body>
     <div class="app-container">
         <div class="header"><h1>Delta Draft</h1></div>
+        <!-- --- MODIFIED: Removed Get Recs button and Role Rate filter from here --- -->
         <div class="controls">
             <button id="reset-btn">Reset Draft</button>
             <button id="live-tracking-btn"><span id="live-indicator" class="live-indicator"></span>Start Live Tracking</button>
-            <button id="get-recs-btn" disabled>Get Recommendations</button>
-            <input type="number" id="role-rate-filter" placeholder="Min Role Rate %" min="0" max="100">
         </div>
         <div class="draft-area" id="draft-area">
             <div class="team-panel" id="left-team-panel"></div>
             <div class="center-column">
                 <input type="text" id="search-champion" placeholder="Search for a champion...">
                 <div id="champion-grid"></div>
-                <div id="results"><h3 id="recs-header">Recommendations:</h3><ol id="recommendation-list"></ol></div>
+                <!-- --- MODIFIED: Added controls and new search bar into the results panel --- -->
+                <div id="results">
+                    <h3 id="recs-header">Recommendations:</h3>
+                    <div class="recommendation-controls">
+                        <input type="text" id="recommendation-search" placeholder="Search recommendations...">
+                        <input type="number" id="role-rate-filter" placeholder="Min Role Rate %" min="0" max="100">
+                        <button id="get-recs-btn" disabled>Get Recommendations</button>
+                    </div>
+                    <ol id="recommendation-list"></ol>
+                </div>
             </div>
             <div class="team-panel" id="right-team-panel"></div>
         </div>
@@ -103,6 +117,9 @@
             const draftArea = document.getElementById('draft-area');
             const leftTeamPanel = document.getElementById('left-team-panel');
             const rightTeamPanel = document.getElementById('right-team-panel');
+            // --- NEW: Get the new recommendation search input element ---
+            const recommendationSearch = document.getElementById('recommendation-search');
+
 
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'Shift' && !isShiftPressed) {
@@ -202,6 +219,7 @@
                 swapSourceSlot = null;
                 recommendationTarget = null;
                 roleRateFilter.value = '';
+                recommendationSearch.value = ''; // --- NEW: Clear recommendation search on reset
                 blueSidePanel = null;
                 updateTeamLabels();
             }
@@ -229,9 +247,23 @@
                 } catch (error) { console.error("Failed to get recommendations:", error); recommendationList.innerHTML = '<li>Error fetching recommendations.</li>'; }
             }
             
+            // --- MODIFIED: This function now handles filtering by role rate AND by search query ---
             function displayFilteredRecommendations() {
                 const threshold = parseFloat(roleRateFilter.value) || 0;
-                const filteredRecs = lastRecommendations.filter(pick => (pick.pick_rate * 100) >= threshold);
+                const searchQuery = recommendationSearch.value.toLowerCase();
+                
+                let filteredRecs = lastRecommendations;
+
+                // Apply role rate filter if a value is entered
+                if (threshold > 0) {
+                    filteredRecs = filteredRecs.filter(pick => (pick.pick_rate * 100) >= threshold);
+                }
+
+                // Apply search query filter if a value is entered
+                if (searchQuery) {
+                    filteredRecs = filteredRecs.filter(pick => pick.champion.toLowerCase().includes(searchQuery));
+                }
+
                 recommendationList.innerHTML = '';
                 if (filteredRecs.length === 0) {
                     recommendationList.innerHTML = '<li>No champions meet the filter criteria.</li>';
@@ -397,7 +429,9 @@
                     clearSelections();
                 }
             });
+            // --- MODIFIED: Both filters now call the same function ---
             roleRateFilter.addEventListener('input', displayFilteredRecommendations);
+            recommendationSearch.addEventListener('input', displayFilteredRecommendations);
             
             function updateTooltipContent(li, shiftPressed) {
                 if (!li || !li.dataset.breakdown) return;
