@@ -1,4 +1,4 @@
-# backend/server.py (v5 - With Total Delta in Analysis)
+# backend/server.py (v7 - With Ban Rec Breakdown)
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
@@ -46,25 +46,15 @@ def get_recommendations(my_team, enemy_team, target_role):
         total_delta = 0.0
         delta_breakdown = []
 
-        # Calculate delta vs enemies
-        for role, champ in enemy_team.items():
-            if champ and (champ, role) in valid_roles_set:
-                matchup_key = (pick_champ, target_role, champ, role, 'enemy')
-                stats = matchup_stats.get(matchup_key)
-                delta = (stats['win_rate'] - base_wr) if stats else 0
-                games = stats['total_games'] if stats else 0
-                total_delta += delta
-                delta_breakdown.append({"source": champ, "delta": delta, "games": games})
-
-        # Calculate delta with teammates
-        for role, champ in my_team.items():
-            if champ and (champ, role) in valid_roles_set:
-                matchup_key = (pick_champ, target_role, champ, role, 'teammate')
-                stats = matchup_stats.get(matchup_key)
-                delta = (stats['win_rate'] - base_wr) if stats else 0
-                games = stats['total_games'] if stats else 0
-                total_delta += delta
-                delta_breakdown.append({"source": champ, "delta": delta, "games": games})
+        for team_member, relationship in [(enemy_team, 'enemy'), (my_team, 'teammate')]:
+            for role, champ in team_member.items():
+                if champ and (champ, role) in valid_roles_set:
+                    matchup_key = (pick_champ, target_role, champ, role, relationship)
+                    stats = matchup_stats.get(matchup_key)
+                    delta = (stats['win_rate'] - base_wr) if stats else 0
+                    games = stats['total_games'] if stats else 0
+                    total_delta += delta
+                    delta_breakdown.append({"source": champ, "delta": delta, "games": games})
         
         recommendations.append({
             "champion": pick_champ, "total_delta": total_delta,
@@ -84,32 +74,21 @@ def get_champion_analysis(pick_champ, pick_role, my_team, enemy_team):
     total_delta = 0.0
     delta_breakdown = []
 
-    # Calculate delta vs enemies
-    for role, champ in enemy_team.items():
-        if champ and (champ, role) in valid_roles_set:
-            matchup_key = (pick_champ, pick_role, champ, role, 'enemy')
-            stats = matchup_stats.get(matchup_key)
-            delta = (stats['win_rate'] - base_wr) if stats else 0
-            games = stats['total_games'] if stats else 0
-            total_delta += delta
-            delta_breakdown.append({"source": champ, "delta": delta, "games": games})
-
-    # Calculate delta with teammates (excluding self)
-    for role, champ in my_team.items():
-        if champ and champ != pick_champ and (champ, role) in valid_roles_set:
-            matchup_key = (pick_champ, pick_role, champ, role, 'teammate')
-            stats = matchup_stats.get(matchup_key)
-            delta = (stats['win_rate'] - base_wr) if stats else 0
-            games = stats['total_games'] if stats else 0
-            total_delta += delta
-            delta_breakdown.append({"source": champ, "delta": delta, "games": games})
+    for team_member, relationship in [(enemy_team, 'enemy'), (my_team, 'teammate')]:
+        for role, champ in team_member.items():
+            if relationship == 'teammate' and champ == pick_champ:
+                continue
+            if champ and (champ, role) in valid_roles_set:
+                matchup_key = (pick_champ, pick_role, champ, role, relationship)
+                stats = matchup_stats.get(matchup_key)
+                delta = (stats['win_rate'] - base_wr) if stats else 0
+                games = stats['total_games'] if stats else 0
+                total_delta += delta
+                delta_breakdown.append({"source": champ, "delta": delta, "games": games})
 
     return {
-        "champion": pick_champ,
-        "role": pick_role,
-        "total_delta": total_delta,
-        "base_win_rate": base_wr,
-        "pick_rate": pick_rates.get(pick_combo, 0),
+        "champion": pick_champ, "role": pick_role, "total_delta": total_delta,
+        "base_win_rate": base_wr, "pick_rate": pick_rates.get(pick_combo, 0),
         "breakdown": sorted(delta_breakdown, key=lambda x: x['delta'], reverse=True)
     }
 
@@ -143,20 +122,93 @@ def analyze_draft():
             analysis = get_champion_analysis(champ, role, red_team, blue_team)
             if analysis: red_picks_analysis.append(analysis)
 
-    # --- NEW: Calculate total delta for each team ---
     blue_total_delta = sum(p['total_delta'] for p in blue_picks_analysis)
     red_total_delta = sum(p['total_delta'] for p in red_picks_analysis)
 
     return jsonify({
-        "blue": {
-            "picks": blue_picks_analysis,
-            "total_delta": blue_total_delta
-        },
-        "red": {
-            "picks": red_picks_analysis,
-            "total_delta": red_total_delta
-        }
+        "blue": {"picks": blue_picks_analysis, "total_delta": blue_total_delta},
+        "red": {"picks": red_picks_analysis, "total_delta": red_total_delta}
     })
+
+@app.route('/ban_recommendations', methods=['POST'])
+def ban_recommendations():
+    data = request.get_json()
+    my_role = data.get('my_role')
+    my_picks = data.get('my_picks', [])
+    current_allies = data.get('current_allies', {})
+    consider_teammates = data.get('consider_teammates', False)
+
+    ban_scores = {}
+
+    for ban_candidate in valid_roles_list:
+        ban_champ = ban_candidate['champion']
+        ban_role = ban_candidate['role']
+        
+        if ban_champ in my_picks: continue
+
+        # --- MODIFIED: Store detailed breakdown ---
+        if ban_champ not in ban_scores:
+            ban_scores[ban_champ] = {"score": 0, "breakdown": {}}
+
+        for my_pick_champ in my_picks:
+            my_pick_combo = (my_pick_champ, my_role)
+            if my_pick_combo not in base_winrates: continue
+            my_base_wr = base_winrates[my_pick_combo]
+
+            # Enemy Threat
+            enemy_key = (my_pick_champ, my_role, ban_champ, ban_role, 'enemy')
+            enemy_stats = matchup_stats.get(enemy_key)
+            if enemy_stats:
+                delta = enemy_stats['win_rate'] - my_base_wr
+                if delta < 0:
+                    if my_pick_champ not in ban_scores[ban_champ]["breakdown"]:
+                        ban_scores[ban_champ]["breakdown"][my_pick_champ] = 0
+                    ban_scores[ban_champ]["breakdown"][my_pick_champ] += delta
+                    ban_scores[ban_champ]["score"] += delta
+
+            # Ally Nuisance
+            ally_key = (my_pick_champ, my_role, ban_champ, ban_role, 'teammate')
+            ally_stats = matchup_stats.get(ally_key)
+            if ally_stats:
+                delta = ally_stats['win_rate'] - my_base_wr
+                if delta < 0:
+                    if my_pick_champ not in ban_scores[ban_champ]["breakdown"]:
+                        ban_scores[ban_champ]["breakdown"][my_pick_champ] = 0
+                    ban_scores[ban_champ]["breakdown"][my_pick_champ] += delta
+                    ban_scores[ban_champ]["score"] += delta
+
+        if consider_teammates:
+            for ally_role, ally_champ in current_allies.items():
+                if not ally_champ: continue
+                ally_combo = (ally_champ, ally_role)
+                if ally_combo not in base_winrates: continue
+                ally_base_wr = base_winrates[ally_combo]
+
+                enemy_key_for_ally = (ally_champ, ally_role, ban_champ, ban_role, 'enemy')
+                enemy_stats_for_ally = matchup_stats.get(enemy_key_for_ally)
+                if enemy_stats_for_ally:
+                    delta = enemy_stats_for_ally['win_rate'] - ally_base_wr
+                    if delta < 0:
+                        if ally_champ not in ban_scores[ban_champ]["breakdown"]:
+                            ban_scores[ban_champ]["breakdown"][ally_champ] = 0
+                        ban_scores[ban_champ]["breakdown"][ally_champ] += delta
+                        ban_scores[ban_champ]["score"] += delta
+
+    # Format the final list
+    final_bans = []
+    for champ, data in ban_scores.items():
+        if data["score"] < 0:
+            # Convert breakdown dict to sorted list
+            sorted_breakdown = sorted(data["breakdown"].items(), key=lambda item: item[1])
+            final_bans.append({
+                "champion": champ,
+                "score": data["score"],
+                "breakdown": [{"source": src, "detriment": val} for src, val in sorted_breakdown]
+            })
+
+    final_bans.sort(key=lambda item: item["score"])
+    
+    return jsonify(final_bans)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

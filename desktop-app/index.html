@@ -9,10 +9,10 @@
         * { box-sizing: border-box; }
         .app-container { width: 100%; max-width: 1200px; }
         .controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
-        button, input[type="number"], input[type="text"] { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
+        button, input[type="number"], input[type="text"], select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
         button:hover { background-color: var(--border-color); }
         button:disabled { background-color: #1e293b; color: #475569; cursor: not-allowed; }
-        input[type="number"], input[type="text"] { cursor: text; }
+        input[type="number"], input[type="text"], select { cursor: text; }
         .live-indicator { width: 10px; height: 10px; border-radius: 50%; background-color: #64748b; margin-right: 8px; display: inline-block; transition: background-color 0.3s; }
         .live-indicator.active { background-color: var(--red-neg); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
@@ -33,8 +33,10 @@
         .champion-tile img { width: 100%; display: block; border-radius: 4px; border: 2px solid transparent; transition: border-color 0.2s, filter 0.2s, opacity 0.2s; }
         .champion-tile:hover img { border-color: var(--accent-color); }
         #results { background-color: var(--bg-secondary); padding: 15px; border-radius: 8px; flex-grow: 1; display: flex; flex-direction: column; }
-        #recommendation-list { list-style: none; padding: 0; margin-top: 10px; flex-grow: 1; overflow-y: auto; }
+        #recommendation-list, #ban-recommendation-list { list-style: none; padding: 0; margin-top: 10px; flex-grow: 1; overflow-y: auto; }
         #recommendation-list li { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid var(--border-color); position: relative; transition: filter 0.2s, opacity 0.2s; }
+        #ban-recommendation-list li { flex-direction: column; align-items: stretch; padding: 0; border-bottom: 1px solid var(--border-color); }
+        .ban-rec-summary { display: flex; align-items: center; gap: 10px; padding: 8px; cursor: pointer; }
         .rec-img { width: 40px; height: 40px; border-radius: 4px; }
         .rec-info { flex-grow: 1; }
         .rec-name { font-weight: bold; }
@@ -86,6 +88,13 @@
         .analysis-champ-stats { font-size: 0.75rem; color: var(--text-secondary); }
         .analysis-delta-separator { width: 100px; text-align: center; font-size: 0.8rem; color: var(--text-secondary); }
         .analysis-total-delta { text-align: center; padding: 10px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; }
+        .ban-rec-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .ban-rec-controls select { flex-grow: 1; }
+        .ban-rec-controls button { flex-shrink: 0; }
+        .champion-tile.ban-selected img { border-color: var(--red-neg); }
+        .ban-rec-details { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background-color: #0f172a; padding: 0 15px; }
+        .ban-rec-details.visible { max-height: 500px; /* Adjust as needed */ padding: 10px 15px; }
+        .ban-rec-details div { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 2px 0; }
     </style>
 </head>
 <body>
@@ -105,6 +114,7 @@
                     <div class="tabs">
                         <button id="rec-tab-btn" class="tab-btn active">Recommendations</button>
                         <button id="analysis-tab-btn" class="tab-btn">Draft Analysis</button>
+                        <button id="ban-rec-tab-btn" class="tab-btn">Ban Recommender</button>
                     </div>
                     <div id="recommendations-view" class="tab-content">
                         <h3 id="recs-header">Recommendations:</h3>
@@ -119,6 +129,17 @@
                         <ol id="recommendation-list"></ol>
                     </div>
                     <div id="analysis-view" class="tab-content" style="display: none;">
+                    </div>
+                    <div id="ban-recommender-view" class="tab-content" style="display: none;">
+                        <div class="ban-rec-controls">
+                            <select id="ban-rec-role-select"></select>
+                            <button id="ban-rec-use-favorites-btn">Use Favorites</button>
+                            <label class="favorite-toggle-label">
+                                <input type="checkbox" id="ban-rec-teammates-toggle"> Consider Teammates
+                            </label>
+                            <button id="get-ban-recs-btn">Get Ban Recommendations</button>
+                        </div>
+                        <ol id="ban-recommendation-list"></ol>
                     </div>
                 </div>
             </div>
@@ -147,6 +168,8 @@
             let favorites = {};
             let unavailableChampions = new Set();
             let lockedSlots = new Set();
+            let banConsiderationSet = new Set();
+            let activeTab = 'recommendations';
 
             const championGrid = document.getElementById('champion-grid');
             const searchInput = document.getElementById('search-champion');
@@ -166,9 +189,16 @@
             const swapSidesBtn = document.getElementById('swap-sides-btn');
             const recTabBtn = document.getElementById('rec-tab-btn');
             const analysisTabBtn = document.getElementById('analysis-tab-btn');
+            const banRecTabBtn = document.getElementById('ban-rec-tab-btn');
             const recommendationsView = document.getElementById('recommendations-view');
             const analysisView = document.getElementById('analysis-view');
+            const banRecommenderView = document.getElementById('ban-recommender-view');
             const recsHeader = document.getElementById('recs-header');
+            const banRecRoleSelect = document.getElementById('ban-rec-role-select');
+            const banRecUseFavoritesBtn = document.getElementById('ban-rec-use-favorites-btn');
+            const banRecTeammatesToggle = document.getElementById('ban-rec-teammates-toggle');
+            const getBanRecsBtn = document.getElementById('get-ban-recs-btn');
+            const banRecommendationList = document.getElementById('ban-recommendation-list');
 
             window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !isShiftPressed) { isShiftPressed = true; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, true); } });
             window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { isShiftPressed = false; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, false); } });
@@ -190,6 +220,8 @@
                         validRolesSet.add(`${item.champion}-${item.role}`);
                     });
                 } catch (e) { console.error("Failed to initialize app data:", e); alert("Could not load necessary data. Please ensure the backend server is running and you have an internet connection."); }
+                
+                banRecRoleSelect.innerHTML = roles.map(r => `<option value="${r}">${r}</option>`).join('');
                 createRoleSlots();
                 populateChampionGrid();
                 updateTeamSideLabels();
@@ -233,6 +265,7 @@
                 `).join('');
                 updateAllGridFavoriteStars();
                 updateAvailabilityUI();
+                updateBanSelectionUI();
             }
 
             function setChampionForSlot(side, role, championName) {
@@ -280,6 +313,7 @@
                 });
                 recommendationList.innerHTML = '';
                 analysisView.innerHTML = '';
+                banRecommendationList.innerHTML = '';
                 getRecsBtn.disabled = true;
                 getRecsBtn.textContent = "Get Recommendations";
                 recsHeader.textContent = "Recommendations:";
@@ -292,11 +326,13 @@
                 updateTeamSideLabels();
                 unavailableChampions.clear();
                 lockedSlots.clear();
+                banConsiderationSet.clear();
                 document.querySelectorAll('.lock-icon').forEach(icon => {
                     icon.classList.remove('locked');
                     icon.textContent = '🔓';
                 });
                 updateAvailabilityUI();
+                updateBanSelectionUI();
             }
 
             async function updateRecommendations() {
@@ -381,11 +417,21 @@
             }
 
             function handleChampionTileClick(tile) {
-                if (swapSourceSlot) {
-                    setChampionForSlot(swapSourceSlot.side, swapSourceSlot.role, tile.dataset.championName);
-                    if (recommendationTarget) updateRecommendations();
-                    updateAnalysisView();
-                    clearSelections();
+                const champName = tile.dataset.championName;
+                if (activeTab === 'ban-recommender') {
+                    if (banConsiderationSet.has(champName)) {
+                        banConsiderationSet.delete(champName);
+                    } else {
+                        banConsiderationSet.add(champName);
+                    }
+                    updateBanSelectionUI();
+                } else {
+                    if (swapSourceSlot) {
+                        setChampionForSlot(swapSourceSlot.side, swapSourceSlot.role, champName);
+                        if (recommendationTarget) updateRecommendations();
+                        updateAnalysisView();
+                        clearSelections();
+                    }
                 }
             }
             
@@ -746,6 +792,80 @@
                 });
             }
 
+            function updateBanSelectionUI() {
+                document.querySelectorAll('.champion-tile').forEach(tile => {
+                    tile.classList.remove('ban-selected');
+                });
+                if (activeTab === 'ban-recommender') {
+                    banConsiderationSet.forEach(champName => {
+                        const tile = document.querySelector(`.champion-tile[data-champion-name="${champName}"]`);
+                        if (tile) {
+                            tile.classList.add('ban-selected');
+                        }
+                    });
+                }
+            }
+
+            async function getBanRecommendations() {
+                banRecommendationList.innerHTML = '<li>Calculating...</li>';
+                const myRole = banRecRoleSelect.value;
+                const myPicks = Array.from(banConsiderationSet);
+                const considerTeammates = banRecTeammatesToggle.checked;
+                const currentAllies = {};
+                roles.forEach(role => {
+                    currentAllies[role] = document.querySelector(`[data-side='left'][data-role='${role}']`).dataset.champion || null;
+                });
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/ban_recommendations', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ my_role: myRole, my_picks: myPicks, current_allies: currentAllies, consider_teammates: considerTeammates })
+                    });
+                    if (!response.ok) throw new Error("Backend server error for ban recommendations");
+                    const banRecs = await response.json();
+                    renderBanRecommendations(banRecs);
+                } catch (error) {
+                    console.error("Failed to get ban recommendations:", error);
+                    banRecommendationList.innerHTML = '<li>Error fetching ban recommendations.</li>';
+                }
+            }
+
+            function renderBanRecommendations(banRecs) {
+                banRecommendationList.innerHTML = '';
+                if (banRecs.length === 0) {
+                    banRecommendationList.innerHTML = '<li>No significant ban threats found.</li>';
+                    return;
+                }
+                banRecs.slice(0, 20).forEach(rec => {
+                    const champData = allChampions.find(c => c.id === rec.champion);
+                    if (!champData) return;
+                    const li = document.createElement('li');
+                    
+                    const detailsHTML = rec.breakdown.map(item => `
+                        <div>
+                            <span>vs. ${item.source}</span>
+                            <span class="delta-neg">${(item.detriment * 100).toFixed(2)}%</span>
+                        </div>
+                    `).join('');
+
+                    li.innerHTML = `
+                        <div class="ban-rec-summary">
+                            <img class="rec-img" src="./assets/champions/${champData.image.full}">
+                            <div class="rec-info">
+                                <div class="rec-name">${rec.champion}</div>
+                                <div class="rec-stats">
+                                    <span>Detriment Score: <b class="delta-neg">${(rec.score * 100).toFixed(2)}%</b></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ban-rec-details">
+                            ${detailsHTML}
+                        </div>
+                    `;
+                    banRecommendationList.appendChild(li);
+                });
+            }
+
             championGrid.addEventListener('contextmenu', e => {
                 const tile = e.target.closest('.champion-tile');
                 if (tile) { showContextMenu(e, tile.dataset.championName); }
@@ -782,17 +902,54 @@
             });
 
             recTabBtn.addEventListener('click', () => {
+                activeTab = 'recommendations';
                 recTabBtn.classList.add('active');
                 analysisTabBtn.classList.remove('active');
+                banRecTabBtn.classList.remove('active');
                 recommendationsView.style.display = 'block';
                 analysisView.style.display = 'none';
+                banRecommenderView.style.display = 'none';
+                updateBanSelectionUI();
             });
             analysisTabBtn.addEventListener('click', () => {
+                activeTab = 'analysis';
                 analysisTabBtn.classList.add('active');
                 recTabBtn.classList.remove('active');
+                banRecTabBtn.classList.remove('active');
                 analysisView.style.display = 'block';
                 recommendationsView.style.display = 'none';
+                banRecommenderView.style.display = 'none';
                 updateAnalysisView();
+                updateBanSelectionUI();
+            });
+            banRecTabBtn.addEventListener('click', () => {
+                activeTab = 'ban-recommender';
+                banRecTabBtn.classList.add('active');
+                recTabBtn.classList.remove('active');
+                analysisTabBtn.classList.remove('active');
+                banRecommenderView.style.display = 'block';
+                recommendationsView.style.display = 'none';
+                analysisView.style.display = 'none';
+                updateBanSelectionUI();
+            });
+
+            banRecUseFavoritesBtn.addEventListener('click', () => {
+                const selectedRole = banRecRoleSelect.value;
+                banConsiderationSet.clear();
+                allChampions.forEach(champ => {
+                    if (favorites[`${champ.id}-${selectedRole}`]) {
+                        banConsiderationSet.add(champ.id);
+                    }
+                });
+                updateBanSelectionUI();
+            });
+            getBanRecsBtn.addEventListener('click', getBanRecommendations);
+            banRecommendationList.addEventListener('click', e => {
+                const summary = e.target.closest('.ban-rec-summary');
+                if (summary) {
+                    const details = summary.nextElementSibling;
+                    details.classList.toggle('visible');
+                }
             });
 
             [recommendationList, analysisView].forEach(element => {
