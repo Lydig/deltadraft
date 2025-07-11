@@ -5,4 +5,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   // Expose the 'get-champ-select' function from our main.js
   getChampSelect: () => ipcRenderer.invoke('get-champ-select'),
+
+  // --- NEW: Expose favorites functions ---
+  getFavorites: () => ipcRenderer.invoke('get-favorites'),
+  saveFavorites: (favorites) => ipcRenderer.invoke('save-favorites', favorites),
 });
