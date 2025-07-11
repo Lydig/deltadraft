@@ -30,11 +30,11 @@
         #search-champion { width: 100%; padding: 10px; margin-bottom: 10px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 1rem; }
         #champion-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; height: 350px; overflow-y: auto; padding-right: 10px; margin-bottom: 20px;}
         .champion-tile { cursor: pointer; position: relative; }
-        .champion-tile img { width: 100%; display: block; border-radius: 4px; border: 2px solid transparent; transition: border-color 0.2s; }
+        .champion-tile img { width: 100%; display: block; border-radius: 4px; border: 2px solid transparent; transition: border-color 0.2s, filter 0.2s, opacity 0.2s; }
         .champion-tile:hover img { border-color: var(--accent-color); }
         #results { background-color: var(--bg-secondary); padding: 15px; border-radius: 8px; flex-grow: 1; display: flex; flex-direction: column; }
         #recommendation-list { list-style: none; padding: 0; margin-top: 10px; flex-grow: 1; overflow-y: auto; }
-        #recommendation-list li { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid var(--border-color); position: relative; }
+        #recommendation-list li { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid var(--border-color); position: relative; transition: filter 0.2s, opacity 0.2s; }
         .rec-img { width: 40px; height: 40px; border-radius: 4px; }
         .rec-info { flex-grow: 1; }
         .rec-name { font-weight: bold; }
@@ -65,6 +65,7 @@
         .context-menu-item:hover { background-color: var(--bg-secondary); }
         .context-menu-item .star { margin-right: 8px; color: var(--text-secondary); }
         .context-menu-item.favorited .star { color: var(--yellow-warn); }
+        .unavailable { filter: grayscale(100%); opacity: 0.5; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -114,9 +115,9 @@
             let lastRecommendations = [];
             let isShiftPressed = false;
             let lastHoveredRec = null;
-
             let leftPanelIsBlue = true;
             let favorites = {};
+            let unavailableChampions = new Set();
 
             const championGrid = document.getElementById('champion-grid');
             const searchInput = document.getElementById('search-champion');
@@ -198,6 +199,7 @@
                     </div>
                 `).join('');
                 updateAllGridFavoriteStars();
+                updateAvailabilityUI(); // Ensure new grid respects current availability
             }
 
             function setChampionForSlot(side, role, championName) {
@@ -248,6 +250,8 @@
                 favoritesOnlyToggle.checked = false;
                 leftPanelIsBlue = true;
                 updateTeamSideLabels();
+                unavailableChampions.clear();
+                updateAvailabilityUI();
             }
 
             async function updateRecommendations() {
@@ -294,7 +298,12 @@
                     const champData = allChampions.find(c => c.id === pick.champion);
                     if (!champData) return;
                     const li = document.createElement('li');
-                    li.dataset.championName = pick.champion;
+                    
+                    li.dataset.championName = pick.champion; // Set data attribute first
+                    if (unavailableChampions.has(pick.champion)) {
+                        li.classList.add('unavailable');
+                    }
+
                     li.dataset.breakdown = JSON.stringify(pick.breakdown);
                     const deltaStr = (pick.total_delta >= 0 ? '+' : '') + (pick.total_delta * 100).toFixed(2) + '%';
                     const baseWrStr = (pick.base_win_rate * 100).toFixed(2) + '%';
@@ -379,10 +388,33 @@
                 }
             });
 
+            // --- FIXED: This function now correctly targets all elements with a champion name ---
+            function updateAvailabilityUI() {
+                document.querySelectorAll('[data-champion-name]').forEach(el => {
+                    const champName = el.dataset.championName;
+                    el.classList.toggle('unavailable', unavailableChampions.has(champName));
+                });
+            }
+
             async function updateFromLiveGame() {
                 const session = await window.electronAPI.getChampSelect();
                 if (!session) return;
                 
+                unavailableChampions.clear();
+                const bans = session.actions.flat().filter(a => a.type === 'ban' && a.completed);
+                for (const ban of bans) {
+                    if (ban.championId !== 0 && champIdToName[ban.championId]) {
+                        unavailableChampions.add(champIdToName[ban.championId]);
+                    }
+                }
+                for (const team of [session.myTeam, session.theirTeam]) {
+                    for (const player of team) {
+                        if (player.championId !== 0 && champIdToName[player.championId]) {
+                            unavailableChampions.add(champIdToName[player.championId]);
+                        }
+                    }
+                }
+
                 const blueTeamSide = leftPanelIsBlue ? 'left' : 'right';
                 const redTeamSide = leftPanelIsBlue ? 'right' : 'left';
                 
@@ -397,8 +429,12 @@
                         setChampionForSlot(blueTeamSide, role, blueAssignments[role]);
                         setChampionForSlot(redTeamSide, role, redAssignments[role]);
                     });
-                    if (recommendationTarget) updateRecommendations();
+                    if (recommendationTarget) {
+                        updateRecommendations();
+                    }
                 }
+                // --- FIXED: Call the UI update function unconditionally after every check ---
+                updateAvailabilityUI();
             }
             
             function inferRoles(picks) {
