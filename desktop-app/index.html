@@ -65,10 +65,19 @@
         .context-menu-item:hover { background-color: var(--bg-secondary); }
         .context-menu-item .star { margin-right: 8px; color: var(--text-secondary); }
         .context-menu-item.favorited .star { color: var(--yellow-warn); }
-        .unavailable { filter: grayscale(100%); opacity: 0.5; pointer-events: none; }
         .lock-icon { position: absolute; bottom: 4px; right: 5px; cursor: pointer; font-size: 1rem; display: none; color: var(--text-secondary); text-shadow: 0 0 3px black; }
         .role-slot[data-champion] .lock-icon { display: block; }
         .lock-icon.locked { color: var(--accent-color); }
+
+        /* --- MODIFIED: Removed 'pointer-events: none' to allow tooltips on greyed-out items --- */
+        .unavailable {
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+        /* We still want to disable clicks on the champion grid tiles themselves */
+        .champion-tile.unavailable {
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -413,9 +422,13 @@
             });
 
             function updateAvailabilityUI() {
-                document.querySelectorAll('[data-champion-name]').forEach(el => {
-                    const champName = el.dataset.championName;
-                    el.classList.toggle('unavailable', unavailableChampions.has(champName));
+                document.querySelectorAll('.champion-tile').forEach(tile => {
+                    const champName = tile.dataset.championName;
+                    tile.classList.toggle('unavailable', unavailableChampions.has(champName));
+                });
+                document.querySelectorAll('#recommendation-list li').forEach(li => {
+                    const champName = li.dataset.championName;
+                    li.classList.toggle('unavailable', unavailableChampions.has(champName));
                 });
             }
 
@@ -474,13 +487,11 @@
                 updateAvailabilityUI();
             }
             
-            // --- REWRITTEN: New smarter role inference algorithm ---
-            function inferRoles(picks, lockedChamps) { // lockedChamps is a Map of {role: champion}
+            function inferRoles(picks, lockedChamps) {
                 let finalAssignments = {};
                 let availableRoles = [...roles];
                 let availableChamps = [...picks];
 
-                // 1. Assign locked champions first and remove them from the pool
                 for (const [role, champ] of lockedChamps.entries()) {
                     finalAssignments[role] = champ;
                     availableRoles = availableRoles.filter(r => r !== role);
@@ -494,7 +505,6 @@
                 let bestOverallAssignment = {};
                 let maxOverallProb = -1;
 
-                // Helper to generate permutations of an array
                 function getPermutations(arr) {
                     if (arr.length === 0) return [[]];
                     const result = [];
@@ -508,7 +518,6 @@
                     return result;
                 }
                 
-                // Helper to generate combinations of k elements from an array
                 function getCombinations(arr, k) {
                     const result = [];
                     function backtrack(combination, start) {
@@ -529,9 +538,7 @@
                 const roleCombinations = getCombinations(availableRoles, availableChamps.length);
                 const champPermutations = getPermutations(availableChamps);
 
-                // Iterate over every combination of roles the champions could fill
                 for (const roleCombo of roleCombinations) {
-                    // For each role combination, try every permutation of champions
                     for (const champPerm of champPermutations) {
                         let currentAssignment = {};
                         let currentProb = 1.0;
