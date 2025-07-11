@@ -70,6 +70,22 @@
         .lock-icon { position: absolute; bottom: 4px; right: 5px; cursor: pointer; font-size: 1rem; display: none; color: var(--text-secondary); text-shadow: 0 0 3px black; }
         .role-slot[data-champion] .lock-icon { display: block; }
         .lock-icon.locked { color: var(--accent-color); }
+        .tabs { display: flex; border-bottom: 1px solid var(--border-color); }
+        .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 10px 15px; color: var(--text-secondary); font-size: 1rem; }
+        .tab-btn.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
+        .tab-content { padding-top: 15px; }
+        #analysis-view { display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
+        .analysis-row { display: flex; align-items: center; justify-content: space-between; padding: 5px; border-radius: 4px; background-color: #0f172a; }
+        .analysis-cell { display: flex; align-items: center; }
+        .analysis-cell.left { flex: 1; justify-content: flex-start; }
+        .analysis-cell.right { flex: 1; justify-content: flex-end; text-align: right; }
+        .analysis-cell img { width: 32px; height: 32px; border-radius: 4px; margin-right: 8px; }
+        .analysis-cell.right img { margin-left: 8px; margin-right: 0; order: 1; }
+        .analysis-champ-info { font-size: 0.9rem; }
+        .analysis-champ-name { font-weight: bold; }
+        .analysis-champ-stats { font-size: 0.75rem; color: var(--text-secondary); }
+        .analysis-delta-separator { width: 100px; text-align: center; font-size: 0.8rem; color: var(--text-secondary); }
+        .analysis-total-delta { text-align: center; padding: 10px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -86,16 +102,24 @@
                 <input type="text" id="search-champion" placeholder="Search for a champion...">
                 <div id="champion-grid"></div>
                 <div id="results">
-                    <h3 id="recs-header">Recommendations:</h3>
-                    <div class="recommendation-controls">
-                        <input type="text" id="recommendation-search" placeholder="Search recommendations...">
-                        <input type="number" id="role-rate-filter" placeholder="Min Role Rate %" min="0" max="100">
-                        <label class="favorite-toggle-label">
-                            <input type="checkbox" id="favorites-only-toggle"> Show Favorites Only
-                        </label>
-                        <button id="get-recs-btn" disabled>Get Recommendations</button>
+                    <div class="tabs">
+                        <button id="rec-tab-btn" class="tab-btn active">Recommendations</button>
+                        <button id="analysis-tab-btn" class="tab-btn">Draft Analysis</button>
                     </div>
-                    <ol id="recommendation-list"></ol>
+                    <div id="recommendations-view" class="tab-content">
+                        <h3 id="recs-header">Recommendations:</h3>
+                        <div class="recommendation-controls">
+                            <input type="text" id="recommendation-search" placeholder="Search recommendations...">
+                            <input type="number" id="role-rate-filter" placeholder="Min Role Rate %" min="0" max="100">
+                            <label class="favorite-toggle-label">
+                                <input type="checkbox" id="favorites-only-toggle"> Show Favorites Only
+                            </label>
+                            <button id="get-recs-btn" disabled>Get Recommendations</button>
+                        </div>
+                        <ol id="recommendation-list"></ol>
+                    </div>
+                    <div id="analysis-view" class="tab-content" style="display: none;">
+                    </div>
                 </div>
             </div>
             <div class="team-panel" id="right-team-panel"><h2 id="right-team-header"></h2></div>
@@ -127,7 +151,6 @@
             const championGrid = document.getElementById('champion-grid');
             const searchInput = document.getElementById('search-champion');
             const recommendationList = document.getElementById('recommendation-list');
-            const recsHeader = document.getElementById('recs-header');
             const liveTrackingBtn = document.getElementById('live-tracking-btn');
             const resetBtn = document.getElementById('reset-btn');
             const getRecsBtn = document.getElementById('get-recs-btn');
@@ -141,6 +164,11 @@
             const contextMenu = document.getElementById('context-menu');
             const favoritesOnlyToggle = document.getElementById('favorites-only-toggle');
             const swapSidesBtn = document.getElementById('swap-sides-btn');
+            const recTabBtn = document.getElementById('rec-tab-btn');
+            const analysisTabBtn = document.getElementById('analysis-tab-btn');
+            const recommendationsView = document.getElementById('recommendations-view');
+            const analysisView = document.getElementById('analysis-view');
+            const recsHeader = document.getElementById('recs-header');
 
             window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !isShiftPressed) { isShiftPressed = true; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, true); } });
             window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { isShiftPressed = false; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, false); } });
@@ -251,6 +279,7 @@
                     slot.classList.remove('selected', 'swap-source');
                 });
                 recommendationList.innerHTML = '';
+                analysisView.innerHTML = '';
                 getRecsBtn.disabled = true;
                 getRecsBtn.textContent = "Get Recommendations";
                 recsHeader.textContent = "Recommendations:";
@@ -343,12 +372,11 @@
                     clearSelections();
                     slot.classList.add('swap-source');
                     swapSourceSlot = clickedSlotInfo;
-                    if (!slot.dataset.champion) {
-                        getRecsBtn.disabled = false;
-                        const sourceIsBlue = (swapSourceSlot.side === 'left' && leftPanelIsBlue) || (swapSourceSlot.side === 'right' && !leftPanelIsBlue);
-                        const sideName = sourceIsBlue ? 'BLUE' : 'RED';
-                        getRecsBtn.textContent = `Get Recs for ${sideName} ${swapSourceSlot.role}`;
-                    }
+                    
+                    getRecsBtn.disabled = false;
+                    const sourceIsBlue = (swapSourceSlot.side === 'left' && leftPanelIsBlue) || (swapSourceSlot.side === 'right' && !leftPanelIsBlue);
+                    const sideName = sourceIsBlue ? 'BLUE' : 'RED';
+                    getRecsBtn.textContent = `Get Recs for ${sideName} ${swapSourceSlot.role}`;
                 }
             }
 
@@ -356,6 +384,7 @@
                 if (swapSourceSlot) {
                     setChampionForSlot(swapSourceSlot.side, swapSourceSlot.role, tile.dataset.championName);
                     if (recommendationTarget) updateRecommendations();
+                    updateAnalysisView();
                     clearSelections();
                 }
             }
@@ -368,6 +397,7 @@
                 setChampionForSlot(source.side, source.role, destChamp);
                 setChampionForSlot(destination.side, destination.role, sourceChamp);
                 if (recommendationTarget) updateRecommendations();
+                updateAnalysisView();
             }
 
             function clearSelections() {
@@ -398,6 +428,7 @@
                 if (roleSlot && roleSlot.dataset.champion) {
                     setChampionForSlot(roleSlot.dataset.side, roleSlot.dataset.role, null);
                     if (recommendationTarget) updateRecommendations();
+                    updateAnalysisView();
                 }
             });
 
@@ -414,13 +445,9 @@
             });
 
             function updateAvailabilityUI() {
-                document.querySelectorAll('.champion-tile').forEach(tile => {
-                    const champName = tile.dataset.championName;
-                    tile.classList.toggle('unavailable', unavailableChampions.has(champName));
-                });
-                document.querySelectorAll('#recommendation-list li').forEach(li => {
-                    const champName = li.dataset.championName;
-                    li.classList.toggle('unavailable', unavailableChampions.has(champName));
+                document.querySelectorAll('[data-champion-name]').forEach(el => {
+                    const champName = el.dataset.championName;
+                    el.classList.toggle('unavailable', unavailableChampions.has(champName));
                 });
             }
 
@@ -472,6 +499,7 @@
                     if (recommendationTarget) {
                         updateRecommendations();
                     }
+                    updateAnalysisView();
                 }
                 updateAvailabilityUI();
             }
@@ -487,9 +515,7 @@
                     availableChamps = availableChamps.filter(c => c !== champ);
                 }
 
-                if (availableChamps.length === 0) {
-                    return finalAssignments;
-                }
+                if (availableChamps.length === 0) return finalAssignments;
 
                 let bestOverallAssignment = {};
                 let maxOverallProb = -1;
@@ -500,9 +526,7 @@
                     for (let i = 0; i < arr.length; i++) {
                         const rest = arr.slice(0, i).concat(arr.slice(i + 1));
                         const perms = getPermutations(rest);
-                        for (const p of perms) {
-                            result.push([arr[i]].concat(p));
-                        }
+                        for (const p of perms) { result.push([arr[i]].concat(p)); }
                     }
                     return result;
                 }
@@ -510,10 +534,7 @@
                 function getCombinations(arr, k) {
                     const result = [];
                     function backtrack(combination, start) {
-                        if (combination.length === k) {
-                            result.push([...combination]);
-                            return;
-                        }
+                        if (combination.length === k) { result.push([...combination]); return; }
                         for (let i = start; i < arr.length; i++) {
                             combination.push(arr[i]);
                             backtrack(combination, i + 1);
@@ -610,25 +631,132 @@
                 contextMenu.style.left = `${event.clientX}px`;
                 contextMenu.style.top = `${event.clientY}px`;
             }
+            
+            async function updateAnalysisView() {
+                const blueTeam = {};
+                const redTeam = {};
+                const blueSidePanelId = leftPanelIsBlue ? 'left' : 'right';
+                const redSidePanelId = leftPanelIsBlue ? 'right' : 'left';
+
+                roles.forEach(role => {
+                    blueTeam[role] = document.querySelector(`[data-side='${blueSidePanelId}'][data-role='${role}']`).dataset.champion || null;
+                    redTeam[role] = document.querySelector(`[data-side='${redSidePanelId}'][data-role='${role}']`).dataset.champion || null;
+                });
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/analyze_draft', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ blue_team: blueTeam, red_team: redTeam })
+                    });
+                    if (!response.ok) throw new Error("Backend server error for analysis");
+                    const analysisData = await response.json();
+                    renderAnalysisView(analysisData);
+                } catch (error) {
+                    console.error("Failed to get draft analysis:", error);
+                    analysisView.innerHTML = '<li>Error fetching analysis.</li>';
+                }
+            }
+
+            function renderAnalysisView(analysisData) {
+                analysisView.innerHTML = '';
+                
+                const leftData = leftPanelIsBlue ? analysisData.blue : analysisData.red;
+                const rightData = leftPanelIsBlue ? analysisData.red : analysisData.blue;
+
+                const totalDeltaHeader = document.createElement('div');
+                totalDeltaHeader.className = 'analysis-total-delta';
+                const leftTotal = leftData.total_delta;
+                const rightTotal = rightData.total_delta;
+                totalDeltaHeader.innerHTML = `
+                    <span class="${leftTotal >= 0 ? 'delta-pos' : 'delta-neg'}">${(leftTotal * 100).toFixed(2)}%</span>
+                     vs 
+                    <span class="${rightTotal >= 0 ? 'delta-pos' : 'delta-neg'}">${(rightTotal * 100).toFixed(2)}%</span>
+                `;
+                analysisView.appendChild(totalDeltaHeader);
+
+                const analysisByRole = {};
+                
+                leftData.picks.forEach(pick => {
+                    if (!analysisByRole[pick.role]) analysisByRole[pick.role] = {};
+                    analysisByRole[pick.role].left = pick;
+                });
+                rightData.picks.forEach(pick => {
+                    if (!analysisByRole[pick.role]) analysisByRole[pick.role] = {};
+                    analysisByRole[pick.role].right = pick;
+                });
+
+                roles.forEach(role => {
+                    const leftPick = analysisByRole[role]?.left;
+                    const rightPick = analysisByRole[role]?.right;
+
+                    const row = document.createElement('div');
+                    row.className = 'analysis-row';
+
+                    const leftCell = document.createElement('div');
+                    leftCell.className = 'analysis-cell left';
+                    if (leftPick) {
+                        const champData = allChampions.find(c => c.id === leftPick.champion);
+                        const wrStr = (leftPick.base_win_rate * 100).toFixed(2) + '%';
+                        leftCell.dataset.championName = leftPick.champion;
+                        leftCell.dataset.breakdown = JSON.stringify(leftPick.breakdown);
+                        leftCell.innerHTML = `
+                            <img src="./assets/champions/${champData.image.full}">
+                            <div class="analysis-champ-info">
+                                <div class="analysis-champ-name">${leftPick.champion}</div>
+                                <div class="analysis-champ-stats">Base WR: ${wrStr}</div>
+                            </div>
+                        `;
+                    }
+                    row.appendChild(leftCell);
+
+                    const deltaSeparator = document.createElement('div');
+                    deltaSeparator.className = 'analysis-delta-separator';
+                    const leftDelta = leftPick ? (leftPick.total_delta * 100).toFixed(1) : null;
+                    const rightDelta = rightPick ? (rightPick.total_delta * 100).toFixed(1) : null;
+
+                    if (leftDelta !== null && rightDelta !== null) {
+                        deltaSeparator.innerHTML = `<b class="${leftDelta >= 0 ? 'delta-pos' : 'delta-neg'}">${leftDelta}%</b> vs <b class="${rightDelta >= 0 ? 'delta-pos' : 'delta-neg'}">${rightDelta}%</b>`;
+                    } else if (leftDelta !== null) {
+                        deltaSeparator.innerHTML = `<b class="${leftDelta >= 0 ? 'delta-pos' : 'delta-neg'}">${leftDelta}%</b>`;
+                    } else if (rightDelta !== null) {
+                        deltaSeparator.innerHTML = `<b class="${rightDelta >= 0 ? 'delta-pos' : 'delta-neg'}">${rightDelta}%</b>`;
+                    } else {
+                        deltaSeparator.textContent = role;
+                    }
+                    row.appendChild(deltaSeparator);
+
+                    const rightCell = document.createElement('div');
+                    rightCell.className = 'analysis-cell right';
+                     if (rightPick) {
+                        const champData = allChampions.find(c => c.id === rightPick.champion);
+                        const wrStr = (rightPick.base_win_rate * 100).toFixed(2) + '%';
+                        rightCell.dataset.championName = rightPick.champion;
+                        rightCell.dataset.breakdown = JSON.stringify(rightPick.breakdown);
+                        rightCell.innerHTML = `
+                            <div class="analysis-champ-info">
+                                <div class="analysis-champ-name">${rightPick.champion}</div>
+                                <div class="analysis-champ-stats">Base WR: ${wrStr}</div>
+                            </div>
+                            <img src="./assets/champions/${champData.image.full}">
+                        `;
+                    }
+                    row.appendChild(rightCell);
+
+                    analysisView.appendChild(row);
+                });
+            }
 
             championGrid.addEventListener('contextmenu', e => {
                 const tile = e.target.closest('.champion-tile');
-                if (tile) {
-                    showContextMenu(e, tile.dataset.championName);
-                }
+                if (tile) { showContextMenu(e, tile.dataset.championName); }
             });
-
             contextMenu.addEventListener('click', e => {
                 const item = e.target.closest('.context-menu-item');
-                if (item) {
-                    toggleFavorite(item.dataset.champion, item.dataset.role);
-                }
+                if (item) { toggleFavorite(item.dataset.champion, item.dataset.role); }
             });
-
             favoritesOnlyToggle.addEventListener('input', displayFilteredRecommendations);
             searchInput.addEventListener('input', populateChampionGrid);
             resetBtn.addEventListener('click', resetDraft);
-            
             getRecsBtn.addEventListener('click', () => {
                 const selected = document.querySelector('.role-slot.swap-source');
                 if (selected) {
@@ -637,16 +765,13 @@
                     clearSelections();
                 }
             });
-            
             roleRateFilter.addEventListener('input', displayFilteredRecommendations);
             recommendationSearch.addEventListener('input', displayFilteredRecommendations);
-            
             swapSidesBtn.addEventListener('click', () => {
                 leftPanelIsBlue = !leftPanelIsBlue;
                 updateTeamSideLabels();
-                if (recommendationTarget) {
-                    updateRecommendations();
-                }
+                if (recommendationTarget) updateRecommendations();
+                updateAnalysisView();
                 const selected = document.querySelector('.role-slot.swap-source');
                 if (selected) {
                     const swapSourceSlot = { side: selected.dataset.side, role: selected.dataset.role };
@@ -655,24 +780,75 @@
                     getRecsBtn.textContent = `Get Recs for ${sideName} ${swapSourceSlot.role}`;
                 }
             });
+
+            recTabBtn.addEventListener('click', () => {
+                recTabBtn.classList.add('active');
+                analysisTabBtn.classList.remove('active');
+                recommendationsView.style.display = 'block';
+                analysisView.style.display = 'none';
+            });
+            analysisTabBtn.addEventListener('click', () => {
+                analysisTabBtn.classList.add('active');
+                recTabBtn.classList.remove('active');
+                analysisView.style.display = 'block';
+                recommendationsView.style.display = 'none';
+                updateAnalysisView();
+            });
+
+            [recommendationList, analysisView].forEach(element => {
+                element.addEventListener('mousemove', e => {
+                    const target = e.target.closest('[data-breakdown]');
+                    if (target) {
+                        const tooltipRect = deltaTooltip.getBoundingClientRect();
+                        let top = e.clientY - tooltipRect.height - 10;
+                        let left = e.clientX + 20;
+
+                        if (top < 0) top = 10;
+                        if (left + tooltipRect.width > window.innerWidth) {
+                            left = e.clientX - tooltipRect.width - 10;
+                        }
+
+                        deltaTooltip.style.left = `${left}px`;
+                        deltaTooltip.style.top = `${top}px`;
+                        updateTooltipContent(target, isShiftPressed);
+                    }
+                });
+                element.addEventListener('mouseover', e => {
+                    const target = e.target.closest('[data-breakdown]');
+                    lastHoveredRec = target;
+                    if (target) {
+                        updateTooltipContent(target, isShiftPressed);
+                        deltaTooltip.style.opacity = '1';
+                    }
+                });
+                element.addEventListener('mouseout', () => {
+                    lastHoveredRec = null;
+                    deltaTooltip.style.opacity = '0';
+                });
+            });
             
-            function updateTooltipContent(li, shiftPressed) {
-                if (!li || !li.dataset.breakdown) return;
-                const breakdown = JSON.parse(li.dataset.breakdown);
+            function updateTooltipContent(target, shiftPressed) {
+                if (!target || !target.dataset.breakdown) return;
+                const breakdown = JSON.parse(target.dataset.breakdown);
                 const breakdownMap = Object.fromEntries(breakdown.map(item => [item.source, {delta: item.delta, games: item.games}]));
                 
-                const blueSide = leftPanelIsBlue ? 'left' : 'right';
-                const redSide = leftPanelIsBlue ? 'right' : 'left';
+                const leftHeader = leftPanelIsBlue ? 'Blue Side' : 'Red Side';
+                const rightHeader = leftPanelIsBlue ? 'Red Side' : 'Blue Side';
                 
-                let blueHTML = '<h5>Blue Side</h5>';
-                let redHTML = '<h5>Red Side</h5>';
+                let leftHTML = `<h5>${leftHeader}</h5>`;
+                let rightHTML = `<h5>${rightHeader}</h5>`;
+
                 roles.forEach(role => {
-                    const blueChamp = document.querySelector(`[data-side="${blueSide}"][data-role="${role}"]`).dataset.champion;
-                    const redChamp = document.querySelector(`[data-side="${redSide}"][data-role="${role}"]`).dataset.champion;
-                    blueHTML += buildTooltipRow(blueChamp, 'blue', role, breakdownMap, shiftPressed);
-                    redHTML += buildTooltipRow(redChamp, 'red', role, breakdownMap, shiftPressed);
+                    const leftChamp = document.querySelector(`[data-side="left"][data-role="${role}"]`).dataset.champion;
+                    const rightChamp = document.querySelector(`[data-side="right"][data-role="${role}"]`).dataset.champion;
+                    
+                    const leftSideColor = leftPanelIsBlue ? 'blue' : 'red';
+                    const rightSideColor = leftPanelIsBlue ? 'red' : 'blue';
+
+                    leftHTML += buildTooltipRow(leftChamp, leftSideColor, role, breakdownMap, shiftPressed);
+                    rightHTML += buildTooltipRow(rightChamp, rightSideColor, role, breakdownMap, shiftPressed);
                 });
-                deltaTooltip.innerHTML = `<h4>${li.dataset.championName} Breakdown</h4><div class="tooltip-columns"><div class="tooltip-col">${blueHTML}</div><div class="tooltip-col">${redHTML}</div></div>`;
+                deltaTooltip.innerHTML = `<h4>${target.dataset.championName} Breakdown</h4><div class="tooltip-columns"><div class="tooltip-col">${leftHTML}</div><div class="tooltip-col">${rightHTML}</div></div>`;
             }
 
             function formatGames(num) {
@@ -696,30 +872,10 @@
                     const gamesHTML = showGames ? `<span class="games-count">(${formatGames(stats.games)})</span>` : '';
                     return `<div><span class="champ-name" title="${champ}">${champ}</span> ${gamesHTML}<span class="${deltaClass}">${delta.toFixed(2)}%</span></div>`;
                 } else {
-                    return `<div><span class="delta-neutral">${side.toUpperCase()} ${role} MISSING</span></div>`;
+                    return `<div><span class="delta-neutral">${role} MISSING</span></div>`;
                 }
             }
-
-            recommendationList.addEventListener('mousemove', e => {
-                const li = e.target.closest('li');
-                if (li) {
-                    deltaTooltip.style.left = `${e.clientX + 20}px`;
-                    deltaTooltip.style.top = `${e.clientY + 20}px`;
-                    updateTooltipContent(li, isShiftPressed);
-                }
-            });
-            recommendationList.addEventListener('mouseover', e => {
-                const li = e.target.closest('li');
-                lastHoveredRec = li;
-                if (li) {
-                    updateTooltipContent(li, isShiftPressed);
-                    deltaTooltip.style.opacity = '1';
-                }
-            });
-            recommendationList.addEventListener('mouseout', () => {
-                lastHoveredRec = null;
-                deltaTooltip.style.opacity = '0';
-            });
+            
             draftArea.addEventListener('mouseover', e => {
                 const warningIcon = e.target.closest('.warning-icon');
                 if (warningIcon) {
