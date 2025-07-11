@@ -65,19 +65,11 @@
         .context-menu-item:hover { background-color: var(--bg-secondary); }
         .context-menu-item .star { margin-right: 8px; color: var(--text-secondary); }
         .context-menu-item.favorited .star { color: var(--yellow-warn); }
+        .unavailable { filter: grayscale(100%); opacity: 0.5; }
+        .champion-tile.unavailable { pointer-events: none; }
         .lock-icon { position: absolute; bottom: 4px; right: 5px; cursor: pointer; font-size: 1rem; display: none; color: var(--text-secondary); text-shadow: 0 0 3px black; }
         .role-slot[data-champion] .lock-icon { display: block; }
         .lock-icon.locked { color: var(--accent-color); }
-
-        /* --- MODIFIED: Removed 'pointer-events: none' to allow tooltips on greyed-out items --- */
-        .unavailable {
-            filter: grayscale(100%);
-            opacity: 0.5;
-        }
-        /* We still want to disable clicks on the champion grid tiles themselves */
-        .champion-tile.unavailable {
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
@@ -451,34 +443,31 @@
                     }
                 }
 
-                const blueTeamSide = leftPanelIsBlue ? 'left' : 'right';
-                const redTeamSide = leftPanelIsBlue ? 'right' : 'left';
-                
-                const bluePicks = session.myTeam.map(p => champIdToName[p.championId]).filter(Boolean);
-                const redPicks = session.theirTeam.map(p => champIdToName[p.championId]).filter(Boolean);
+                const myPicks = session.myTeam.map(p => champIdToName[p.championId]).filter(Boolean);
+                const theirPicks = session.theirTeam.map(p => champIdToName[p.championId]).filter(Boolean);
 
-                const blueLockedSlots = new Map();
-                const redLockedSlots = new Map();
+                const myLockedSlots = new Map();
+                const theirLockedSlots = new Map();
                 lockedSlots.forEach(lockId => {
                     const [side, role] = lockId.split('-');
                     const slot = document.querySelector(`[data-side='${side}'][data-role='${role}']`);
                     if (slot && slot.dataset.champion) {
-                        if (side === blueTeamSide) blueLockedSlots.set(role, slot.dataset.champion);
-                        else if (side === redTeamSide) redLockedSlots.set(role, slot.dataset.champion);
+                        if (side === 'left') myLockedSlots.set(role, slot.dataset.champion);
+                        else if (side === 'right') theirLockedSlots.set(role, slot.dataset.champion);
                     }
                 });
 
-                const blueAssignments = inferRoles(bluePicks, blueLockedSlots);
-                const redAssignments = inferRoles(redPicks, redLockedSlots);
+                const myAssignments = inferRoles(myPicks, myLockedSlots);
+                const theirAssignments = inferRoles(theirPicks, theirLockedSlots);
 
                 let currentDraftState = '';
-                roles.forEach(role => { currentDraftState += (blueAssignments[role] || '') + (redAssignments[role] || ''); });
+                roles.forEach(role => { currentDraftState += (myAssignments[role] || '') + (theirAssignments[role] || ''); });
 
                 if (currentDraftState !== lastKnownDraftState) {
                     lastKnownDraftState = currentDraftState;
                     roles.forEach(role => {
-                        setChampionForSlot(blueTeamSide, role, blueAssignments[role]);
-                        setChampionForSlot(redTeamSide, role, redAssignments[role]);
+                        setChampionForSlot('left', role, myAssignments[role]);
+                        setChampionForSlot('right', role, theirAssignments[role]);
                     });
                     if (recommendationTarget) {
                         updateRecommendations();
