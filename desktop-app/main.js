@@ -3,11 +3,14 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 const https = require('https');
-const fs = require('fs');
+const fs = require('fs'); // --- NEW: Import File System module
 
 let win;
 
-// --- START: LCU Credential Logic (adapted from reference repo) ---
+// --- NEW: Path for storing favorites data ---
+const favoritesPath = path.join(app.getPath('userData'), 'favorites.json');
+
+// --- START: LCU Credential Logic ---
 async function getLeagueCredentials() {
     return new Promise((resolve, reject) => {
         const command = 'wmic PROCESS WHERE name="LeagueClientUx.exe" GET commandline';
@@ -30,7 +33,7 @@ async function getLeagueCredentials() {
 }
 
 const httpsAgent = new https.Agent({
-    rejectUnauthorized: false, // Required for LCU's self-signed certificate
+    rejectUnauthorized: false,
 });
 
 async function getChampSelect() {
@@ -53,28 +56,50 @@ async function getChampSelect() {
                     if (res.statusCode === 200) {
                         resolve(JSON.parse(data));
                     } else {
-                        resolve(null); // Resolve with null if not in champ select (e.g., 404)
+                        resolve(null);
                     }
                 });
             });
             req.on('error', (err) => reject(err));
         });
     } catch (error) {
-        // This will catch errors from getLeagueCredentials (e.g., client not running)
         return null;
     }
 }
 
-// Register the IPC handler that our preload script will use
 ipcMain.handle("get-champ-select", getChampSelect);
 // --- END: LCU Credential Logic ---
+
+
+// --- NEW: IPC Handlers for Favorites ---
+ipcMain.handle('get-favorites', async () => {
+    try {
+        if (fs.existsSync(favoritesPath)) {
+            const data = fs.readFileSync(favoritesPath, 'utf-8');
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        console.error('Failed to read favorites file:', error);
+    }
+    return {}; // Return empty object if file doesn't exist or fails to parse
+});
+
+ipcMain.handle('save-favorites', async (event, favorites) => {
+    try {
+        fs.writeFileSync(favoritesPath, JSON.stringify(favorites, null, 2));
+    } catch (error) {
+        console.error('Failed to save favorites file:', error);
+    }
+});
+// --- END: IPC Handlers for Favorites ---
+
 
 function createWindow() {
     win = new BrowserWindow({
         width: 1200,
         height: 800,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js'), // Link our preload script
+            preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false,
         },
