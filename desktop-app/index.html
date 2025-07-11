@@ -66,6 +66,9 @@
         .context-menu-item .star { margin-right: 8px; color: var(--text-secondary); }
         .context-menu-item.favorited .star { color: var(--yellow-warn); }
         .unavailable { filter: grayscale(100%); opacity: 0.5; pointer-events: none; }
+        .lock-icon { position: absolute; bottom: 4px; right: 5px; cursor: pointer; font-size: 1rem; display: none; color: var(--text-secondary); text-shadow: 0 0 3px black; }
+        .role-slot[data-champion] .lock-icon { display: block; }
+        .lock-icon.locked { color: var(--accent-color); }
     </style>
 </head>
 <body>
@@ -118,6 +121,7 @@
             let leftPanelIsBlue = true;
             let favorites = {};
             let unavailableChampions = new Set();
+            let lockedSlots = new Set();
 
             const championGrid = document.getElementById('champion-grid');
             const searchInput = document.getElementById('search-champion');
@@ -184,8 +188,8 @@
                 rightTeamPanel.innerHTML = '<h2 id="right-team-header"></h2>';
                 roles.forEach(role => {
                     const iconSrc = `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-${role.toLowerCase()}.png`;
-                    leftTeamPanel.innerHTML += `<div class="role-slot" data-side="left" data-role="${role}"><img class="role-icon" src="${iconSrc}"></div>`;
-                    rightTeamPanel.innerHTML += `<div class="role-slot" data-side="right" data-role="${role}"><img class="role-icon" src="${iconSrc}"></div>`;
+                    leftTeamPanel.innerHTML += `<div class="role-slot" data-side="left" data-role="${role}"><img class="role-icon" src="${iconSrc}"><div class="lock-icon">🔓</div></div>`;
+                    rightTeamPanel.innerHTML += `<div class="role-slot" data-side="right" data-role="${role}"><img class="role-icon" src="${iconSrc}"><div class="lock-icon">🔓</div></div>`;
                 });
             }
 
@@ -199,7 +203,7 @@
                     </div>
                 `).join('');
                 updateAllGridFavoriteStars();
-                updateAvailabilityUI(); // Ensure new grid respects current availability
+                updateAvailabilityUI();
             }
 
             function setChampionForSlot(side, role, championName) {
@@ -226,7 +230,13 @@
                         warningIcon.textContent = '⚠️';
                         slot.appendChild(warningIcon);
                     }
-                } else { delete slot.dataset.champion; }
+                } else {
+                    delete slot.dataset.champion;
+                    const lockId = `${side}-${role}`;
+                    if (lockedSlots.has(lockId)) {
+                        toggleLock(slot);
+                    }
+                }
             }
 
             function resetDraft() {
@@ -251,6 +261,11 @@
                 leftPanelIsBlue = true;
                 updateTeamSideLabels();
                 unavailableChampions.clear();
+                lockedSlots.clear();
+                document.querySelectorAll('.lock-icon').forEach(icon => {
+                    icon.classList.remove('locked');
+                    icon.textContent = '🔓';
+                });
                 updateAvailabilityUI();
             }
 
@@ -299,7 +314,7 @@
                     if (!champData) return;
                     const li = document.createElement('li');
                     
-                    li.dataset.championName = pick.champion; // Set data attribute first
+                    li.dataset.championName = pick.champion;
                     if (unavailableChampions.has(pick.champion)) {
                         li.classList.add('unavailable');
                     }
@@ -362,9 +377,18 @@
             draftArea.addEventListener('click', e => {
                 const roleSlotEl = e.target.closest('.role-slot');
                 const championTileEl = e.target.closest('.champion-tile');
-                if (roleSlotEl) handleRoleSlotClick(roleSlotEl);
-                else if (championTileEl) handleChampionTileClick(championTileEl);
-                else clearSelections();
+                const lockIcon = e.target.closest('.lock-icon');
+
+                if (lockIcon) {
+                    e.stopPropagation();
+                    toggleLock(lockIcon.closest('.role-slot'));
+                } else if (roleSlotEl) {
+                    handleRoleSlotClick(roleSlotEl);
+                } else if (championTileEl) {
+                    handleChampionTileClick(championTileEl);
+                } else {
+                    clearSelections();
+                }
             });
 
             draftArea.addEventListener('contextmenu', e => {
@@ -388,7 +412,6 @@
                 }
             });
 
-            // --- FIXED: This function now correctly targets all elements with a champion name ---
             function updateAvailabilityUI() {
                 document.querySelectorAll('[data-champion-name]').forEach(el => {
                     const champName = el.dataset.championName;
@@ -418,8 +441,23 @@
                 const blueTeamSide = leftPanelIsBlue ? 'left' : 'right';
                 const redTeamSide = leftPanelIsBlue ? 'right' : 'left';
                 
-                const blueAssignments = inferRoles(session.myTeam.map(p => champIdToName[p.championId]).filter(Boolean));
-                const redAssignments = inferRoles(session.theirTeam.map(p => champIdToName[p.championId]).filter(Boolean));
+                const bluePicks = session.myTeam.map(p => champIdToName[p.championId]).filter(Boolean);
+                const redPicks = session.theirTeam.map(p => champIdToName[p.championId]).filter(Boolean);
+
+                const blueLockedSlots = new Map();
+                const redLockedSlots = new Map();
+                lockedSlots.forEach(lockId => {
+                    const [side, role] = lockId.split('-');
+                    const slot = document.querySelector(`[data-side='${side}'][data-role='${role}']`);
+                    if (slot && slot.dataset.champion) {
+                        if (side === blueTeamSide) blueLockedSlots.set(role, slot.dataset.champion);
+                        else if (side === redTeamSide) redLockedSlots.set(role, slot.dataset.champion);
+                    }
+                });
+
+                const blueAssignments = inferRoles(bluePicks, blueLockedSlots);
+                const redAssignments = inferRoles(redPicks, redLockedSlots);
+
                 let currentDraftState = '';
                 roles.forEach(role => { currentDraftState += (blueAssignments[role] || '') + (redAssignments[role] || ''); });
 
@@ -433,30 +471,102 @@
                         updateRecommendations();
                     }
                 }
-                // --- FIXED: Call the UI update function unconditionally after every check ---
                 updateAvailabilityUI();
             }
             
-            function inferRoles(picks) {
-                let assignments = {};
-                if (picks.length === 0) return assignments;
-                let availableRoles = [...roles]; let availableChamps = [...picks]; let possibilities = [];
-                availableChamps.forEach(champ => {
-                    availableRoles.forEach(role => {
-                        const prob = (roleProbabilities[champ] && roleProbabilities[champ][role]) || 0.0001;
-                        possibilities.push({ champ, role, prob });
-                    });
-                });
-                possibilities.sort((a, b) => b.prob - a.prob);
-                while (availableChamps.length > 0 && availableRoles.length > 0) {
-                    let bestPickIndex = possibilities.findIndex(p => availableChamps.includes(p.champ) && availableRoles.includes(p.role));
-                    if (bestPickIndex === -1) break;
-                    const bestPick = possibilities[bestPickIndex];
-                    assignments[bestPick.role] = bestPick.champ;
-                    availableChamps = availableChamps.filter(c => c !== bestPick.champ);
-                    availableRoles = availableRoles.filter(r => r !== bestPick.role);
+            // --- REWRITTEN: New smarter role inference algorithm ---
+            function inferRoles(picks, lockedChamps) { // lockedChamps is a Map of {role: champion}
+                let finalAssignments = {};
+                let availableRoles = [...roles];
+                let availableChamps = [...picks];
+
+                // 1. Assign locked champions first and remove them from the pool
+                for (const [role, champ] of lockedChamps.entries()) {
+                    finalAssignments[role] = champ;
+                    availableRoles = availableRoles.filter(r => r !== role);
+                    availableChamps = availableChamps.filter(c => c !== champ);
                 }
-                return assignments;
+
+                if (availableChamps.length === 0) {
+                    return finalAssignments;
+                }
+
+                let bestOverallAssignment = {};
+                let maxOverallProb = -1;
+
+                // Helper to generate permutations of an array
+                function getPermutations(arr) {
+                    if (arr.length === 0) return [[]];
+                    const result = [];
+                    for (let i = 0; i < arr.length; i++) {
+                        const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+                        const perms = getPermutations(rest);
+                        for (const p of perms) {
+                            result.push([arr[i]].concat(p));
+                        }
+                    }
+                    return result;
+                }
+                
+                // Helper to generate combinations of k elements from an array
+                function getCombinations(arr, k) {
+                    const result = [];
+                    function backtrack(combination, start) {
+                        if (combination.length === k) {
+                            result.push([...combination]);
+                            return;
+                        }
+                        for (let i = start; i < arr.length; i++) {
+                            combination.push(arr[i]);
+                            backtrack(combination, i + 1);
+                            combination.pop();
+                        }
+                    }
+                    backtrack([], 0);
+                    return result;
+                }
+
+                const roleCombinations = getCombinations(availableRoles, availableChamps.length);
+                const champPermutations = getPermutations(availableChamps);
+
+                // Iterate over every combination of roles the champions could fill
+                for (const roleCombo of roleCombinations) {
+                    // For each role combination, try every permutation of champions
+                    for (const champPerm of champPermutations) {
+                        let currentAssignment = {};
+                        let currentProb = 1.0;
+                        for (let i = 0; i < champPerm.length; i++) {
+                            const champ = champPerm[i];
+                            const role = roleCombo[i];
+                            currentAssignment[role] = champ;
+                            const prob = (roleProbabilities[champ] && roleProbabilities[champ][role]) || 0.00001;
+                            currentProb *= prob;
+                        }
+
+                        if (currentProb > maxOverallProb) {
+                            maxOverallProb = currentProb;
+                            bestOverallAssignment = currentAssignment;
+                        }
+                    }
+                }
+                
+                Object.assign(finalAssignments, bestOverallAssignment);
+                return finalAssignments;
+            }
+
+            function toggleLock(slot) {
+                if (!slot || !slot.dataset.champion) return;
+                const lockId = `${slot.dataset.side}-${slot.dataset.role}`;
+                const icon = slot.querySelector('.lock-icon');
+                if (lockedSlots.has(lockId)) {
+                    lockedSlots.delete(lockId);
+                    icon.classList.remove('locked');
+                    icon.textContent = '🔓';
+                } else {
+                    lockedSlots.add(lockId);
+                    icon.classList.add('locked');
+                    icon.textContent = '🔒';
+                }
             }
 
             async function toggleFavorite(championName, role) {
