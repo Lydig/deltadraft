@@ -1,4 +1,4 @@
-# backend/server.py (v7 - Reverted to file-based)
+# backend/server.py (v8 - With Keep-Alive Ping)
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
@@ -33,6 +33,11 @@ for str_key, values in matchup_data_raw.items():
         matchup_stats[new_key] = values
         
 print("✅ All data loaded and ready.")
+
+# --- NEW: Keep-alive endpoint ---
+@app.route('/ping', methods=['GET'])
+def ping():
+    return jsonify({"status": "ok"}), 200
 
 def get_recommendations(my_team, enemy_team, target_role):
     recommendations = []
