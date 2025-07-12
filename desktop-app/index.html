@@ -93,7 +93,7 @@
         .ban-rec-controls button { flex-shrink: 0; }
         .champion-tile.ban-selected img { border-color: var(--red-neg); }
         .ban-rec-details { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background-color: #0f172a; padding: 0 15px; }
-        .ban-rec-details.visible { max-height: 500px; /* Adjust as needed */ padding: 10px 15px; }
+        .ban-rec-details.visible { max-height: 500px; padding: 10px 15px; }
         .ban-rec-details div { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 2px 0; }
     </style>
 </head>
@@ -152,6 +152,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- MODIFIED: Replace this placeholder with your actual Render URL ---
+            const API_BASE_URL = 'https://deltadraft.onrender.com'; 
+
             const roles = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
             let allChampions = [];
             let champIdToName = {};
@@ -212,7 +215,7 @@
                     allChampions = Object.values(champData.data);
                     allChampions.push({id: 'Ambessa', name: 'Ambessa', image: {full: 'Ambessa.png'}, key: '799'}, {id: 'Aurora', name: 'Aurora', image: {full: 'Aurora.png'}, key: '893'}, {id: 'Mel', name: 'Mel', image: {full: 'Mel.png'}, key: '800'});
                     allChampions.forEach(champ => { champIdToName[champ.key] = champ.id; });
-                    const roleResponse = await fetch('http://127.0.0.1:5000/role_data');
+                    const roleResponse = await fetch(`${API_BASE_URL}/role_data`);
                     const roleData = await roleResponse.json();
                     roleData.forEach(item => {
                         if (!roleProbabilities[item.champion]) roleProbabilities[item.champion] = {};
@@ -350,7 +353,7 @@
                     enemyTeam[role] = document.querySelector(`[data-side='${enemyTeamPanelSide}'][data-role='${role}']`).dataset.champion || null;
                 });
                 try {
-                    const response = await fetch('http://127.0.0.1:5000/recommend', {
+                    const response = await fetch(`${API_BASE_URL}/recommend`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ my_team: myTeam, enemy_team: enemyTeam, target_role: recommendationTarget.role })
                     });
@@ -690,7 +693,7 @@
                 });
 
                 try {
-                    const response = await fetch('http://127.0.0.1:5000/analyze_draft', {
+                    const response = await fetch(`${API_BASE_URL}/analyze_draft`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ blue_team: blueTeam, red_team: redTeam })
                     });
@@ -817,7 +820,7 @@
                 });
 
                 try {
-                    const response = await fetch('http://127.0.0.1:5000/ban_recommendations', {
+                    const response = await fetch(`${API_BASE_URL}/ban_recommendations`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ my_role: myRole, my_picks: myPicks, current_allies: currentAllies, consider_teammates: considerTeammates })
                     });
