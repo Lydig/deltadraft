@@ -95,9 +95,20 @@
         .ban-rec-details { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background-color: #0f172a; padding: 0 15px; }
         .ban-rec-details.visible { max-height: 500px; padding: 10px 15px; }
         .ban-rec-details div { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 2px 0; }
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex; justify-content: center; align-items: center;
+            color: var(--text-primary); font-size: 1.5rem; z-index: 2000;
+            flex-direction: column;
+        }
     </style>
 </head>
 <body>
+    <div id="loading-overlay" style="display: none;">
+        <p id="loading-message">Waking up server...</p>
+    </div>
+
     <div class="app-container">
         <div class="header"><h1>Delta Draft</h1></div>
         <div class="controls">
@@ -152,7 +163,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- MODIFIED: Replace this placeholder with your actual Render URL ---
             const API_BASE_URL = 'https://deltadraft.onrender.com'; 
 
             const roles = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
@@ -202,33 +212,89 @@
             const banRecTeammatesToggle = document.getElementById('ban-rec-teammates-toggle');
             const getBanRecsBtn = document.getElementById('get-ban-recs-btn');
             const banRecommendationList = document.getElementById('ban-recommendation-list');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const loadingMessage = document.getElementById('loading-message');
 
             window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !isShiftPressed) { isShiftPressed = true; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, true); } });
             window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { isShiftPressed = false; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, false); } });
             document.addEventListener('click', () => contextMenu.style.display = 'none');
 
+            async function fetchWithRetry(url, options = {}, isInitialLoad = false) {
+                const maxRetries = 12;
+                let attempt = 0;
+                
+                if (isInitialLoad) {
+                    loadingOverlay.style.display = 'flex';
+                    loadingMessage.textContent = 'Contacting server...';
+                }
+
+                while (attempt < maxRetries) {
+                    try {
+                        const response = await fetch(url, options);
+                        if (!response.ok) {
+                            // For server errors, we don't retry, we fail fast.
+                            if (response.status >= 500 && response.status < 600) {
+                                throw new Error(`Server error: ${response.status}`);
+                            }
+                            // For other client-side errors, we also fail. Network errors will be caught by the catch block.
+                             throw new Error(`HTTP error: ${response.status}`);
+                        }
+                        if (loadingOverlay.style.display === 'flex') loadingOverlay.style.display = 'none';
+                        return await response.json();
+                    } catch (error) {
+                        // Only retry on network errors (TypeError: Failed to fetch)
+                        if (error instanceof TypeError && error.message === "Failed to fetch") {
+                            attempt++;
+                            console.warn(`Attempt ${attempt} to fetch ${url} failed. Retrying...`);
+                            if (attempt >= maxRetries) {
+                                if (isInitialLoad) {
+                                    loadingMessage.textContent = `Server did not respond. Please try restarting the app.`;
+                                }
+                                throw new Error("Server is not responding.");
+                            }
+                            if (loadingOverlay.style.display !== 'flex') {
+                                loadingOverlay.style.display = 'flex';
+                                loadingMessage.textContent = `Reconnecting to server...`;
+                            } else if (isInitialLoad) {
+                                loadingMessage.textContent = `Waking up server... (Attempt ${attempt}/${maxRetries})`;
+                            }
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                        } else {
+                            // For non-network errors, fail immediately
+                            if (loadingOverlay.style.display === 'flex') loadingOverlay.style.display = 'none';
+                            throw error;
+                        }
+                    }
+                }
+            }
+
             async function initializeApp() {
-                favorites = await window.electronAPI.getFavorites();
                 try {
-                    const response = await fetch('https://ddragon.leagueoflegends.com/cdn/14.13.1/data/en_US/champion.json');
-                    const champData = await response.json();
+                    const roleData = await fetchWithRetry(`${API_BASE_URL}/role_data`, {}, true);
+                    
+                    favorites = await window.electronAPI.getFavorites();
+                    const ddragonResponse = await fetch('https://ddragon.leagueoflegends.com/cdn/14.13.1/data/en_US/champion.json');
+                    const champData = await ddragonResponse.json();
+                    
                     allChampions = Object.values(champData.data);
                     allChampions.push({id: 'Ambessa', name: 'Ambessa', image: {full: 'Ambessa.png'}, key: '799'}, {id: 'Aurora', name: 'Aurora', image: {full: 'Aurora.png'}, key: '893'}, {id: 'Mel', name: 'Mel', image: {full: 'Mel.png'}, key: '800'});
                     allChampions.forEach(champ => { champIdToName[champ.key] = champ.id; });
-                    const roleResponse = await fetch(`${API_BASE_URL}/role_data`);
-                    const roleData = await roleResponse.json();
+                    
                     roleData.forEach(item => {
                         if (!roleProbabilities[item.champion]) roleProbabilities[item.champion] = {};
                         roleProbabilities[item.champion][item.role] = item.pick_rate;
                         validRolesSet.add(`${item.champion}-${item.role}`);
                     });
-                } catch (e) { console.error("Failed to initialize app data:", e); alert("Could not load necessary data. Please ensure the backend server is running and you have an internet connection."); }
-                
-                banRecRoleSelect.innerHTML = roles.map(r => `<option value="${r}">${r}</option>`).join('');
-                createRoleSlots();
-                populateChampionGrid();
-                updateTeamSideLabels();
-                updateAllGridFavoriteStars();
+
+                    banRecRoleSelect.innerHTML = roles.map(r => `<option value="${r}">${r}</option>`).join('');
+                    createRoleSlots();
+                    populateChampionGrid();
+                    updateTeamSideLabels();
+                    updateAllGridFavoriteStars();
+                } catch (e) {
+                    loadingMessage.textContent = `Error: ${e.message}`;
+                    alert(`Failed to initialize app: ${e.message}`);
+                }
             }
 
             function updateTeamSideLabels() {
@@ -353,14 +419,11 @@
                     enemyTeam[role] = document.querySelector(`[data-side='${enemyTeamPanelSide}'][data-role='${role}']`).dataset.champion || null;
                 });
                 try {
-                    const response = await fetch(`${API_BASE_URL}/recommend`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ my_team: myTeam, enemy_team: enemyTeam, target_role: recommendationTarget.role })
-                    });
-                    if (!response.ok) throw new Error("Backend server error");
-                    lastRecommendations = await response.json();
+                    const payload = { my_team: myTeam, enemy_team: enemyTeam, target_role: recommendationTarget.role };
+                    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) };
+                    lastRecommendations = await fetchWithRetry(`${API_BASE_URL}/recommend`, options);
                     displayFilteredRecommendations();
-                } catch (error) { console.error("Failed to get recommendations:", error); recommendationList.innerHTML = '<li>Error fetching recommendations.</li>'; }
+                } catch (error) { console.error("Failed to get recommendations:", error); recommendationList.innerHTML = `<li>${error.message}</li>`; }
             }
             
             function displayFilteredRecommendations() {
@@ -693,16 +756,13 @@
                 });
 
                 try {
-                    const response = await fetch(`${API_BASE_URL}/analyze_draft`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ blue_team: blueTeam, red_team: redTeam })
-                    });
-                    if (!response.ok) throw new Error("Backend server error for analysis");
-                    const analysisData = await response.json();
+                    const payload = { blue_team: blueTeam, red_team: redTeam };
+                    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) };
+                    const analysisData = await fetchWithRetry(`${API_BASE_URL}/analyze_draft`, options);
                     renderAnalysisView(analysisData);
                 } catch (error) {
                     console.error("Failed to get draft analysis:", error);
-                    analysisView.innerHTML = '<li>Error fetching analysis.</li>';
+                    analysisView.innerHTML = `<li>${error.message}</li>`;
                 }
             }
 
@@ -820,16 +880,13 @@
                 });
 
                 try {
-                    const response = await fetch(`${API_BASE_URL}/ban_recommendations`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ my_role: myRole, my_picks: myPicks, current_allies: currentAllies, consider_teammates: considerTeammates })
-                    });
-                    if (!response.ok) throw new Error("Backend server error for ban recommendations");
-                    const banRecs = await response.json();
+                    const payload = { my_role: myRole, my_picks: myPicks, current_allies: currentAllies, consider_teammates: considerTeammates };
+                    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) };
+                    const banRecs = await fetchWithRetry(`${API_BASE_URL}/ban_recommendations`, options);
                     renderBanRecommendations(banRecs);
                 } catch (error) {
                     console.error("Failed to get ban recommendations:", error);
-                    banRecommendationList.innerHTML = '<li>Error fetching ban recommendations.</li>';
+                    banRecommendationList.innerHTML = `<li>${error.message}</li>`;
                 }
             }
 
@@ -1051,6 +1108,17 @@
             });
             
             initializeApp();
+
+            // --- NEW: Keep-alive ping ---
+            setInterval(() => {
+                console.log("Pinging server to keep it awake...");
+                fetch(`${API_BASE_URL}/ping`)
+                    .then(res => {
+                        if (res.ok) console.log("Ping successful.");
+                        else console.warn("Ping failed, server might be restarting.");
+                    })
+                    .catch(err => console.error("Ping failed:", err));
+            }, 10 * 60 * 1000); // 10 minutes
         });
     </script>
 </body>
