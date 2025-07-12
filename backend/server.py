@@ -1,4 +1,4 @@
-# backend/server.py (v7 - With Ban Rec Breakdown)
+# backend/server.py (v7 - Reverted to file-based)
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
@@ -146,7 +146,6 @@ def ban_recommendations():
         
         if ban_champ in my_picks: continue
 
-        # --- MODIFIED: Store detailed breakdown ---
         if ban_champ not in ban_scores:
             ban_scores[ban_champ] = {"score": 0, "breakdown": {}}
 
@@ -155,7 +154,6 @@ def ban_recommendations():
             if my_pick_combo not in base_winrates: continue
             my_base_wr = base_winrates[my_pick_combo]
 
-            # Enemy Threat
             enemy_key = (my_pick_champ, my_role, ban_champ, ban_role, 'enemy')
             enemy_stats = matchup_stats.get(enemy_key)
             if enemy_stats:
@@ -166,7 +164,6 @@ def ban_recommendations():
                     ban_scores[ban_champ]["breakdown"][my_pick_champ] += delta
                     ban_scores[ban_champ]["score"] += delta
 
-            # Ally Nuisance
             ally_key = (my_pick_champ, my_role, ban_champ, ban_role, 'teammate')
             ally_stats = matchup_stats.get(ally_key)
             if ally_stats:
@@ -194,11 +191,9 @@ def ban_recommendations():
                         ban_scores[ban_champ]["breakdown"][ally_champ] += delta
                         ban_scores[ban_champ]["score"] += delta
 
-    # Format the final list
     final_bans = []
     for champ, data in ban_scores.items():
         if data["score"] < 0:
-            # Convert breakdown dict to sorted list
             sorted_breakdown = sorted(data["breakdown"].items(), key=lambda item: item[1])
             final_bans.append({
                 "champion": champ,
