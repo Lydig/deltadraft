@@ -1,4 +1,4 @@
-# backend/server.py (v8 - With Keep-Alive Ping)
+# backend/server.py (v9 - Final Polish)
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
@@ -34,12 +34,11 @@ for str_key, values in matchup_data_raw.items():
         
 print("✅ All data loaded and ready.")
 
-# --- NEW: Keep-alive endpoint ---
 @app.route('/ping', methods=['GET'])
 def ping():
     return jsonify({"status": "ok"}), 200
 
-def get_recommendations(my_team, enemy_team, target_role):
+def get_recommendations(my_team, enemy_team, target_role, sort_by='total_delta'):
     recommendations = []
     champions_to_consider = [item['champion'] for item in valid_roles_list if item['role'] == target_role]
     
@@ -61,13 +60,19 @@ def get_recommendations(my_team, enemy_team, target_role):
                     total_delta += delta
                     delta_breakdown.append({"source": champ, "delta": delta, "games": games})
         
+        expected_wr = base_wr + total_delta
         recommendations.append({
             "champion": pick_champ, "total_delta": total_delta,
             "base_win_rate": base_wr, "pick_rate": pick_rates.get(pick_combo, 0),
+            "expected_win_rate": expected_wr,
             "breakdown": sorted(delta_breakdown, key=lambda x: x['delta'], reverse=True)
         })
         
-    recommendations.sort(key=lambda x: x['total_delta'], reverse=True)
+    # --- MODIFIED: Sort by the specified key ---
+    if sort_by not in ['total_delta', 'base_win_rate', 'expected_win_rate']:
+        sort_by = 'total_delta' # Default to total_delta if invalid key is provided
+        
+    recommendations.sort(key=lambda x: x[sort_by], reverse=True)
     return recommendations
 
 def get_champion_analysis(pick_champ, pick_role, my_team, enemy_team):
@@ -81,8 +86,7 @@ def get_champion_analysis(pick_champ, pick_role, my_team, enemy_team):
 
     for team_member, relationship in [(enemy_team, 'enemy'), (my_team, 'teammate')]:
         for role, champ in team_member.items():
-            if relationship == 'teammate' and champ == pick_champ:
-                continue
+            if relationship == 'teammate' and champ == pick_champ: continue
             if champ and (champ, role) in valid_roles_set:
                 matchup_key = (pick_champ, pick_role, champ, role, relationship)
                 stats = matchup_stats.get(matchup_key)
@@ -100,7 +104,8 @@ def get_champion_analysis(pick_champ, pick_role, my_team, enemy_team):
 @app.route('/recommend', methods=['POST'])
 def recommend():
     data = request.get_json()
-    recommendations = get_recommendations(data['my_team'], data['enemy_team'], data['target_role'])
+    sort_by = data.get('sort_by', 'total_delta')
+    recommendations = get_recommendations(data['my_team'], data['enemy_team'], data['target_role'], sort_by)
     return jsonify(recommendations)
 
 @app.route('/role_data', methods=['GET'])
@@ -164,8 +169,7 @@ def ban_recommendations():
             if enemy_stats:
                 delta = enemy_stats['win_rate'] - my_base_wr
                 if delta < 0:
-                    if my_pick_champ not in ban_scores[ban_champ]["breakdown"]:
-                        ban_scores[ban_champ]["breakdown"][my_pick_champ] = 0
+                    if my_pick_champ not in ban_scores[ban_champ]["breakdown"]: ban_scores[ban_champ]["breakdown"][my_pick_champ] = 0
                     ban_scores[ban_champ]["breakdown"][my_pick_champ] += delta
                     ban_scores[ban_champ]["score"] += delta
 
@@ -174,8 +178,7 @@ def ban_recommendations():
             if ally_stats:
                 delta = ally_stats['win_rate'] - my_base_wr
                 if delta < 0:
-                    if my_pick_champ not in ban_scores[ban_champ]["breakdown"]:
-                        ban_scores[ban_champ]["breakdown"][my_pick_champ] = 0
+                    if my_pick_champ not in ban_scores[ban_champ]["breakdown"]: ban_scores[ban_champ]["breakdown"][my_pick_champ] = 0
                     ban_scores[ban_champ]["breakdown"][my_pick_champ] += delta
                     ban_scores[ban_champ]["score"] += delta
 
@@ -191,8 +194,7 @@ def ban_recommendations():
                 if enemy_stats_for_ally:
                     delta = enemy_stats_for_ally['win_rate'] - ally_base_wr
                     if delta < 0:
-                        if ally_champ not in ban_scores[ban_champ]["breakdown"]:
-                            ban_scores[ban_champ]["breakdown"][ally_champ] = 0
+                        if ally_champ not in ban_scores[ban_champ]["breakdown"]: ban_scores[ban_champ]["breakdown"][ally_champ] = 0
                         ban_scores[ban_champ]["breakdown"][ally_champ] += delta
                         ban_scores[ban_champ]["score"] += delta
 
