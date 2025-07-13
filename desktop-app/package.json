@@ -1,16 +1,36 @@
 {
-  "name": "desktop-app",
+  "name": "deltadraft",
   "version": "1.0.0",
-  "description": "",
+  "description": "League of Legends Champion Pick Recommender",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "npx electron-builder"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "electron": "^37.2.0"
+    "electron": "^31.0.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.deltadraft.app",
+    "productName": "DeltaDraft",
+    "files": [
+      "**/*",
+      "!*.code-workspace",
+      "!LICENSE.md",
+      "!package.json",
+      "!package-lock.json",
+      "!README.md"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    }
   }
 }
