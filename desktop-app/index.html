@@ -64,7 +64,6 @@
         .context-menu-item .star { margin-right: 8px; color: var(--text-secondary); }
         .context-menu-item.favorited .star { color: var(--yellow-warn); }
         .unavailable { filter: grayscale(100%); opacity: 0.5; }
-        .champion-tile.unavailable { pointer-events: none; }
         .lock-icon { position: absolute; bottom: 4px; right: 5px; cursor: pointer; font-size: 1rem; display: none; color: var(--text-secondary); text-shadow: 0 0 3px black; }
         .role-slot[data-champion] .lock-icon { display: block; }
         .lock-icon.locked { color: var(--accent-color); }
@@ -104,7 +103,7 @@
         .rec-controls-row input[type="text"] { flex-grow: 1; font-size: 0.9rem; }
         .input-group { display: flex; flex-direction: column; }
         .input-group label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; }
-        .input-group input[type="number"] { width: 120px; font-size: 0.9rem; }
+        .input-group input[type="number"], .input-group select { width: 120px; font-size: 0.9rem; }
         .blue-text { color: #5c9be4; font-weight: bold; }
         .red-text { color: #e84e4e; font-weight: bold; }
     </style>
@@ -140,6 +139,14 @@
                                 <button id="get-recs-btn" disabled>Get Recommendations</button>
                             </div>
                             <div class="rec-controls-row">
+                                <div class="input-group">
+                                    <label for="sort-by-select">Sort By</label>
+                                    <select id="sort-by-select">
+                                        <option value="total_delta" selected>Total Delta</option>
+                                        <option value="expected_win_rate">Expected WR</option>
+                                        <option value="base_win_rate">Base WR</option>
+                                    </select>
+                                </div>
                                 <div class="input-group">
                                     <label for="base-wr-filter">Min Base WR %</label>
                                     <input type="number" id="base-wr-filter" min="0" max="100">
@@ -208,6 +215,7 @@
             const getRecsBtn = document.getElementById('get-recs-btn');
             const roleRateFilter = document.getElementById('role-rate-filter');
             const baseWrFilter = document.getElementById('base-wr-filter');
+            const sortBySelect = document.getElementById('sort-by-select');
             const deltaTooltip = document.getElementById('delta-tooltip');
             const warningTooltip = document.getElementById('warning-tooltip');
             const draftArea = document.getElementById('draft-area');
@@ -434,7 +442,12 @@
                     enemyTeam[role] = document.querySelector(`[data-side='${enemyTeamPanelSide}'][data-role='${role}']`).dataset.champion || null;
                 });
                 try {
-                    const payload = { my_team: myTeam, enemy_team: enemyTeam, target_role: recommendationTarget.role };
+                    const payload = { 
+                        my_team: myTeam, 
+                        enemy_team: enemyTeam, 
+                        target_role: recommendationTarget.role,
+                        sort_by: sortBySelect.value // --- NEW: Send sort preference to backend
+                    };
                     const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) };
                     lastRecommendations = await fetchWithRetry(`${API_BASE_URL}/recommend`, options);
                     displayFilteredRecommendations();
@@ -475,14 +488,16 @@
                     const li = document.createElement('li');
                     
                     li.dataset.championName = pick.champion;
-                    if (unavailableChampions.has(pick.champion)) {
-                        li.classList.add('unavailable');
-                    }
+                    // --- MODIFIED: Do not apply unavailable class to recommendation list ---
+                    // if (unavailableChampions.has(pick.champion)) {
+                    //     li.classList.add('unavailable');
+                    // }
 
                     li.dataset.breakdown = JSON.stringify(pick.breakdown);
                     const deltaStr = (pick.total_delta >= 0 ? '+' : '') + (pick.total_delta * 100).toFixed(2) + '%';
                     const baseWrStr = (pick.base_win_rate * 100).toFixed(2) + '%';
                     const pickRateStr = (pick.pick_rate * 100).toFixed(2) + '%';
+                    const expectedWrStr = (pick.expected_win_rate * 100).toFixed(2) + '%';
                     
                     const isFavorite = favorites[`${pick.champion}-${recommendationTarget?.role}`];
                     const favoriteStar = isFavorite ? '<span class="rec-favorite-star">★</span>' : '';
@@ -496,9 +511,10 @@
                         <div class="rec-info">
                             <div class="rec-name">${pick.champion}${favoriteStar}</div>
                             <div class="rec-stats">
-                                <span>Delta: <b class="${pick.total_delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> | 
-                                <span>Base WR: ${baseWrStr}</span> | 
-                                <span>Role Rate: ${pickRateStr}</span>
+                                <span>Δ: <b class="${pick.total_delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> | 
+                                <span>Base: ${baseWrStr}</span> | 
+                                <span>Exp: ${expectedWrStr}</span> |
+                                <span>Role: ${pickRateStr}</span>
                             </div>
                         </div>`;
                     recommendationList.appendChild(li);
@@ -599,9 +615,14 @@
             });
 
             function updateAvailabilityUI() {
-                document.querySelectorAll('[data-champion-name]').forEach(el => {
-                    const champName = el.dataset.championName;
-                    el.classList.toggle('unavailable', unavailableChampions.has(champName));
+                document.querySelectorAll('.champion-tile').forEach(tile => {
+                    const champName = tile.dataset.championName;
+                    tile.classList.toggle('unavailable', unavailableChampions.has(champName));
+                });
+                // --- MODIFIED: Do not grey out analysis view ---
+                document.querySelectorAll('#recommendation-list li, #ban-recommendation-list li').forEach(li => {
+                    const champName = li.dataset.championName;
+                    li.classList.toggle('unavailable', unavailableChampions.has(champName));
                 });
             }
 
@@ -644,7 +665,8 @@
                 let currentDraftState = '';
                 roles.forEach(role => { currentDraftState += (myAssignments[role] || '') + (theirAssignments[role] || ''); });
 
-                if (currentDraftState !== lastKnownDraftState) {
+                // --- MODIFIED: Force update even if state is the same, to handle re-sync ---
+                // if (currentDraftState !== lastKnownDraftState) {
                     lastKnownDraftState = currentDraftState;
                     roles.forEach(role => {
                         setChampionForSlot('left', role, myAssignments[role]);
@@ -654,7 +676,7 @@
                         updateRecommendations();
                     }
                     updateAnalysisView();
-                }
+                // }
                 updateAvailabilityUI();
             }
             
@@ -989,7 +1011,10 @@
             });
             roleRateFilter.addEventListener('input', displayFilteredRecommendations);
             baseWrFilter.addEventListener('input', displayFilteredRecommendations);
-            recommendationSearch.addEventListener('input', displayFilteredRecommendations); // --- FIXED: Added missing listener ---
+            recommendationSearch.addEventListener('input', displayFilteredRecommendations);
+            sortBySelect.addEventListener('change', () => {
+                if (recommendationTarget) updateRecommendations();
+            });
             swapSidesBtn.addEventListener('click', () => {
                 leftPanelIsBlue = !leftPanelIsBlue;
                 updateTeamSideLabels();
