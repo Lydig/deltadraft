@@ -54,10 +54,6 @@
         .tooltip-col .champ-name { max-width: 70px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: middle; }
         .delta-neutral { color: var(--text-secondary); font-style: italic; font-size: 0.8rem;}
         .games-count { font-size: 0.75rem; color: var(--text-secondary); margin-left: 5px; }
-        .recommendation-controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items: center; }
-        .recommendation-controls input[type="text"] { flex-grow: 1; font-size: 0.9rem; min-width: 150px; }
-        .recommendation-controls input[type="number"] { width: 160px; font-size: 0.9rem; flex-shrink: 0; }
-        .recommendation-controls button { flex-shrink: 0; }
         .favorite-toggle-label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
         .grid-favorite-star { position: absolute; top: 2px; right: 2px; color: var(--yellow-warn); font-size: 1.2rem; text-shadow: 0 0 3px black; pointer-events: none; display: none; }
         .champion-tile.is-favorite .grid-favorite-star { display: block; }
@@ -102,6 +98,15 @@
             color: var(--text-primary); font-size: 1.5rem; z-index: 2000;
             flex-direction: column;
         }
+        .rec-rank { font-size: 0.9rem; color: var(--text-secondary); width: 50px; text-align: right; flex-shrink: 0; }
+        .recommendation-controls { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .rec-controls-row { display: flex; gap: 10px; align-items: flex-end; }
+        .rec-controls-row input[type="text"] { flex-grow: 1; font-size: 0.9rem; }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; }
+        .input-group input[type="number"] { width: 120px; font-size: 0.9rem; }
+        .blue-text { color: #5c9be4; font-weight: bold; }
+        .red-text { color: #e84e4e; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -130,12 +135,23 @@
                     <div id="recommendations-view" class="tab-content">
                         <h3 id="recs-header">Recommendations:</h3>
                         <div class="recommendation-controls">
-                            <input type="text" id="recommendation-search" placeholder="Search recommendations...">
-                            <input type="number" id="role-rate-filter" placeholder="Min Role Rate %" min="0" max="100">
-                            <label class="favorite-toggle-label">
-                                <input type="checkbox" id="favorites-only-toggle"> Show Favorites Only
-                            </label>
-                            <button id="get-recs-btn" disabled>Get Recommendations</button>
+                            <div class="rec-controls-row">
+                                <input type="text" id="recommendation-search" placeholder="Search recommendations...">
+                                <button id="get-recs-btn" disabled>Get Recommendations</button>
+                            </div>
+                            <div class="rec-controls-row">
+                                <div class="input-group">
+                                    <label for="base-wr-filter">Min Base WR %</label>
+                                    <input type="number" id="base-wr-filter" min="0" max="100">
+                                </div>
+                                <div class="input-group">
+                                    <label for="role-rate-filter">Min Role Rate %</label>
+                                    <input type="number" id="role-rate-filter" min="0" max="100">
+                                </div>
+                                <label class="favorite-toggle-label">
+                                    <input type="checkbox" id="favorites-only-toggle"> Favorites
+                                </label>
+                            </div>
                         </div>
                         <ol id="recommendation-list"></ol>
                     </div>
@@ -191,6 +207,7 @@
             const resetBtn = document.getElementById('reset-btn');
             const getRecsBtn = document.getElementById('get-recs-btn');
             const roleRateFilter = document.getElementById('role-rate-filter');
+            const baseWrFilter = document.getElementById('base-wr-filter');
             const deltaTooltip = document.getElementById('delta-tooltip');
             const warningTooltip = document.getElementById('warning-tooltip');
             const draftArea = document.getElementById('draft-area');
@@ -232,17 +249,14 @@
                     try {
                         const response = await fetch(url, options);
                         if (!response.ok) {
-                            // For server errors, we don't retry, we fail fast.
                             if (response.status >= 500 && response.status < 600) {
                                 throw new Error(`Server error: ${response.status}`);
                             }
-                            // For other client-side errors, we also fail. Network errors will be caught by the catch block.
                              throw new Error(`HTTP error: ${response.status}`);
                         }
                         if (loadingOverlay.style.display === 'flex') loadingOverlay.style.display = 'none';
                         return await response.json();
                     } catch (error) {
-                        // Only retry on network errors (TypeError: Failed to fetch)
                         if (error instanceof TypeError && error.message === "Failed to fetch") {
                             attempt++;
                             console.warn(`Attempt ${attempt} to fetch ${url} failed. Retrying...`);
@@ -260,7 +274,6 @@
                             }
                             await new Promise(resolve => setTimeout(resolve, 5000));
                         } else {
-                            // For non-network errors, fail immediately
                             if (loadingOverlay.style.display === 'flex') loadingOverlay.style.display = 'none';
                             throw error;
                         }
@@ -291,6 +304,7 @@
                     populateChampionGrid();
                     updateTeamSideLabels();
                     updateAllGridFavoriteStars();
+                    resetDraft();
                 } catch (e) {
                     loadingMessage.textContent = `Error: ${e.message}`;
                     alert(`Failed to initialize app: ${e.message}`);
@@ -384,11 +398,12 @@
                 analysisView.innerHTML = '';
                 banRecommendationList.innerHTML = '';
                 getRecsBtn.disabled = true;
-                getRecsBtn.textContent = "Get Recommendations";
+                getRecsBtn.innerHTML = "Get Recommendations";
                 recsHeader.textContent = "Recommendations:";
                 swapSourceSlot = null;
                 recommendationTarget = null;
                 roleRateFilter.value = '';
+                baseWrFilter.value = '47';
                 recommendationSearch.value = '';
                 favoritesOnlyToggle.checked = false;
                 leftPanelIsBlue = true;
@@ -427,21 +442,34 @@
             }
             
             function displayFilteredRecommendations() {
-                const threshold = parseFloat(roleRateFilter.value) || 0;
+                const roleRateThreshold = parseFloat(roleRateFilter.value) || 0;
+                const baseWrThreshold = parseFloat(baseWrFilter.value) || 0;
                 const searchQuery = recommendationSearch.value.toLowerCase();
                 const favoritesOnly = favoritesOnlyToggle.checked;
 
-                let filteredRecs = lastRecommendations;
-                if (threshold > 0) { filteredRecs = filteredRecs.filter(pick => (pick.pick_rate * 100) >= threshold); }
-                if (searchQuery) { filteredRecs = filteredRecs.filter(pick => pick.champion.toLowerCase().includes(searchQuery)); }
-                if (favoritesOnly && recommendationTarget) {
-                    filteredRecs = filteredRecs.filter(pick => favorites[`${pick.champion}-${recommendationTarget.role}`]);
-                }
+                const globallyFilteredRecs = lastRecommendations.filter(pick => {
+                    return (pick.pick_rate * 100) >= roleRateThreshold && (pick.base_win_rate * 100) >= baseWrThreshold;
+                });
+
+                const rankMap = new Map();
+                globallyFilteredRecs.forEach((pick, index) => {
+                    rankMap.set(pick.champion, index + 1);
+                });
+                const totalRanks = globallyFilteredRecs.length;
+
+                const displayRecs = globallyFilteredRecs.filter(pick => {
+                    const searchMatch = !searchQuery || pick.champion.toLowerCase().includes(searchQuery);
+                    const favoriteMatch = !favoritesOnly || (recommendationTarget && favorites[`${pick.champion}-${recommendationTarget.role}`]);
+                    return searchMatch && favoriteMatch;
+                });
 
                 recommendationList.innerHTML = '';
-                if (filteredRecs.length === 0) { recommendationList.innerHTML = '<li>No champions meet the filter criteria.</li>'; return; }
+                if (displayRecs.length === 0) {
+                    recommendationList.innerHTML = '<li>No champions meet the filter criteria.</li>';
+                    return;
+                }
                 
-                filteredRecs.forEach(pick => {
+                displayRecs.forEach(pick => {
                     const champData = allChampions.find(c => c.id === pick.champion);
                     if (!champData) return;
                     const li = document.createElement('li');
@@ -459,7 +487,20 @@
                     const isFavorite = favorites[`${pick.champion}-${recommendationTarget?.role}`];
                     const favoriteStar = isFavorite ? '<span class="rec-favorite-star">★</span>' : '';
 
-                    li.innerHTML = `<img class="rec-img" src="./assets/champions/${champData.image.full}"><div class="rec-info"><div class="rec-name">${pick.champion}${favoriteStar}</div><div class="rec-stats"><span>Delta: <b class="${pick.total_delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> | <span>Base WR: ${baseWrStr}</span> | <span>Role Rate: ${pickRateStr}</span></div></div>`;
+                    const rank = rankMap.get(pick.champion);
+                    const rankStr = `${rank}/${totalRanks}`;
+
+                    li.innerHTML = `
+                        <div class="rec-rank">${rankStr}</div>
+                        <img class="rec-img" src="./assets/champions/${champData.image.full}">
+                        <div class="rec-info">
+                            <div class="rec-name">${pick.champion}${favoriteStar}</div>
+                            <div class="rec-stats">
+                                <span>Delta: <b class="${pick.total_delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> | 
+                                <span>Base WR: ${baseWrStr}</span> | 
+                                <span>Role Rate: ${pickRateStr}</span>
+                            </div>
+                        </div>`;
                     recommendationList.appendChild(li);
                 });
             }
@@ -478,7 +519,8 @@
                     getRecsBtn.disabled = false;
                     const sourceIsBlue = (swapSourceSlot.side === 'left' && leftPanelIsBlue) || (swapSourceSlot.side === 'right' && !leftPanelIsBlue);
                     const sideName = sourceIsBlue ? 'BLUE' : 'RED';
-                    getRecsBtn.textContent = `Get Recs for ${sideName} ${swapSourceSlot.role}`;
+                    const sideColorClass = sourceIsBlue ? 'blue-text' : 'red-text';
+                    getRecsBtn.innerHTML = `Recommend <span class="${sideColorClass}">${sideName}</span> ${swapSourceSlot.role}`;
                 }
             }
 
@@ -946,7 +988,8 @@
                 }
             });
             roleRateFilter.addEventListener('input', displayFilteredRecommendations);
-            recommendationSearch.addEventListener('input', displayFilteredRecommendations);
+            baseWrFilter.addEventListener('input', displayFilteredRecommendations);
+            recommendationSearch.addEventListener('input', displayFilteredRecommendations); // --- FIXED: Added missing listener ---
             swapSidesBtn.addEventListener('click', () => {
                 leftPanelIsBlue = !leftPanelIsBlue;
                 updateTeamSideLabels();
@@ -957,7 +1000,7 @@
                     const swapSourceSlot = { side: selected.dataset.side, role: selected.dataset.role };
                     const sourceIsBlue = (swapSourceSlot.side === 'left' && leftPanelIsBlue) || (swapSourceSlot.side === 'right' && !leftPanelIsBlue);
                     const sideName = sourceIsBlue ? 'BLUE' : 'RED';
-                    getRecsBtn.textContent = `Get Recs for ${sideName} ${swapSourceSlot.role}`;
+                    getRecsBtn.innerHTML = `Recommend <span class="${sourceIsBlue ? 'blue-text' : 'red-text'}">${sideName}</span> ${swapSourceSlot.role}`;
                 }
             });
 
@@ -1109,7 +1152,6 @@
             
             initializeApp();
 
-            // --- NEW: Keep-alive ping ---
             setInterval(() => {
                 console.log("Pinging server to keep it awake...");
                 fetch(`${API_BASE_URL}/ping`)
@@ -1118,7 +1160,7 @@
                         else console.warn("Ping failed, server might be restarting.");
                     })
                     .catch(err => console.error("Ping failed:", err));
-            }, 10 * 60 * 1000); // 10 minutes
+            }, 10 * 60 * 1000);
         });
     </script>
 </body>
