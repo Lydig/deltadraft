@@ -9,12 +9,11 @@ from tqdm.asyncio import tqdm_asyncio
 from collections import defaultdict
 import boto3
 
-# --- ACTION REQUIRED: FILL IN YOUR CLOUDFLARE R2 CREDENTIALS ---
-CLOUDFLARE_ACCOUNT_ID = ""
-AWS_ACCESS_KEY_ID = ""
-AWS_SECRET_ACCESS_KEY = ""
+# --- MODIFIED: Read credentials securely from environment variables ---
+CLOUDFLARE_ACCOUNT_ID = os.environ.get('CLOUDFLARE_ACCOUNT_ID')
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 R2_BUCKET_NAME = "deltadraft-data"
-# --- END OF ACTION REQUIRED ---
 
 # --- Constants ---
 DDRAGON_BASE_URL = "https://ddragon.leagueoflegends.com/cdn/{patch}/data/en_US/"
@@ -55,7 +54,7 @@ async def get_patches():
             response = await client.get(DDRAGON_VERSIONS_URL, headers=HEADERS)
             response.raise_for_status()
             versions = response.json()
-            return versions[0], versions[1] # Return latest and previous patch
+            return versions[0], versions[1]
         except Exception as e:
             print(f"An error occurred fetching patch versions: {e}")
             return None, None
@@ -230,8 +229,8 @@ def process_and_upload_dataset(results, id_to_name_map, time_period, rank, regio
         return 0
 
 async def main():
-    if "YOUR_ACCOUNT_ID" in CLOUDFLARE_ACCOUNT_ID or "YOUR_ACCESS_KEY" in AWS_ACCESS_KEY_ID:
-        print("❌ ERROR: Please fill in your Cloudflare R2 credentials at the top of the script.")
+    if not all([CLOUDFLARE_ACCOUNT_ID, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY]):
+        print("❌ ERROR: Missing one or more R2 credentials. Ensure CLOUDFLARE_ACCOUNT_ID, AWS_ACCESS_KEY_ID, and AWS_SECRET_ACCESS_KEY are set as environment variables.")
         return
 
     start_time = datetime.now()
@@ -266,7 +265,6 @@ async def main():
     except Exception as e:
         print(f"❌ FAILED to upload champion_mapping.json: {e}")
 
-
     champions_to_scrape = list(name_to_id_map.keys())
     
     filter_combinations = list(itertools.product(TIME_PERIODS, RANKS))
@@ -274,10 +272,10 @@ async def main():
     for time_period, rank in filter_combinations:
         print(f"\n--- Scraping for: Time={time_period}, Rank={rank}, Region={REGION_TO_SCRAPE} ---")
         
+        patch_to_use = latest_patch_api if time_period == 'patch' else time_period
+        
         scrape_combinations = list(itertools.product(champions_to_scrape, ROLES))
         
-        patch_to_use = latest_patch_api if time_period == 'patch' else time_period
-
         semaphore = asyncio.Semaphore(20)
         tasks = []
         async with httpx.AsyncClient() as session:
@@ -289,7 +287,6 @@ async def main():
 
         valid_results = [r for r in results if r is not None]
 
-        # --- NEW: Fallback Logic ---
         if time_period == 'patch' and not valid_results:
             print(f"⚠️  No data found for latest patch ({latest_patch_api}). Falling back to previous patch ({previous_patch_api}).")
             patch_to_use = previous_patch_api

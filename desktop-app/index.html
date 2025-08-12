@@ -199,7 +199,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const API_BASE_URL = 'http://127.0.0.1:5000'; 
+            const API_BASE_URL = 'https://deltadraft.vercel.app'; 
             const DDRAGON_BASE_URL = 'https://ddragon.leagueoflegends.com';
 
             const TIME_PERIODS = { patch: 'Current Patch', '30': 'Last 30 Days' };
@@ -318,7 +318,7 @@
                             if (response.status >= 500 && response.status < 600) {
                                 throw new Error(`Server error: ${response.status}`);
                             }
-                             throw new Error(`HTTP error: ${response.status}`);
+                            throw new Error(`HTTP error: ${response.status}`);
                         }
                         if (loadingOverlay.style.display === 'flex') loadingOverlay.style.display = 'none';
                         return await response.json();
@@ -427,7 +427,6 @@
                 leftTeamPanel.innerHTML = '<h2 id="left-team-header"></h2>';
                 rightTeamPanel.innerHTML = '<h2 id="right-team-header"></h2>';
                 roles.forEach(role => {
-                    // --- MODIFIED: Handle the 'SUPPORT' vs 'utility' mismatch for the icon URL ---
                     let iconRoleName = role.toLowerCase();
                     if (iconRoleName === 'support') {
                         iconRoleName = 'utility';
