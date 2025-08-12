@@ -28,6 +28,8 @@ __pycache__/
 /backend/server_v*.py
 # IGNORE personal notes.
 /riot.txt
+# IGNORE personal workspace
+/workspace/
 
 # User-specific Files
 .vscode/
