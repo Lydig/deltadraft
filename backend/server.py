@@ -4,16 +4,35 @@ import json
 import os
 import ast
 import threading
+import boto3
 
 app = Flask(__name__)
 CORS(app)
 
+# --- NEW: Production R2 Data Fetching ---
+# Read credentials securely from environment variables
+CLOUDFLARE_ACCOUNT_ID = os.environ.get('CLOUDFLARE_ACCOUNT_ID')
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+R2_BUCKET_NAME = "deltadraft-data"
+
+s3_client = None
+if all([CLOUDFLARE_ACCOUNT_ID, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY]):
+    s3_client = boto3.client(
+        's3',
+        endpoint_url=f'https://{CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com',
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name='auto',
+    )
+    print("✅ S3 client initialized for R2.")
+else:
+    print("⚠️  Missing R2 environment variables. Server will not be able to fetch data.")
+
 data_cache = {}
 cache_lock = threading.Lock()
 
-BASE_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
-
-def get_data_for_filters(time_period, rank):
+def get_data_from_r2(time_period, rank):
     time_period_dir = f"days_{time_period}" if time_period.isdigit() else time_period
     region = 'all'
     cache_key = (time_period, rank, region)
@@ -25,24 +44,25 @@ def get_data_for_filters(time_period, rank):
         if cache_key in data_cache:
             return data_cache[cache_key]
 
-        print(f"Cache miss for {cache_key}. Loading from disk...")
+        if not s3_client:
+            print("❌ S3 client not available. Cannot fetch data.")
+            return None
+
+        print(f"Cache miss for {cache_key}. Fetching from R2...")
         
-        data_path = os.path.join(BASE_DATA_DIR, time_period_dir, rank, region)
-        if not os.path.exists(data_path):
-            print(f"⚠️  Data directory not found: {data_path}")
-            return None
-
-        # --- MODIFIED: Load from new consolidated file ---
         try:
-            with open(os.path.join(data_path, "champion_stats.json"), 'r') as f:
-                champion_stats_list = json.load(f)
-            with open(os.path.join(data_path, "matchup_winrates.json"), 'r') as f:
-                matchup_data_raw = json.load(f)
-        except FileNotFoundError as e:
-            print(f"⚠️  Missing a data file in {data_path}: {e}")
+            stats_key = f"{time_period_dir}/{rank}/{region}/champion_stats.json"
+            stats_obj = s3_client.get_object(Bucket=R2_BUCKET_NAME, Key=stats_key)
+            champion_stats_list = json.loads(stats_obj['Body'].read().decode('utf-8'))
+
+            matchups_key = f"{time_period_dir}/{rank}/{region}/matchup_winrates.json"
+            matchups_obj = s3_client.get_object(Bucket=R2_BUCKET_NAME, Key=matchups_key)
+            matchup_data_raw = json.loads(matchups_obj['Body'].read().decode('utf--8'))
+
+        except Exception as e:
+            print(f"⚠️  Failed to fetch data from R2 for {cache_key}: {e}")
             return None
 
-        # --- MODIFIED: Reconstruct data dictionaries from the single stats file ---
         valid_roles_set = set()
         base_winrates = {}
         pick_rates = {}
@@ -61,7 +81,7 @@ def get_data_for_filters(time_period, rank):
         matchup_stats = {ast.literal_eval(k): v for k, v in matchup_data_raw.items()}
 
         dataset = {
-            "champion_stats_list": champion_stats_list, # Pass the raw list for role_data endpoint
+            "champion_stats_list": champion_stats_list,
             "valid_roles_set": valid_roles_set,
             "base_winrates": base_winrates,
             "pick_rates": pick_rates,
@@ -73,18 +93,37 @@ def get_data_for_filters(time_period, rank):
         print(f"✅ Successfully loaded and cached data for {cache_key}.")
         return dataset
 
-MAPPING_FILE = os.path.join(BASE_DATA_DIR, "champion_mapping.json")
-try:
-    with open(MAPPING_FILE, 'r') as f: id_to_name = json.load(f)
-    print("✅ Global champion mapping loaded.")
-except FileNotFoundError:
-    id_to_name = {}
-    print("⚠️  Global champion_mapping.json not found.")
-
+# The rest of the server logic remains the same, but calls get_data_from_r2
 
 @app.route('/ping', methods=['GET'])
 def ping():
     return jsonify({"status": "ok"}), 200
+
+@app.route('/recommend', methods=['POST'])
+def recommend():
+    data = request.get_json()
+    time_period = data.get('time_period', 'patch')
+    rank = data.get('rank', 'platinum_plus')
+    
+    dataset = get_data_from_r2(time_period, rank)
+    if not dataset:
+        return jsonify({"error": f"No data available for {time_period}/{rank}"}), 404
+
+    sort_by = data.get('sort_by', 'total_delta')
+    recommendations = get_recommendations(data['my_team'], data['enemy_team'], data['target_role'], dataset, sort_by)
+    return jsonify(recommendations)
+
+@app.route('/role_data', methods=['POST'])
+def role_data():
+    data = request.get_json()
+    time_period = data.get('time_period', 'patch')
+    rank = data.get('rank', 'platinum_plus')
+    
+    dataset = get_data_from_r2(time_period, rank)
+    if not dataset:
+        return jsonify({"error": f"No data available for {time_period}/{rank}"}), 404
+        
+    return jsonify(dataset['champion_stats_list'])
 
 def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by='total_delta'):
     recommendations = []
@@ -111,7 +150,7 @@ def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by='tota
                     matchup_key = (pick_champ, target_role, champ, role, relationship)
                     stats = matchup_stats.get(matchup_key)
                     delta = (stats['win_rate'] - base_wr) if stats else 0
-                    games = stats['total_games'] if stats else 0
+                    games = stats.get('total_games', 0) if stats else 0
                     total_delta += delta
                     delta_breakdown.append({"source": champ, "delta": delta, "games": games})
         
@@ -130,36 +169,3 @@ def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by='tota
         
     recommendations.sort(key=lambda x: x[sort_by], reverse=True)
     return recommendations
-
-@app.route('/recommend', methods=['POST'])
-def recommend():
-    data = request.get_json()
-    time_period = data.get('time_period', 'patch')
-    rank = data.get('rank', 'platinum_plus')
-    
-    dataset = get_data_for_filters(time_period, rank)
-    if not dataset:
-        return jsonify({"error": f"No data available for {time_period}/{rank}"}), 404
-
-    sort_by = data.get('sort_by', 'total_delta')
-    recommendations = get_recommendations(data['my_team'], data['enemy_team'], data['target_role'], dataset, sort_by)
-    return jsonify(recommendations)
-
-@app.route('/role_data', methods=['POST'])
-def role_data():
-    data = request.get_json()
-    time_period = data.get('time_period', 'patch')
-    rank = data.get('rank', 'platinum_plus')
-    
-    dataset = get_data_for_filters(time_period, rank)
-    if not dataset:
-        return jsonify({"error": f"No data available for {time_period}/{rank}"}), 404
-        
-    return jsonify(dataset['champion_stats_list'])
-
-# Other endpoints like analyze_draft and ban_recommendations would be updated similarly.
-# For brevity, I am omitting them as they follow the same pattern as the /recommend endpoint.
-# They would need to call get_data_for_filters and use the returned dataset.
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
