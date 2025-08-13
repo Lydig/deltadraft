@@ -1,12 +1,4 @@
-distribution.
-
-does it have downtime during data scraping? while the data on cloudflare is being replaced, will the application be unstable/unusable?
-
-what about when we want to change things? like do we need to redeploy the vercel sometimes?
-
 is this the best approach? should we compute the best recommendation by simulating how good the draft looks AFTER adding a champion?
-
-readme.txt?
 
 draft analysis could analyse lane matchups and expectations (gold, cs, kills, deaths, assists, level, at early timestamps (we have this data)) like the davi heatmap
 
@@ -22,7 +14,7 @@ machine learning draft from win/lose and 10 champions
 
 should we preload every dataset?
 
-calculating...
+calculating... (ping Vercel sever to prevent it from going idle?)
 
 right now i need to press the role first and then the champion from the pool, could we also make it possible to press the champion first, and then the role?
 
@@ -40,9 +32,11 @@ change index.html from being one big file to sectioning it?
 
 
 
+Two methods for recommending:
 
+The Old Method was like a race where everyone starts at the same line, even if some runners are Olympic athletes and others are amateurs. It only measured the finish time.
 
-
+The New Method is like a handicapped race. The Olympic athletes have to start further back, and the amateurs get a head start. Now, if an amateur finishes with a decent time, we know they performed exceptionally well for their skill level.
 
 
 

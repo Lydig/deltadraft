@@ -109,6 +109,21 @@
         .data-filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 20px; padding: 10px; background-color: var(--bg-secondary); border-radius: 8px;}
         .data-filters .input-group { flex-grow: 1; }
         .data-filters .input-group select { width: 100%; }
+        /* --- NEW: Styles for the new toggle and tooltip --- */
+        .tooltip-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--text-secondary);
+            border-radius: 50%;
+            color: var(--text-secondary);
+            text-align: center;
+            font-size: 0.8rem;
+            line-height: 14px;
+            cursor: help;
+            margin-left: 5px;
+        }
+        #balance-tooltip { width: 300px; text-align: justify; }
     </style>
 </head>
 <body>
@@ -155,8 +170,7 @@
                                 <div class="input-group">
                                     <label for="sort-by-select">Sort By</label>
                                     <select id="sort-by-select">
-                                        <option value="total_delta" selected>Total Delta</option>
-                                        <option value="expected_win_rate">Expected WR</option>
+                                        <option value="expected_win_rate" selected>Expected WR</option>
                                         <option value="base_win_rate">Base WR</option>
                                     </select>
                                 </div>
@@ -170,6 +184,13 @@
                                 </div>
                                 <label class="favorite-toggle-label">
                                     <input type="checkbox" id="favorites-only-toggle"> Favorites
+                                </label>
+                            </div>
+                            <!-- --- NEW: Balance Toggle Row --- -->
+                            <div class="rec-controls-row" style="margin-top: 10px;">
+                                <label class="favorite-toggle-label">
+                                    <input type="checkbox" id="balance-toggle"> Assume Perfect Balance
+                                    <span class="tooltip-icon" id="balance-tooltip-icon">?</span>
                                 </label>
                             </div>
                         </div>
@@ -195,6 +216,11 @@
         <div id="delta-tooltip" class="tooltip"></div>
         <div id="warning-tooltip" class="tooltip">This champion plays this role in less than 1% of their games. Stats may not be reliable.</div>
         <div id="context-menu"></div>
+        <!-- --- NEW: Tooltip for the balance toggle --- -->
+        <div id="balance-tooltip" class="tooltip">
+            <p><b>Unchecked (Default):</b> The "Performance Review" method. This is like a handicapped race where strong champions (high base win rate) are expected to perform better. A recommendation is good if it outperforms that expectation.</p>
+            <p><b>Checked:</b> The "Simple Bonus" method. This assumes all champions are perfectly balanced (50% win rate). It recommends based purely on which champion gets the biggest raw synergy and counter-pick bonuses.</p>
+        </div>
     </div>
 
     <script>
@@ -216,14 +242,11 @@
             let roleProbabilities = {};
             let lcuIntervalId = null;
             let recommendationTarget = null;
-            
             let championRoleStats = new Map();
-
             let lastKnownDraftState = '';
             let swapSourceSlot = null;
             let lastRecommendations = [];
             let isShiftPressed = false;
-            let lastHoveredRec = null;
             let leftPanelIsBlue = true;
             let favorites = {};
             let unavailableChampions = new Set();
@@ -234,6 +257,9 @@
 
             const timePeriodSelect = document.getElementById('time-period-select');
             const rankSelect = document.getElementById('rank-select');
+            const balanceToggle = document.getElementById('balance-toggle');
+            const balanceTooltipIcon = document.getElementById('balance-tooltip-icon');
+            const balanceTooltip = document.getElementById('balance-tooltip');
             const championGrid = document.getElementById('champion-grid');
             const searchInput = document.getElementById('search-champion');
             const recommendationList = document.getElementById('recommendation-list');
@@ -243,7 +269,6 @@
             const roleRateFilter = document.getElementById('role-rate-filter');
             const baseWrFilter = document.getElementById('base-wr-filter');
             const sortBySelect = document.getElementById('sort-by-select');
-            const deltaTooltip = document.getElementById('delta-tooltip');
             const warningTooltip = document.getElementById('warning-tooltip');
             const draftArea = document.getElementById('draft-area');
             const leftTeamPanel = document.getElementById('left-team-panel');
@@ -267,17 +292,18 @@
             const loadingOverlay = document.getElementById('loading-overlay');
             const loadingMessage = document.getElementById('loading-message');
 
-            window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !isShiftPressed) { isShiftPressed = true; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, true); } });
-            window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { isShiftPressed = false; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, false); } });
+            window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !isShiftPressed) { isShiftPressed = true; } });
+            window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { isShiftPressed = false; } });
             document.addEventListener('click', () => contextMenu.style.display = 'none');
 
             const DEFAULT_SETTINGS = {
                 timePeriod: 'patch',
                 rank: 'platinum_plus',
-                sortBy: 'total_delta',
+                sortBy: 'expected_win_rate',
                 baseWr: '47',
                 roleRate: '',
-                favoritesOnly: false
+                favoritesOnly: false,
+                assumeBalanced: false
             };
 
             async function saveCurrentSettings() {
@@ -287,7 +313,8 @@
                     sortBy: sortBySelect.value,
                     baseWr: baseWrFilter.value,
                     roleRate: roleRateFilter.value,
-                    favoritesOnly: favoritesOnlyToggle.checked
+                    favoritesOnly: favoritesOnlyToggle.checked,
+                    assumeBalanced: balanceToggle.checked
                 };
                 await window.electronAPI.saveSettings(settings);
             }
@@ -300,6 +327,7 @@
                 baseWrFilter.value = effectiveSettings.baseWr;
                 roleRateFilter.value = effectiveSettings.roleRate;
                 favoritesOnlyToggle.checked = effectiveSettings.favoritesOnly;
+                balanceToggle.checked = effectiveSettings.assumeBalanced;
             }
 
             async function fetchWithRetry(url, options = {}, isInitialLoad = false) {
@@ -318,7 +346,7 @@
                             if (response.status >= 500 && response.status < 600) {
                                 throw new Error(`Server error: ${response.status}`);
                             }
-                            throw new Error(`HTTP error: ${response.status}`);
+                             throw new Error(`HTTP error: ${response.status}`);
                         }
                         if (loadingOverlay.style.display === 'flex') loadingOverlay.style.display = 'none';
                         return await response.json();
@@ -540,7 +568,8 @@
                         target_role: recommendationTarget.role,
                         sort_by: sortBySelect.value,
                         time_period: timePeriodSelect.value,
-                        rank: rankSelect.value
+                        rank: rankSelect.value,
+                        assume_balanced: balanceToggle.checked
                     };
                     const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) };
                     lastRecommendations = await fetchWithRetry(`${API_BASE_URL}/recommend`, options);
@@ -586,11 +615,11 @@
                         li.classList.add('unavailable');
                     }
 
-                    li.dataset.breakdown = JSON.stringify(pick.breakdown);
-                    const deltaStr = (pick.total_delta >= 0 ? '+' : '') + (pick.total_delta * 100).toFixed(2) + '%';
                     const baseWrStr = (pick.base_win_rate * 100).toFixed(2) + '%';
                     const roleFreqStr = (pick.role_frequency * 100).toFixed(1) + '%';
                     const expectedWrStr = (pick.expected_win_rate * 100).toFixed(2) + '%';
+                    const delta = pick.expected_win_rate - pick.base_win_rate;
+                    const deltaStr = (delta >= 0 ? '+' : '') + (delta * 100).toFixed(2) + '%';
                     
                     const isFavorite = favorites[`${pick.champion}-${recommendationTarget?.role}`];
                     const favoriteStar = isFavorite ? '<span class="rec-favorite-star">★</span>' : '';
@@ -604,9 +633,9 @@
                         <div class="rec-info">
                             <div class="rec-name">${pick.champion}${favoriteStar}</div>
                             <div class="rec-stats">
-                                <span>Δ: <b class="${pick.total_delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> | 
+                                <span>Exp: <b class="${pick.expected_win_rate >= 0.5 ? 'delta-pos' : 'delta-neg'}">${expectedWrStr}</b></span> | 
                                 <span>Base: ${baseWrStr}</span> | 
-                                <span>Exp: ${expectedWrStr}</span> |
+                                <span>Δ: <b class="${delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> |
                                 <span>Role Freq: ${roleFreqStr}</span>
                             </div>
                         </div>`;
@@ -890,9 +919,9 @@
                     const key = `${championName}-${role}`;
                     const isFavorited = favorites[key];
                     return `<div class="context-menu-item ${isFavorited ? 'favorited' : ''}" data-champion="${championName}" data-role="${role}">
-                                <span class="star">${isFavorited ? '★' : '☆'}</span>
-                                ${isFavorited ? 'Remove from' : 'Add to'} ${role} Favorites
-                            </div>`;
+                                    <span class="star">${isFavorited ? '★' : '☆'}</span>
+                                    ${isFavorited ? 'Remove from' : 'Add to'} ${role} Favorites
+                                </div>`;
                 }).join('');
                 contextMenu.style.display = 'block';
                 contextMenu.style.left = `${event.clientX}px`;
@@ -938,6 +967,7 @@
 
             timePeriodSelect.addEventListener('change', handleFilterChange);
             rankSelect.addEventListener('change', handleFilterChange);
+            balanceToggle.addEventListener('change', handleFilterChange);
             sortBySelect.addEventListener('change', () => { saveCurrentSettings(); handleFilterChange(); });
             baseWrFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
             roleRateFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
@@ -1028,87 +1058,6 @@
                 }
             });
 
-            [recommendationList, analysisView].forEach(element => {
-                element.addEventListener('mousemove', e => {
-                    const target = e.target.closest('[data-breakdown]');
-                    if (target) {
-                        const tooltipRect = deltaTooltip.getBoundingClientRect();
-                        let top = e.clientY - tooltipRect.height - 10;
-                        let left = e.clientX + 20;
-
-                        if (top < 0) top = 10;
-                        if (left + tooltipRect.width > window.innerWidth) {
-                            left = e.clientX - tooltipRect.width - 10;
-                        }
-
-                        deltaTooltip.style.left = `${left}px`;
-                        deltaTooltip.style.top = `${top}px`;
-                        updateTooltipContent(target, isShiftPressed);
-                    }
-                });
-                element.addEventListener('mouseover', e => {
-                    const target = e.target.closest('[data-breakdown]');
-                    lastHoveredRec = target;
-                    if (target) {
-                        updateTooltipContent(target, isShiftPressed);
-                        deltaTooltip.style.opacity = '1';
-                    }
-                });
-                element.addEventListener('mouseout', () => {
-                    lastHoveredRec = null;
-                    deltaTooltip.style.opacity = '0';
-                });
-            });
-            
-            function updateTooltipContent(target, shiftPressed) {
-                if (!target || !target.dataset.breakdown) return;
-                const breakdown = JSON.parse(target.dataset.breakdown);
-                const breakdownMap = Object.fromEntries(breakdown.map(item => [item.source, {delta: item.delta, games: item.games}]));
-                
-                const leftHeader = leftPanelIsBlue ? 'Blue Side' : 'Red Side';
-                const rightHeader = leftPanelIsBlue ? 'Red Side' : 'Blue Side';
-                
-                let leftHTML = `<h5>${leftHeader}</h5>`;
-                let rightHTML = `<h5>${rightHeader}</h5>`;
-
-                roles.forEach(role => {
-                    const leftChamp = document.querySelector(`[data-side="left"][data-role="${role}"]`).dataset.champion;
-                    const rightChamp = document.querySelector(`[data-side="right"][data-role="${role}"]`).dataset.champion;
-                    
-                    const leftSideColor = leftPanelIsBlue ? 'blue' : 'red';
-                    const rightSideColor = leftPanelIsBlue ? 'red' : 'blue';
-
-                    leftHTML += buildTooltipRow(leftChamp, leftSideColor, role, breakdownMap, shiftPressed);
-                    rightHTML += buildTooltipRow(rightChamp, rightSideColor, role, breakdownMap, shiftPressed);
-                });
-                deltaTooltip.innerHTML = `<h4>${target.dataset.championName} Breakdown</h4><div class="tooltip-columns"><div class="tooltip-col">${leftHTML}</div><div class="tooltip-col">${rightHTML}</div></div>`;
-            }
-
-            function formatGames(num) {
-                if (num < 1000) return num.toString();
-                return `${(num / 1000).toFixed(1)}k`;
-            }
-
-            function buildTooltipRow(champ, side, role, breakdownMap, showGames) {
-                let recColor = null;
-                if (recommendationTarget) {
-                    const targetIsBlue = (recommendationTarget.side === 'left' && leftPanelIsBlue) || (recommendationTarget.side === 'right' && !leftPanelIsBlue);
-                    recColor = targetIsBlue ? 'blue' : 'red';
-                }
-
-                if (recommendationTarget && recColor === side && recommendationTarget.role === role) {
-                    return `<div><span class="delta-neutral">RECOMMENDING</span></div>`;
-                } else if (champ) {
-                    const stats = breakdownMap[champ] || {delta: 0, games: 0};
-                    const delta = stats.delta * 100;
-                    const deltaClass = delta >= 0 ? 'delta-pos' : 'delta-neg';
-                    const gamesHTML = showGames ? `<span class="games-count">(${formatGames(stats.games)})</span>` : '';
-                    return `<div><span class="champ-name" title="${champ}">${champ}</span> ${gamesHTML}<span class="${deltaClass}">${delta.toFixed(2)}%</span></div>`;
-                } else {
-                    return `<div><span class="delta-neutral">${role} MISSING</span></div>`;
-                }
-            }
-            
             draftArea.addEventListener('mouseover', e => {
                 const warningIcon = e.target.closest('.warning-icon');
                 if (warningIcon) {
@@ -1121,6 +1070,15 @@
                 if (e.target.closest('.warning-icon')) {
                     warningTooltip.style.opacity = '0';
                 }
+            });
+
+            balanceTooltipIcon.addEventListener('mouseover', e => {
+                balanceTooltip.style.left = `${e.clientX + 15}px`;
+                balanceTooltip.style.top = `${e.clientY + 15}px`;
+                balanceTooltip.style.opacity = '1';
+            });
+            balanceTooltipIcon.addEventListener('mouseout', () => {
+                balanceTooltip.style.opacity = '0';
             });
             
             initializeApp();
