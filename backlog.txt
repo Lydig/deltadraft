@@ -1,0 +1,55 @@
+distribution.
+
+does it have downtime during data scraping? while the data on cloudflare is being replaced, will the application be unstable/unusable?
+
+what about when we want to change things? like do we need to redeploy the vercel sometimes?
+
+is this the best approach? should we compute the best recommendation by simulating how good the draft looks AFTER adding a champion?
+
+readme.txt?
+
+draft analysis could analyse lane matchups and expectations (gold, cs, kills, deaths, assists, level, at early timestamps (we have this data)) like the davi heatmap
+
+should delta contributions with low game count be excluded? filter option for user
+
+recommend button next to each role instead of having to select it first then press recommend
+
+sanity check - is this delta approach better than a machine learning or deep learning approach?
+
+machine learning draft from win/lose and 10 champions
+
+should we preload every dataset?
+
+right now i need to press the role first and then the champion from the pool, could we also make it possible to press the champion first, and then the role?
+
+pressing the search bar to begin searching should not deselect the current role i pressed
+
+min base wr % and mine role freq % has little arrow buttons that appear when you hover the field, these can be removed if possible
+
+how to use
+
+rename to DraftDiff?
+
+red side blue side stats - need to scrape that data
+
+change index.html from being one big file to sectioning it?
+
+
+
+
+
+
+
+
+
+
+
+
+
+DeltaDraft / DraftDiff
+
+DD is first and foremost meant to be a drafting tool that helps players find new picks or just help them choose the best pick in their given champion pool. At the moment it is based on 50 million games from 3 different recent patch 14's, where it calculates a champion/role's base winrate, and sees how that winrate changes against every single enemy champion, and with every single friendly champion. It then accumulates these "delta's" for every possible pick in the role you are drafting for, and recommends you the pick with the highest accumulated delta.
+
+I was inspired to make this tool because I personally like to vary which champions I play, but I find it hard to justify playing a champion that I'm not very practiced on, because I have no idea if it's a bad pick because of my lack of experience with the pick. With this tool I have already discovered numerous super interesting picks for myself to try in various roles - for example Ivern top, Vex top, Sylas support, Mordekaiser jungle, Zac mid, and many more.
+
+Right now I have confidence in the tool working fine on the data I have, but I would like to move on and future proof the tool by being able to collect data as patches roll out, with new champions and the like. The data I have right now I have gotten from another developer making a similar tool, who decided to kind of "pass on the torch" to others who had a passion for this kind of project. I need to be able to collect more data than the developer API allows.
