@@ -181,11 +181,15 @@
                                     <label for="role-rate-filter">Min Role Freq %</label>
                                     <input type="number" id="role-rate-filter" min="0" max="100">
                                 </div>
-                                <label class="favorite-toggle-label">
-                                    <input type="checkbox" id="favorites-only-toggle"> Favorites
-                                </label>
+                                <div class="input-group">
+                                    <label for="min-games-filter">Min Games</label>
+                                    <input type="number" id="min-games-filter" min="0">
+                                </div>
                             </div>
-                            <div class="rec-controls-row" style="margin-top: 10px;">
+                            <div class="rec-controls-row" style="margin-top: 10px; justify-content: space-between;">
+                                <label class="favorite-toggle-label">
+                                    <input type="checkbox" id="favorites-only-toggle"> Favorites Only
+                                </label>
                                 <label class="favorite-toggle-label">
                                     <input type="checkbox" id="balance-toggle"> Assume Perfect Balance
                                     <span class="tooltip-icon" id="balance-tooltip-icon">?</span>
@@ -258,6 +262,7 @@
             const balanceToggle = document.getElementById('balance-toggle');
             const balanceTooltipIcon = document.getElementById('balance-tooltip-icon');
             const balanceTooltip = document.getElementById('balance-tooltip');
+            const minGamesFilter = document.getElementById('min-games-filter');
             const championGrid = document.getElementById('champion-grid');
             const searchInput = document.getElementById('search-champion');
             const recommendationList = document.getElementById('recommendation-list');
@@ -302,7 +307,8 @@
                 baseWr: '47',
                 roleRate: '',
                 favoritesOnly: false,
-                assumeBalanced: false
+                assumeBalanced: false,
+                minGames: '10'
             };
 
             async function saveCurrentSettings() {
@@ -313,7 +319,8 @@
                     baseWr: baseWrFilter.value,
                     roleRate: roleRateFilter.value,
                     favoritesOnly: favoritesOnlyToggle.checked,
-                    assumeBalanced: balanceToggle.checked
+                    assumeBalanced: balanceToggle.checked,
+                    minGames: minGamesFilter.value
                 };
                 await window.electronAPI.saveSettings(settings);
             }
@@ -327,6 +334,7 @@
                 roleRateFilter.value = effectiveSettings.roleRate;
                 favoritesOnlyToggle.checked = effectiveSettings.favoritesOnly;
                 balanceToggle.checked = effectiveSettings.assumeBalanced;
+                minGamesFilter.value = effectiveSettings.minGames;
             }
 
             async function fetchWithRetry(url, options = {}, isInitialLoad = false) {
@@ -568,7 +576,8 @@
                         sort_by: sortBySelect.value,
                         time_period: timePeriodSelect.value,
                         rank: rankSelect.value,
-                        assume_balanced: balanceToggle.checked
+                        assume_balanced: balanceToggle.checked,
+                        min_games: parseInt(minGamesFilter.value) || 0
                     };
                     const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) };
                     lastRecommendations = await fetchWithRetry(`${API_BASE_URL}/recommend`, options);
@@ -928,25 +937,11 @@
                 contextMenu.style.top = `${event.clientY}px`;
             }
             
-            async function updateAnalysisView() {
-                // This function would also need to pass the filter params
-            }
-
-            function renderAnalysisView(analysisData) {
-                // This function would need to be updated to use the new data structure
-            }
-
-            function updateBanSelectionUI() {
-                // This function is fine
-            }
-
-            async function getBanRecommendations() {
-                // This function would also need to pass the filter params
-            }
-
-            function renderBanRecommendations(banRecs) {
-                // This function is fine
-            }
+            async function updateAnalysisView() {}
+            function renderAnalysisView(analysisData) {}
+            function updateBanSelectionUI() {}
+            async function getBanRecommendations() {}
+            function renderBanRecommendations(banRecs) {}
 
             async function handleFilterChange() {
                 await saveCurrentSettings();
@@ -954,8 +949,6 @@
                 analysisView.innerHTML = '';
                 banRecommendationList.innerHTML = '';
                 lastRecommendations = [];
-
-                await getRoleDataForFilters();
 
                 if (recommendationTarget) {
                     updateRecommendations();
@@ -969,6 +962,7 @@
             rankSelect.addEventListener('change', handleFilterChange);
             balanceToggle.addEventListener('change', handleFilterChange);
             sortBySelect.addEventListener('change', () => { saveCurrentSettings(); handleFilterChange(); });
+            minGamesFilter.addEventListener('change', handleFilterChange);
             baseWrFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
             roleRateFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
             favoritesOnlyToggle.addEventListener('change', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
@@ -1058,7 +1052,6 @@
                 }
             });
 
-            // --- MODIFIED: Re-enabled tooltip logic ---
             recommendationList.addEventListener('mousemove', e => {
                 const target = e.target.closest('[data-breakdown]');
                 if (target) {

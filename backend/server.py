@@ -93,8 +93,8 @@ def get_data_from_r2(time_period, rank):
         print(f"✅ Successfully loaded and cached data for {cache_key}.")
         return dataset
 
-# --- Core Recommendation Logic (REWRITTEN to include breakdowns) ---
-def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by, assume_balanced):
+# --- Core Recommendation Logic ---
+def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by, assume_balanced, min_games):
     recommendations = []
     champion_stats_list = dataset['champion_stats_list']
     champion_ratings = dataset['champion_ratings']
@@ -116,9 +116,14 @@ def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by, assu
                     if champ:
                         matchup_key = (pick_champ, target_role, champ, role, relationship)
                         stats = matchup_stats.get(matchup_key)
-                        delta = (stats['win_rate'] - base_wr) if stats else 0
-                        total_delta += delta
-                        delta_breakdown.append({"source": champ, "delta": delta, "games": stats.get('total_games', 0) if stats else 0})
+                        
+                        # --- MODIFIED: Apply min_games filter ---
+                        if stats and stats.get('total_games', 0) >= min_games:
+                            delta = stats['win_rate'] - base_wr
+                            total_delta += delta
+                            delta_breakdown.append({"source": champ, "delta": delta, "games": stats.get('total_games', 0)})
+                        else:
+                            delta_breakdown.append({"source": champ, "delta": 0, "games": stats.get('total_games', 0) if stats else 0})
             expected_wr = base_wr + total_delta
         else:
             total_rating = champion_ratings[pick_combo]['rating']
@@ -129,7 +134,9 @@ def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by, assu
                         if partner_combo in champion_ratings:
                             matchup_key = (pick_champ, target_role, champ, role, relationship)
                             matchup_data = matchup_stats.get(matchup_key)
-                            if matchup_data:
+                            
+                            # --- MODIFIED: Apply min_games filter ---
+                            if matchup_data and matchup_data.get('total_games', 0) >= min_games:
                                 pick_rating = champion_ratings[pick_combo]['rating']
                                 partner_rating = champion_ratings[partner_combo]['rating']
                                 
@@ -143,6 +150,8 @@ def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by, assu
                                 rating_adjustment = winrate_to_rating(0.5 + performance_delta)
                                 total_rating += rating_adjustment
                                 delta_breakdown.append({"source": champ, "delta": rating_adjustment, "games": matchup_data.get('total_games', 0)})
+                            else:
+                                delta_breakdown.append({"source": champ, "delta": 0, "games": matchup_data.get('total_games', 0) if matchup_data else 0})
             expected_wr = rating_to_winrate(total_rating)
 
         recommendations.append({
@@ -168,13 +177,14 @@ def recommend():
     time_period = data.get('time_period', 'patch')
     rank = data.get('rank', 'platinum_plus')
     assume_balanced = data.get('assume_balanced', False)
+    min_games = data.get('min_games', 10) # --- NEW: Get min_games from request
     
     dataset = get_data_from_r2(time_period, rank)
     if not dataset:
         return jsonify({"error": f"No data available for {time_period}/{rank}"}), 404
 
     sort_by = data.get('sort_by', 'expected_win_rate')
-    recommendations = get_recommendations(data['my_team'], data['enemy_team'], data['target_role'], dataset, sort_by, assume_balanced)
+    recommendations = get_recommendations(data['my_team'], data['enemy_team'], data['target_role'], dataset, sort_by, assume_balanced, min_games)
     return jsonify(recommendations)
 
 @app.route('/role_data', methods=['POST'])
