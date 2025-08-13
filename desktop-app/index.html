@@ -42,11 +42,9 @@
         .rec-name { font-weight: bold; }
         .rec-stats { font-size: 0.8rem; color: var(--text-secondary); }
         .delta-pos { color: var(--green-pos); } .delta-neg { color: var(--red-neg); }
-        .warning-icon { position: absolute; top: 5px; font-size: 1.2rem; color: var(--yellow-warn); text-shadow: 0 0 5px black; z-index: 2; }
-        .warning-icon.left { left: 5px; } .warning-icon.right { right: 5px; }
         .tooltip { position: fixed; background-color: #020617; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.1s; }
-        #delta-tooltip { width: 320px; } #warning-tooltip { width: 250px; }
-        #delta-tooltip h4, #warning-tooltip h4 { margin: 0 0 10px 0; color: var(--accent-color); font-size: 1rem; text-align: center; }
+        #delta-tooltip { width: 320px; }
+        #delta-tooltip h4 { margin: 0 0 10px 0; color: var(--accent-color); font-size: 1rem; text-align: center; }
         .tooltip-columns { display: flex; justify-content: space-between; gap: 15px; }
         .tooltip-col { flex: 1; }
         .tooltip-col h5 { margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 3px; }
@@ -64,8 +62,10 @@
         .context-menu-item .star { margin-right: 8px; color: var(--text-secondary); }
         .context-menu-item.favorited .star { color: var(--yellow-warn); }
         .unavailable { filter: grayscale(100%); opacity: 0.5; }
-        .lock-icon { position: absolute; bottom: 4px; right: 5px; cursor: pointer; font-size: 1rem; display: none; color: var(--text-secondary); text-shadow: 0 0 3px black; }
+        .lock-icon { position: absolute; bottom: 4px; cursor: pointer; font-size: 1rem; display: none; color: var(--text-secondary); text-shadow: 0 0 3px black; }
         .role-slot[data-champion] .lock-icon { display: block; }
+        .role-slot[data-side="left"] .lock-icon { left: 5px; }
+        .role-slot[data-side="right"] .lock-icon { right: 5px; }
         .lock-icon.locked { color: var(--accent-color); }
         .tabs { display: flex; border-bottom: 1px solid var(--border-color); }
         .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 10px 15px; color: var(--text-secondary); font-size: 1rem; }
@@ -123,6 +123,21 @@
             margin-left: 5px;
         }
         #balance-tooltip { width: 300px; text-align: justify; }
+        .rec-button {
+            position: absolute;
+            top: 4px;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            font-size: 1rem;
+            line-height: 28px;
+            text-align: center;
+            background-color: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border-color);
+            z-index: 5;
+        }
+        .role-slot[data-side="left"] .rec-button { left: 4px; }
+        .role-slot[data-side="right"] .rec-button { right: 4px; }
     </style>
 </head>
 <body>
@@ -163,7 +178,6 @@
                         <div class="recommendation-controls">
                             <div class="rec-controls-row">
                                 <input type="text" id="recommendation-search" placeholder="Search recommendations...">
-                                <button id="get-recs-btn" disabled>Get Recommendations</button>
                             </div>
                             <div class="rec-controls-row">
                                 <div class="input-group">
@@ -216,7 +230,6 @@
             <div class="team-panel" id="right-team-panel"><h2 id="right-team-header"></h2></div>
         </div>
         <div id="delta-tooltip" class="tooltip"></div>
-        <div id="warning-tooltip" class="tooltip">This champion plays this role in less than 1% of their games. Stats may not be reliable.</div>
         <div id="context-menu"></div>
         <div id="balance-tooltip" class="tooltip">
             <p><b>Unchecked (Default):</b> The "Performance Review" method. This is like a handicapped race where strong champions (high base win rate) are expected to perform better. A recommendation is good if it outperforms that expectation.</p>
@@ -268,12 +281,10 @@
             const recommendationList = document.getElementById('recommendation-list');
             const liveTrackingBtn = document.getElementById('live-tracking-btn');
             const resetBtn = document.getElementById('reset-btn');
-            const getRecsBtn = document.getElementById('get-recs-btn');
             const roleRateFilter = document.getElementById('role-rate-filter');
             const baseWrFilter = document.getElementById('base-wr-filter');
             const sortBySelect = document.getElementById('sort-by-select');
             const deltaTooltip = document.getElementById('delta-tooltip');
-            const warningTooltip = document.getElementById('warning-tooltip');
             const draftArea = document.getElementById('draft-area');
             const leftTeamPanel = document.getElementById('left-team-panel');
             const rightTeamPanel = document.getElementById('right-team-panel');
@@ -468,8 +479,15 @@
                     }
                     const iconSrc = `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-${iconRoleName}.png`;
                     
-                    leftTeamPanel.innerHTML += `<div class="role-slot" data-side="left" data-role="${role}"><img class="role-icon" src="${iconSrc}"><div class="lock-icon">🔓</div></div>`;
-                    rightTeamPanel.innerHTML += `<div class="role-slot" data-side="right" data-role="${role}"><img class="role-icon" src="${iconSrc}"><div class="lock-icon">🔓</div></div>`;
+                    const slotHTML = `
+                        <div class="role-slot" data-side="SIDE" data-role="${role}">
+                            <button class="rec-button">✨</button>
+                            <img class="role-icon" src="${iconSrc}">
+                            <div class="lock-icon">🔓</div>
+                        </div>`;
+                    
+                    leftTeamPanel.innerHTML += slotHTML.replace('SIDE', 'left');
+                    rightTeamPanel.innerHTML += slotHTML.replace('SIDE', 'right');
                 });
             }
 
@@ -493,8 +511,7 @@
                 slot.querySelector('.role-icon').style.display = 'block';
                 const existingPortrait = slot.querySelector('.champion-portrait');
                 if (existingPortrait) existingPortrait.remove();
-                const existingWarning = slot.querySelector('.warning-icon');
-                if (existingWarning) existingWarning.remove();
+                
                 if (championName) {
                     slot.querySelector('.role-icon').style.display = 'none';
                     const champData = allChampions.find(c => c.id === championName);
@@ -504,14 +521,6 @@
                         portrait.src = `${DDRAGON_BASE_URL}/cdn/${latestPatch}/img/champion/${champData.image.full}`;
                         slot.appendChild(portrait);
                         slot.dataset.champion = championName;
-                    }
-                    
-                    const stats = championRoleStats.get(`${championName}-${role}`);
-                    if (!stats || stats.role_frequency < 0.01) {
-                        const warningIcon = document.createElement('span');
-                        warningIcon.className = `warning-icon ${side === 'left' ? 'left' : 'right'}`;
-                        warningIcon.textContent = '⚠️';
-                        slot.appendChild(warningIcon);
                     }
                 } else {
                     delete slot.dataset.champion;
@@ -527,16 +536,12 @@
                     slot.querySelector('.role-icon').style.display = 'block';
                     const portrait = slot.querySelector('.champion-portrait');
                     if (portrait) portrait.remove();
-                    const warning = slot.querySelector('.warning-icon');
-                    if(warning) warning.remove();
                     delete slot.dataset.champion;
                     slot.classList.remove('selected', 'swap-source');
                 });
                 recommendationList.innerHTML = '';
                 analysisView.innerHTML = '';
                 banRecommendationList.innerHTML = '';
-                getRecsBtn.disabled = true;
-                getRecsBtn.innerHTML = "Get Recommendations";
                 recsHeader.textContent = "Recommendations:";
                 swapSourceSlot = null;
                 recommendationTarget = null;
@@ -662,12 +667,6 @@
                     clearSelections();
                     slot.classList.add('swap-source');
                     swapSourceSlot = clickedSlotInfo;
-                    
-                    getRecsBtn.disabled = false;
-                    const sourceIsBlue = (swapSourceSlot.side === 'left' && leftPanelIsBlue) || (swapSourceSlot.side === 'right' && !leftPanelIsBlue);
-                    const sideName = sourceIsBlue ? 'BLUE' : 'RED';
-                    const sideColorClass = sourceIsBlue ? 'blue-text' : 'red-text';
-                    getRecsBtn.innerHTML = `Recommend <span class="${sideColorClass}">${sideName}</span> ${swapSourceSlot.role}`;
                 }
             }
 
@@ -707,11 +706,17 @@
             }
 
             draftArea.addEventListener('click', e => {
+                const recButton = e.target.closest('.rec-button');
                 const roleSlotEl = e.target.closest('.role-slot');
                 const championTileEl = e.target.closest('.champion-tile');
                 const lockIcon = e.target.closest('.lock-icon');
 
-                if (lockIcon) {
+                if (recButton) {
+                    e.stopPropagation();
+                    const slot = recButton.closest('.role-slot');
+                    recommendationTarget = { side: slot.dataset.side, role: slot.dataset.role };
+                    updateRecommendations();
+                } else if (lockIcon) {
                     e.stopPropagation();
                     toggleLock(lockIcon.closest('.role-slot'));
                 } else if (roleSlotEl) {
@@ -977,14 +982,7 @@
             });
             searchInput.addEventListener('input', populateChampionGrid);
             resetBtn.addEventListener('click', resetDraft);
-            getRecsBtn.addEventListener('click', () => {
-                const selected = document.querySelector('.role-slot.swap-source');
-                if (selected) {
-                    recommendationTarget = { side: selected.dataset.side, role: selected.dataset.role };
-                    updateRecommendations();
-                    clearSelections();
-                }
-            });
+            
             recommendationSearch.addEventListener('input', displayFilteredRecommendations);
             
             swapSidesBtn.addEventListener('click', () => {
@@ -992,13 +990,6 @@
                 updateTeamSideLabels();
                 if (recommendationTarget) updateRecommendations();
                 updateAnalysisView();
-                const selected = document.querySelector('.role-slot.swap-source');
-                if (selected) {
-                    const swapSourceSlot = { side: selected.dataset.side, role: selected.dataset.role };
-                    const sourceIsBlue = (swapSourceSlot.side === 'left' && leftPanelIsBlue) || (swapSourceSlot.side === 'right' && !leftPanelIsBlue);
-                    const sideName = sourceIsBlue ? 'BLUE' : 'RED';
-                    getRecsBtn.innerHTML = `Recommend <span class="${sourceIsBlue ? 'blue-text' : 'red-text'}">${sideName}</span> ${swapSourceSlot.role}`;
-                }
             });
 
             recTabBtn.addEventListener('click', () => {
@@ -1134,20 +1125,6 @@
                 }
             }
             
-            draftArea.addEventListener('mouseover', e => {
-                const warningIcon = e.target.closest('.warning-icon');
-                if (warningIcon) {
-                    warningTooltip.style.left = `${e.clientX + 15}px`;
-                    warningTooltip.style.top = `${e.clientY + 15}px`;
-                    warningTooltip.style.opacity = '1';
-                }
-            });
-            draftArea.addEventListener('mouseout', e => {
-                if (e.target.closest('.warning-icon')) {
-                    warningTooltip.style.opacity = '0';
-                }
-            });
-
             balanceTooltipIcon.addEventListener('mouseover', e => {
                 balanceTooltip.style.left = `${e.clientX + 15}px`;
                 balanceTooltip.style.top = `${e.clientY + 15}px`;
