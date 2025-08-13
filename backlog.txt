@@ -12,6 +12,8 @@ draft analysis could analyse lane matchups and expectations (gold, cs, kills, de
 
 should delta contributions with low game count be excluded? filter option for user
 
+hovered champs detected?
+
 recommend button next to each role instead of having to select it first then press recommend
 
 sanity check - is this delta approach better than a machine learning or deep learning approach?
@@ -19,6 +21,8 @@ sanity check - is this delta approach better than a machine learning or deep lea
 machine learning draft from win/lose and 10 champions
 
 should we preload every dataset?
+
+calculating...
 
 right now i need to press the role first and then the champion from the pool, could we also make it possible to press the champion first, and then the role?
 

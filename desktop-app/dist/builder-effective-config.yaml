@@ -3,16 +3,10 @@ directories:
   buildResources: build
 appId: com.deltadraft.app
 productName: DeltaDraft
-files:
-  - filter:
-      - '**/*'
-      - '!*.code-workspace'
-      - '!LICENSE.md'
-      - '!package.json'
-      - '!package-lock.json'
-      - '!README.md'
 win:
   target: nsis
-mac:
-  target: dmg
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+files: []
 electronVersion: 31.7.7
