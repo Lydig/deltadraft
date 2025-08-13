@@ -109,7 +109,6 @@
         .data-filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 20px; padding: 10px; background-color: var(--bg-secondary); border-radius: 8px;}
         .data-filters .input-group { flex-grow: 1; }
         .data-filters .input-group select { width: 100%; }
-        /* --- NEW: Styles for the new toggle and tooltip --- */
         .tooltip-icon {
             display: inline-block;
             width: 16px;
@@ -186,7 +185,6 @@
                                     <input type="checkbox" id="favorites-only-toggle"> Favorites
                                 </label>
                             </div>
-                            <!-- --- NEW: Balance Toggle Row --- -->
                             <div class="rec-controls-row" style="margin-top: 10px;">
                                 <label class="favorite-toggle-label">
                                     <input type="checkbox" id="balance-toggle"> Assume Perfect Balance
@@ -216,7 +214,6 @@
         <div id="delta-tooltip" class="tooltip"></div>
         <div id="warning-tooltip" class="tooltip">This champion plays this role in less than 1% of their games. Stats may not be reliable.</div>
         <div id="context-menu"></div>
-        <!-- --- NEW: Tooltip for the balance toggle --- -->
         <div id="balance-tooltip" class="tooltip">
             <p><b>Unchecked (Default):</b> The "Performance Review" method. This is like a handicapped race where strong champions (high base win rate) are expected to perform better. A recommendation is good if it outperforms that expectation.</p>
             <p><b>Checked:</b> The "Simple Bonus" method. This assumes all champions are perfectly balanced (50% win rate). It recommends based purely on which champion gets the biggest raw synergy and counter-pick bonuses.</p>
@@ -247,6 +244,7 @@
             let swapSourceSlot = null;
             let lastRecommendations = [];
             let isShiftPressed = false;
+            let lastHoveredRec = null;
             let leftPanelIsBlue = true;
             let favorites = {};
             let unavailableChampions = new Set();
@@ -269,6 +267,7 @@
             const roleRateFilter = document.getElementById('role-rate-filter');
             const baseWrFilter = document.getElementById('base-wr-filter');
             const sortBySelect = document.getElementById('sort-by-select');
+            const deltaTooltip = document.getElementById('delta-tooltip');
             const warningTooltip = document.getElementById('warning-tooltip');
             const draftArea = document.getElementById('draft-area');
             const leftTeamPanel = document.getElementById('left-team-panel');
@@ -292,8 +291,8 @@
             const loadingOverlay = document.getElementById('loading-overlay');
             const loadingMessage = document.getElementById('loading-message');
 
-            window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !isShiftPressed) { isShiftPressed = true; } });
-            window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { isShiftPressed = false; } });
+            window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !isShiftPressed) { isShiftPressed = true; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, true); } });
+            window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { isShiftPressed = false; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, false); } });
             document.addEventListener('click', () => contextMenu.style.display = 'none');
 
             const DEFAULT_SETTINGS = {
@@ -611,6 +610,7 @@
                     const li = document.createElement('li');
                     
                     li.dataset.championName = pick.champion;
+                    li.dataset.breakdown = JSON.stringify(pick.breakdown);
                     if (unavailableChampions.has(pick.champion)) {
                         li.classList.add('unavailable');
                     }
@@ -1058,6 +1058,89 @@
                 }
             });
 
+            // --- MODIFIED: Re-enabled tooltip logic ---
+            recommendationList.addEventListener('mousemove', e => {
+                const target = e.target.closest('[data-breakdown]');
+                if (target) {
+                    const tooltipRect = deltaTooltip.getBoundingClientRect();
+                    let top = e.clientY - tooltipRect.height - 10;
+                    let left = e.clientX + 20;
+
+                    if (top < 0) top = 10;
+                    if (left + tooltipRect.width > window.innerWidth) {
+                        left = e.clientX - tooltipRect.width - 10;
+                    }
+
+                    deltaTooltip.style.left = `${left}px`;
+                    deltaTooltip.style.top = `${top}px`;
+                    updateTooltipContent(target, isShiftPressed);
+                }
+            });
+            recommendationList.addEventListener('mouseover', e => {
+                const target = e.target.closest('[data-breakdown]');
+                lastHoveredRec = target;
+                if (target) {
+                    updateTooltipContent(target, isShiftPressed);
+                    deltaTooltip.style.opacity = '1';
+                }
+            });
+            recommendationList.addEventListener('mouseout', () => {
+                lastHoveredRec = null;
+                deltaTooltip.style.opacity = '0';
+            });
+            
+            function updateTooltipContent(target, shiftPressed) {
+                if (!target || !target.dataset.breakdown) return;
+                const breakdown = JSON.parse(target.dataset.breakdown);
+                const breakdownMap = Object.fromEntries(breakdown.map(item => [item.source, {delta: item.delta, games: item.games}]));
+                
+                const leftHeader = leftPanelIsBlue ? 'Blue Side' : 'Red Side';
+                const rightHeader = leftPanelIsBlue ? 'Red Side' : 'Blue Side';
+                
+                let leftHTML = `<h5>${leftHeader}</h5>`;
+                let rightHTML = `<h5>${rightHeader}</h5>`;
+
+                roles.forEach(role => {
+                    const leftChamp = document.querySelector(`[data-side="left"][data-role="${role}"]`).dataset.champion;
+                    const rightChamp = document.querySelector(`[data-side="right"][data-role="${role}"]`).dataset.champion;
+                    
+                    const leftSideColor = leftPanelIsBlue ? 'blue' : 'red';
+                    const rightSideColor = leftPanelIsBlue ? 'red' : 'blue';
+
+                    leftHTML += buildTooltipRow(leftChamp, leftSideColor, role, breakdownMap, shiftPressed);
+                    rightHTML += buildTooltipRow(rightChamp, rightSideColor, role, breakdownMap, shiftPressed);
+                });
+                
+                const tooltipTitle = balanceToggle.checked ? "Win Rate Delta Breakdown" : "Rating Adjustment Breakdown";
+                deltaTooltip.innerHTML = `<h4>${tooltipTitle}</h4><div class="tooltip-columns"><div class="tooltip-col">${leftHTML}</div><div class="tooltip-col">${rightHTML}</div></div>`;
+            }
+
+            function formatGames(num) {
+                if (num < 1000) return num.toString();
+                return `${(num / 1000).toFixed(1)}k`;
+            }
+
+            function buildTooltipRow(champ, side, role, breakdownMap, showGames) {
+                let recColor = null;
+                if (recommendationTarget) {
+                    const targetIsBlue = (recommendationTarget.side === 'left' && leftPanelIsBlue) || (recommendationTarget.side === 'right' && !leftPanelIsBlue);
+                    recColor = targetIsBlue ? 'blue' : 'red';
+                }
+
+                if (recommendationTarget && recColor === side && recommendationTarget.role === role) {
+                    return `<div><span class="delta-neutral">RECOMMENDING</span></div>`;
+                } else if (champ) {
+                    const stats = breakdownMap[champ] || {delta: 0, games: 0};
+                    const delta = balanceToggle.checked ? stats.delta * 100 : stats.delta;
+                    const deltaClass = delta >= 0 ? 'delta-pos' : 'delta-neg';
+                    const gamesHTML = showGames ? `<span class="games-count">(${formatGames(stats.games)})</span>` : '';
+                    const deltaSuffix = balanceToggle.checked ? '%' : '';
+                    return `<div><span class="champ-name" title="${champ}">${champ}</span> ${gamesHTML}<span class="${deltaClass}">${delta.toFixed(2)}${deltaSuffix}</span></div>`;
+                } else {
+                    return `<div><span class="delta-neutral">${role} MISSING</span></div>`;
+                }
+            }
+            
             draftArea.addEventListener('mouseover', e => {
                 const warningIcon = e.target.closest('.warning-icon');
                 if (warningIcon) {
