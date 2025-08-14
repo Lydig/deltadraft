@@ -1,13 +1,13 @@
 {
   "name": "deltadraft",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Real-time League of Legends draft analysis and recommendation tool.",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder"
   },
-  "author": "Your Name",
+  "author": "Lytten",
   "license": "ISC",
   "devDependencies": {
     "electron": "^25.0.0",
