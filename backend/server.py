@@ -117,7 +117,6 @@ def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by, assu
                         matchup_key = (pick_champ, target_role, champ, role, relationship)
                         stats = matchup_stats.get(matchup_key)
                         
-                        # --- MODIFIED: Apply min_games filter ---
                         if stats and stats.get('total_games', 0) >= min_games:
                             delta = stats['win_rate'] - base_wr
                             total_delta += delta
@@ -135,7 +134,6 @@ def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by, assu
                             matchup_key = (pick_champ, target_role, champ, role, relationship)
                             matchup_data = matchup_stats.get(matchup_key)
                             
-                            # --- MODIFIED: Apply min_games filter ---
                             if matchup_data and matchup_data.get('total_games', 0) >= min_games:
                                 pick_rating = champion_ratings[pick_combo]['rating']
                                 partner_rating = champion_ratings[partner_combo]['rating']
@@ -166,6 +164,55 @@ def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by, assu
     recommendations.sort(key=lambda x: x.get(sort_by, 0), reverse=True)
     return recommendations
 
+# --- NEW: Core Analysis Logic ---
+def get_analysis(my_team, enemy_team, dataset, min_games):
+    analysis_results = []
+    total_team_delta = 0.0
+    champion_ratings = dataset['champion_ratings']
+    matchup_stats = dataset['matchup_stats']
+    roles = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'SUPPORT']
+
+    for role in roles:
+        my_champ = my_team.get(role)
+        enemy_champ = enemy_team.get(role)
+
+        if not my_champ or not enemy_champ:
+            analysis_results.append({"role": role, "my_champ": my_champ, "enemy_champ": enemy_champ, "delta": 0})
+            continue
+
+        my_combo = (my_champ, role)
+        enemy_combo = (enemy_champ, role)
+        
+        my_champ_stats = champion_ratings.get(my_combo)
+        enemy_champ_stats = champion_ratings.get(enemy_combo)
+
+        if not my_champ_stats or not enemy_champ_stats:
+            analysis_results.append({"role": role, "my_champ": my_champ, "enemy_champ": enemy_champ, "delta": 0})
+            continue
+
+        # My champ vs their champ
+        matchup_key = (my_champ, role, enemy_champ, role, 'enemy')
+        matchup_data = matchup_stats.get(matchup_key)
+        
+        delta = 0
+        if matchup_data and matchup_data.get('total_games', 0) >= min_games:
+            delta = matchup_data['win_rate'] - my_champ_stats['win_rate']
+        
+        total_team_delta += delta
+        analysis_results.append({
+            "role": role,
+            "my_champ": my_champ,
+            "my_champ_wr": my_champ_stats['win_rate'],
+            "enemy_champ": enemy_champ,
+            "enemy_champ_wr": enemy_champ_stats['win_rate'],
+            "matchup_wr": matchup_data.get('win_rate') if matchup_data else None,
+            "games": matchup_data.get('total_games') if matchup_data else 0,
+            "delta": delta
+        })
+
+    return {"lane_analysis": analysis_results, "total_team_delta": total_team_delta}
+
+
 # --- API Endpoints ---
 @app.route('/ping', methods=['GET'])
 def ping():
@@ -177,7 +224,7 @@ def recommend():
     time_period = data.get('time_period', 'patch')
     rank = data.get('rank', 'platinum_plus')
     assume_balanced = data.get('assume_balanced', False)
-    min_games = data.get('min_games', 10) # --- NEW: Get min_games from request
+    min_games = data.get('min_games', 10)
     
     dataset = get_data_from_r2(time_period, rank)
     if not dataset:
@@ -198,6 +245,21 @@ def role_data():
         return jsonify({"error": f"No data available for {time_period}/{rank}"}), 404
         
     return jsonify(dataset['champion_stats_list'])
+
+# --- NEW: Analysis Endpoint ---
+@app.route('/analyse', methods=['POST'])
+def analyse():
+    data = request.get_json()
+    time_period = data.get('time_period', 'patch')
+    rank = data.get('rank', 'platinum_plus')
+    min_games = data.get('min_games', 10)
+
+    dataset = get_data_from_r2(time_period, rank)
+    if not dataset:
+        return jsonify({"error": f"No data available for {time_period}/{rank}"}), 404
+
+    analysis = get_analysis(data['my_team'], data['enemy_team'], dataset, min_games)
+    return jsonify(analysis)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
