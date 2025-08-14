@@ -5,9 +5,10 @@
     <title>Delta Draft</title>
     <style>
         :root { --bg-primary: #0f172a; --bg-secondary: #1e293b; --border-color: #334155; --text-primary: #e2e8f0; --text-secondary: #94a3b8; --accent-color: #60a5fa; --green-pos: #22c55e; --red-neg: #ef4444; --yellow-warn: #facc15; }
-        body { font-family: system-ui, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); display: flex; justify-content: center; margin: 0; padding: 20px; }
+        html, body { height: 100%; margin: 0; overflow: hidden; }
+        body { font-family: system-ui, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); display: flex; justify-content: center; padding: 20px; }
         * { box-sizing: border-box; }
-        .app-container { width: 100%; max-width: 1200px; }
+        .app-container { width: 100%; max-width: 1200px; height: calc(100vh - 40px); display: flex; flex-direction: column; }
         .controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
         button, input[type="number"], input[type="text"], select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
         button:hover { background-color: var(--border-color); }
@@ -16,25 +17,31 @@
         .live-indicator { width: 10px; height: 10px; border-radius: 50%; background-color: #64748b; margin-right: 8px; display: inline-block; transition: background-color 0.3s; }
         .live-indicator.active { background-color: var(--red-neg); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
-        .draft-area { display: flex; justify-content: space-between; gap: 20px; }
+        .draft-area { display: flex; justify-content: space-between; gap: 20px; flex-grow: 1; min-height: 0; }
         .team-panel { width: 150px; display: flex; flex-direction: column; gap: 10px; }
         .team-panel h2 { text-align: center; margin: 0 0 10px 0; color: var(--text-secondary); }
         #left-team-header.blue-side, #right-team-header.blue-side { color: #5c9be4; }
         #left-team-header.red-side, #right-team-header.red-side { color: #e84e4e; }
-        .role-slot { width: 100%; height: 100px; background-color: var(--bg-secondary); border: 2px dashed var(--border-color); border-radius: 8px; position: relative; cursor: pointer; transition: border-color 0.2s; overflow: hidden; }
+        .role-slot { width: 100%; aspect-ratio: 1 / 1; background-color: var(--bg-secondary); border: 2px dashed var(--border-color); border-radius: 8px; position: relative; cursor: pointer; transition: border-color 0.2s; overflow: hidden; }
         .role-slot.selected { border-color: var(--accent-color); border-style: solid; }
         .role-slot.swap-source { border-color: var(--yellow-warn); border-style: solid; }
         .role-icon { width: 50%; height: 50%; opacity: 0.2; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .champion-portrait { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; pointer-events: none; }
         .champion-portrait.hovered { filter: grayscale(80%); }
-        .center-column { flex-grow: 1; display: flex; flex-direction: column; }
-        #search-champion { width: 100%; padding: 10px; margin-bottom: 10px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 1rem; }
-        #champion-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; height: 350px; overflow-y: auto; padding-right: 10px; margin-bottom: 20px;}
+        .center-column { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+        #champion-grid-container { margin-bottom: 20px; }
+        #champion-grid-header { display: flex; align-items: center; gap: 10px; }
+        #toggle-champion-grid-btn { padding: 8px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; display: flex; align-items: center; user-select: none; }
+        #search-champion { flex-grow: 1; }
+        #champion-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; max-height: 175px; overflow-y: auto; padding: 10px; border: 1px solid var(--border-color); border-top: none; border-radius: 0 0 6px 6px; background-color: var(--bg-primary); margin-top: -1px; }
+        #champion-grid.collapsed { display: none; }
+        #grid-toggle-icon { transition: transform 0.3s; display: inline-block; }
         .champion-tile { cursor: pointer; position: relative; }
         .champion-tile img { width: 100%; display: block; border-radius: 4px; border: 2px solid transparent; transition: border-color 0.2s, filter 0.2s, opacity 0.2s; }
         .champion-tile:hover img { border-color: var(--accent-color); }
-        #results { background-color: var(--bg-secondary); padding: 15px; border-radius: 8px; flex-grow: 1; display: flex; flex-direction: column; }
-        #recommendation-list, #ban-recommendation-list { list-style: none; padding: 0; margin-top: 10px; flex-grow: 1; overflow-y: auto; }
+        #results { background-color: var(--bg-secondary); padding: 15px; border-radius: 8px; flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
+        #recommendations-view { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
+        #recommendation-list, #ban-recommendation-list { list-style: none; padding: 0; margin-top: 10px; flex-grow: 1; overflow-y: auto; min-height: 0; }
         #recommendation-list li { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid var(--border-color); position: relative; transition: filter 0.2s, opacity 0.2s; }
         #ban-recommendation-list li { flex-direction: column; align-items: stretch; padding: 0; border-bottom: 1px solid var(--border-color); }
         .ban-rec-summary { display: flex; align-items: center; gap: 10px; padding: 8px; cursor: pointer; }
@@ -71,7 +78,7 @@
         .tabs { display: flex; border-bottom: 1px solid var(--border-color); }
         .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 10px 15px; color: var(--text-secondary); font-size: 1rem; }
         .tab-btn.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
-        .tab-content { padding-top: 15px; }
+        .tab-content { padding-top: 15px; flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
         #analysis-view { display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
         .analysis-row { display: flex; align-items: center; justify-content: space-between; padding: 5px; border-radius: 4px; background-color: #0f172a; }
         .analysis-cell { display: flex; align-items: center; }
@@ -169,8 +176,13 @@
         <div class="draft-area" id="draft-area">
             <div class="team-panel" id="left-team-panel"><h2 id="left-team-header"></h2></div>
             <div class="center-column">
-                <input type="text" id="search-champion" placeholder="Search for a champion...">
-                <div id="champion-grid"></div>
+                <div id="champion-grid-container">
+                    <div id="champion-grid-header">
+                        <div id="toggle-champion-grid-btn"><span id="grid-toggle-icon">▼</span></div>
+                        <input type="text" id="search-champion" placeholder="Search for a champion...">
+                    </div>
+                    <div id="champion-grid"></div>
+                </div>
                 <div id="results">
                     <div class="tabs">
                         <button id="rec-tab-btn" class="tab-btn active">Recommendations</button>
@@ -317,6 +329,9 @@
             const banRecommendationList = document.getElementById('ban-recommendation-list');
             const loadingOverlay = document.getElementById('loading-overlay');
             const loadingMessage = document.getElementById('loading-message');
+            const toggleChampionGridBtn = document.getElementById('toggle-champion-grid-btn');
+            const championGridContainer = document.getElementById('champion-grid-container');
+            const gridToggleIcon = document.getElementById('grid-toggle-icon');
 
             window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !isShiftPressed) { isShiftPressed = true; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, true); } });
             window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { isShiftPressed = false; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, false); } });
@@ -462,6 +477,10 @@
                     updateTeamSideLabels();
                     updateAllGridFavoriteStars();
                     resetDraft();
+
+                    // Collapse grid by default
+                    championGrid.classList.add('collapsed');
+                    gridToggleIcon.style.transform = 'rotate(-90deg)';
                 } catch (e) {
                     loadingMessage.textContent = `Error: ${e.message}`;
                     alert(`Failed to initialize app: ${e.message}`);
@@ -544,11 +563,6 @@
                             slot.dataset.champion = championName;
                         }
                         slot.appendChild(portrait);
-                    }
-                } else {
-                    const lockId = `${side}-${role}`;
-                    if (lockedSlots.has(lockId)) {
-                        toggleLock(slot);
                     }
                 }
             }
@@ -1131,7 +1145,11 @@
                 const item = e.target.closest('.context-menu-item');
                 if (item) { toggleFavorite(item.dataset.champion, item.dataset.role); }
             });
-            searchInput.addEventListener('input', populateChampionGrid);
+            searchInput.addEventListener('input', () => {
+                championGrid.classList.remove('collapsed');
+                gridToggleIcon.style.transform = 'rotate(0deg)';
+                populateChampionGrid();
+            });
             resetBtn.addEventListener('click', resetDraft);
             
             recommendationSearch.addEventListener('input', displayFilteredRecommendations);
@@ -1148,7 +1166,7 @@
                 recTabBtn.classList.add('active');
                 analysisTabBtn.classList.remove('active');
                 banRecTabBtn.classList.remove('active');
-                recommendationsView.style.display = 'block';
+                recommendationsView.style.display = 'flex';
                 analysisView.style.display = 'none';
                 banRecommenderView.style.display = 'none';
                 updateBanSelectionUI();
@@ -1158,7 +1176,7 @@
                 analysisTabBtn.classList.add('active');
                 recTabBtn.classList.remove('active');
                 banRecTabBtn.classList.remove('active');
-                analysisView.style.display = 'block';
+                analysisView.style.display = 'flex';
                 recommendationsView.style.display = 'none';
                 banRecommenderView.style.display = 'none';
                 updateAnalysisView();
@@ -1173,6 +1191,11 @@
                 recommendationsView.style.display = 'none';
                 analysisView.style.display = 'none';
                 updateBanSelectionUI();
+            });
+
+            toggleChampionGridBtn.addEventListener('click', () => {
+                const isCollapsed = championGrid.classList.toggle('collapsed');
+                gridToggleIcon.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
             });
 
             banRecUseFavoritesBtn.addEventListener('click', () => {

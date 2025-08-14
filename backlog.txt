@@ -1,3 +1,5 @@
+calculating... (ping Vercel sever to prevent it from going idle?)
+
 draft analysis could analyse lane matchups and expectations (gold, cs, kills, deaths, assists, level, at early timestamps (we have this data)) like the davi heatmap
 
 sanity check - is this delta approach better than a machine learning or deep learning approach?
@@ -7,8 +9,6 @@ machine learning draft from win/lose and 10 champions
 should we preload every dataset?
 
 arrow for minimizing champion grid
-
-calculating... (ping Vercel sever to prevent it from going idle?)
 
 right now i need to press the role first and then the champion from the pool, could we also make it possible to press the champion first, and then the role?
 
@@ -21,6 +21,8 @@ application icon
 ui overhaul
 
 how to use
+
+rename monkeyking to wukong
 
 rename to DraftDiff?
 
