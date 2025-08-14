@@ -26,6 +26,7 @@
         .role-slot.swap-source { border-color: var(--yellow-warn); border-style: solid; }
         .role-icon { width: 50%; height: 50%; opacity: 0.2; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .champion-portrait { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; pointer-events: none; }
+        .champion-portrait.hovered { filter: grayscale(80%); }
         .center-column { flex-grow: 1; display: flex; flex-direction: column; }
         #search-champion { width: 100%; padding: 10px; margin-bottom: 10px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 1rem; }
         #champion-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; height: 350px; overflow-y: auto; padding-right: 10px; margin-bottom: 20px;}
@@ -508,13 +509,17 @@
                 updateBanSelectionUI();
             }
 
-            function setChampionForSlot(side, role, championName) {
+            function setChampionForSlot(side, role, championName, isHover = false) {
                 const slot = document.querySelector(`[data-side='${side}'][data-role='${role}']`);
                 if (!slot) return;
+
+                // Clear previous state
                 slot.querySelector('.role-icon').style.display = 'block';
                 const existingPortrait = slot.querySelector('.champion-portrait');
                 if (existingPortrait) existingPortrait.remove();
-                
+                delete slot.dataset.champion;
+                delete slot.dataset.hover;
+
                 if (championName) {
                     slot.querySelector('.role-icon').style.display = 'none';
                     const champData = allChampions.find(c => c.id === championName);
@@ -522,26 +527,33 @@
                         const portrait = document.createElement('img');
                         portrait.className = 'champion-portrait';
                         portrait.src = `${DDRAGON_BASE_URL}/cdn/${latestPatch}/img/champion/${champData.image.full}`;
+                        if (isHover) {
+                            portrait.classList.add('hovered');
+                            slot.dataset.hover = championName;
+                        } else {
+                            slot.dataset.champion = championName;
+                        }
                         slot.appendChild(portrait);
-                        slot.dataset.champion = championName;
                     }
                 } else {
-                    delete slot.dataset.champion;
                     const lockId = `${side}-${role}`;
                     if (lockedSlots.has(lockId)) {
                         toggleLock(slot);
                     }
                 }
-                if (recommendationTarget) updateRecommendations();
-                if (activeTab === 'analysis') updateAnalysisView();
+                if (!isHover) {
+                    if (recommendationTarget) updateRecommendations();
+                    if (activeTab === 'analysis') updateAnalysisView();
+                }
             }
 
             function resetDraft() {
                 document.querySelectorAll('.role-slot').forEach(slot => {
-                    slot.querySelector('.role-icon').style.display = 'block';
                     const portrait = slot.querySelector('.champion-portrait');
                     if (portrait) portrait.remove();
+                    slot.querySelector('.role-icon').style.display = 'block';
                     delete slot.dataset.champion;
+                    delete slot.dataset.hover;
                     slot.classList.remove('selected', 'swap-source');
                 });
                 recommendationList.innerHTML = '';
@@ -737,7 +749,7 @@
             draftArea.addEventListener('contextmenu', e => {
                 e.preventDefault();
                 const roleSlot = e.target.closest('.role-slot');
-                if (roleSlot && roleSlot.dataset.champion) {
+                if (roleSlot && (roleSlot.dataset.champion || roleSlot.dataset.hover)) {
                     setChampionForSlot(roleSlot.dataset.side, roleSlot.dataset.role, null);
                 }
             });
@@ -750,7 +762,7 @@
                     indicator.classList.add('active');
                     resetDraft();
                     updateFromLiveGame(true);
-                    lcuIntervalId = setInterval(updateFromLiveGame, 1000);
+                    lcuIntervalId = setInterval(() => updateFromLiveGame(false), 1000);
                 }
             });
 
@@ -768,7 +780,13 @@
             async function updateFromLiveGame(force = false) {
                 const session = await window.electronAPI.getChampSelect();
                 if (!session) return;
-                
+
+                let currentDraftState = JSON.stringify(session.myTeam) + JSON.stringify(session.theirTeam) + JSON.stringify(session.actions);
+                if (currentDraftState === lastKnownDraftState && !force) {
+                    return;
+                }
+                lastKnownDraftState = currentDraftState;
+
                 unavailableChampions.clear();
                 const bans = session.actions.flat().filter(a => a.type === 'ban' && a.completed);
                 for (const ban of bans) {
@@ -776,53 +794,93 @@
                         unavailableChampions.add(champIdToName[ban.championId]);
                     }
                 }
-                for (const team of [session.myTeam, session.theirTeam]) {
-                    for (const player of team) {
-                        if (player.championId !== 0 && champIdToName[player.championId]) {
-                            unavailableChampions.add(champIdToName[player.championId]);
-                        }
+
+                const allPlayers = [...session.myTeam, ...session.theirTeam];
+                for (const player of allPlayers) {
+                    if (player.championId !== 0 && champIdToName[player.championId]) {
+                        unavailableChampions.add(champIdToName[player.championId]);
                     }
                 }
 
-                const myPicks = session.myTeam.map(p => champIdToName[p.championId]).filter(Boolean);
-                const theirPicks = session.theirTeam.map(p => champIdToName[p.championId]).filter(Boolean);
+                // Clear all slots before repopulating
+                document.querySelectorAll('.role-slot').forEach(slot => {
+                    setChampionForSlot(slot.dataset.side, slot.dataset.role, null);
+                });
 
-                const myLockedSlots = new Map();
-                const theirLockedSlots = new Map();
+                const myPicks = [], theirPicks = [];
+                const myHovers = [], theirHovers = [];
+                const myLockedSlots = new Map(), theirLockedSlots = new Map();
+
+                // Process locked slots first
                 lockedSlots.forEach(lockId => {
                     const [side, role] = lockId.split('-');
                     const slot = document.querySelector(`[data-side='${side}'][data-role='${role}']`);
                     if (slot && slot.dataset.champion) {
-                        if (side === 'left') myLockedSlots.set(role, slot.dataset.champion);
-                        else if (side === 'right') theirLockedSlots.set(role, slot.dataset.champion);
+                        const map = side === 'left' ? myLockedSlots : theirLockedSlots;
+                        map.set(role, slot.dataset.champion);
                     }
                 });
 
-                const myAssignments = inferRoles(myPicks, myLockedSlots);
-                const theirAssignments = inferRoles(theirPicks, theirLockedSlots);
-
-                let currentDraftState = '';
-                roles.forEach(role => { currentDraftState += (myAssignments[role] || '') + (theirAssignments[role] || ''); });
-
-                if (currentDraftState !== lastKnownDraftState || force) {
-                    lastKnownDraftState = currentDraftState;
-                    roles.forEach(role => {
-                        setChampionForSlot('left', role, myAssignments[role]);
-                        setChampionForSlot('right', role, theirAssignments[role]);
-                    });
+                // Process locked-in picks
+                for (const player of session.myTeam) {
+                    if (player.championId !== 0 && champIdToName[player.championId]) {
+                        myPicks.push(champIdToName[player.championId]);
+                    }
                 }
+                for (const player of session.theirTeam) {
+                    if (player.championId !== 0 && champIdToName[player.championId]) {
+                        theirPicks.push(champIdToName[player.championId]);
+                    }
+                }
+
+                let myAssignments = inferRoles(myPicks, myLockedSlots);
+                let theirAssignments = inferRoles(theirPicks, theirLockedSlots);
+
+                // Process hovers for remaining slots
+                for (const player of session.myTeam) {
+                    if (player.championId === 0 && player.championPickIntent !== 0 && champIdToName[player.championPickIntent]) {
+                        myHovers.push(champIdToName[player.championPickIntent]);
+                    }
+                }
+                for (const player of session.theirTeam) {
+                    if (player.championId === 0 && player.championPickIntent !== 0 && champIdToName[player.championPickIntent]) {
+                        theirHovers.push(champIdToName[player.championPickIntent]);
+                    }
+                }
+
+                let myHoverAssignments = inferRoles(myHovers, myLockedSlots, myAssignments);
+                let theirHoverAssignments = inferRoles(theirHovers, theirLockedSlots, theirAssignments);
+
+                // Render everything
+                roles.forEach(role => {
+                    if (myAssignments[role]) {
+                        setChampionForSlot('left', role, myAssignments[role], false);
+                    } else if (myHoverAssignments[role]) {
+                        setChampionForSlot('left', role, myHoverAssignments[role], true);
+                    }
+                    if (theirAssignments[role]) {
+                        setChampionForSlot('right', role, theirAssignments[role], false);
+                    } else if (theirHoverAssignments[role]) {
+                        setChampionForSlot('right', role, theirHoverAssignments[role], true);
+                    }
+                });
+                
                 updateAvailabilityUI();
+                if (recommendationTarget) updateRecommendations();
+                updateAnalysisView();
             }
             
-            function inferRoles(picks, lockedChamps) {
-                let finalAssignments = {};
-                let availableRoles = [...roles];
-                let availableChamps = [...picks];
+            function inferRoles(picks, lockedChamps, existingAssignments = {}) {
+                let finalAssignments = { ...existingAssignments };
+                let availableRoles = roles.filter(role => !finalAssignments[role]);
+                let availableChamps = picks.filter(champ => !Object.values(finalAssignments).includes(champ));
 
                 for (const [role, champ] of lockedChamps.entries()) {
-                    finalAssignments[role] = champ;
-                    availableRoles = availableRoles.filter(r => r !== role);
-                    availableChamps = availableChamps.filter(c => c !== champ);
+                    if (!finalAssignments[role]) {
+                        finalAssignments[role] = champ;
+                        availableRoles = availableRoles.filter(r => r !== role);
+                        availableChamps = availableChamps.filter(c => c !== champ);
+                    }
                 }
 
                 if (availableChamps.length === 0) return finalAssignments;
@@ -842,6 +900,7 @@
                 }
                 
                 function getCombinations(arr, k) {
+                    if (k > arr.length) return [];
                     const result = [];
                     function backtrack(combination, start) {
                         if (combination.length === k) { result.push([...combination]); return; }
