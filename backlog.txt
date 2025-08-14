@@ -6,7 +6,11 @@ sanity check - is this delta approach better than a machine learning or deep lea
 
 machine learning draft from win/lose and 10 champions
 
+it can detect which champions are available (you can pick)
+
 should we preload every dataset?
+
+arrow for minimizing champion grid
 
 calculating... (ping Vercel sever to prevent it from going idle?)
 
