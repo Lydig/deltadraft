@@ -164,7 +164,6 @@ def get_recommendations(my_team, enemy_team, target_role, dataset, sort_by, assu
     recommendations.sort(key=lambda x: x.get(sort_by, 0), reverse=True)
     return recommendations
 
-# --- NEW: Core Analysis Logic ---
 def get_analysis(my_team, enemy_team, dataset, min_games):
     analysis_results = []
     total_team_delta = 0.0
@@ -190,7 +189,6 @@ def get_analysis(my_team, enemy_team, dataset, min_games):
             analysis_results.append({"role": role, "my_champ": my_champ, "enemy_champ": enemy_champ, "delta": 0})
             continue
 
-        # My champ vs their champ
         matchup_key = (my_champ, role, enemy_champ, role, 'enemy')
         matchup_data = matchup_stats.get(matchup_key)
         
@@ -217,6 +215,28 @@ def get_analysis(my_team, enemy_team, dataset, min_games):
 @app.route('/ping', methods=['GET'])
 def ping():
     return jsonify({"status": "ok"}), 200
+
+@app.route('/metadata', methods=['GET'])
+def metadata():
+    cache_key = 'metadata'
+    if cache_key in data_cache:
+        return jsonify(data_cache[cache_key])
+    
+    with cache_lock:
+        if cache_key in data_cache:
+            return jsonify(data_cache[cache_key])
+
+        if not s3_client:
+            return jsonify({"error": "S3 client not initialized"}), 500
+
+        try:
+            metadata_obj = s3_client.get_object(Bucket=R2_BUCKET_NAME, Key='metadata.json')
+            metadata_data = json.loads(metadata_obj['Body'].read().decode('utf-8'))
+            data_cache[cache_key] = metadata_data
+            return jsonify(metadata_data)
+        except Exception as e:
+            print(f"⚠️ Failed to fetch metadata from R2: {e}")
+            return jsonify({"error": "Could not fetch metadata"}), 404
 
 @app.route('/recommend', methods=['POST'])
 def recommend():
@@ -246,7 +266,6 @@ def role_data():
         
     return jsonify(dataset['champion_stats_list'])
 
-# --- NEW: Analysis Endpoint ---
 @app.route('/analyse', methods=['POST'])
 def analyse():
     data = request.get_json()

@@ -9,14 +9,15 @@
         body { font-family: system-ui, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); display: flex; justify-content: center; padding: 20px; }
         * { box-sizing: border-box; }
         .app-container { width: 100%; max-width: 1200px; height: calc(100vh - 40px); display: flex; flex-direction: column; }
-        .controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
-        button, input[type="number"], input[type="text"], select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
-        button:hover { background-color: var(--border-color); }
-        button:disabled { background-color: #1e293b; color: #475569; cursor: not-allowed; }
-        input[type="number"], input[type="text"], select { cursor: text; }
-        .live-indicator { width: 10px; height: 10px; border-radius: 50%; background-color: #64748b; margin-right: 8px; display: inline-block; transition: background-color 0.3s; }
-        .live-indicator.active { background-color: var(--red-neg); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
+        
+        .header { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .header-row { display: flex; justify-content: space-between; align-items: center; }
+        .header-title { font-size: 2rem; font-weight: bold; }
+        .header-meta { font-size: 0.8rem; color: var(--text-secondary); text-align: right; }
+        .header-controls { display: flex; gap: 10px; align-items: center; }
+        .header-controls .input-group { flex-grow: 1; }
+        .header-controls .input-group select { width: 100%; }
+
         .draft-area { display: flex; justify-content: space-between; gap: 20px; flex-grow: 1; min-height: 0; }
         .team-panel { width: 150px; display: flex; flex-direction: column; gap: 10px; }
         .team-panel h2 { text-align: center; margin: 0 0 10px 0; color: var(--text-secondary); }
@@ -109,7 +110,7 @@
             flex-direction: column;
         }
         .rec-rank { font-size: 0.9rem; color: var(--text-secondary); width: 50px; text-align: right; flex-shrink: 0; }
-        .recommendation-controls { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .recommendation-controls { display: flex; flex-direction: column; gap: 10px; }
         .rec-controls-row { display: flex; gap: 10px; align-items: flex-end; }
         .rec-controls-row input[type="text"] { flex-grow: 1; font-size: 0.9rem; }
         .input-group { display: flex; flex-direction: column; }
@@ -117,9 +118,6 @@
         .input-group input[type="number"], .input-group select { width: 120px; font-size: 0.9rem; }
         .blue-text { color: #5c9be4; font-weight: bold; }
         .red-text { color: #e84e4e; font-weight: bold; }
-        .data-filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 20px; padding: 10px; background-color: var(--bg-secondary); border-radius: 8px;}
-        .data-filters .input-group { flex-grow: 1; }
-        .data-filters .input-group select { width: 100%; }
         .tooltip-icon {
             display: inline-block;
             width: 16px;
@@ -157,28 +155,38 @@
     </div>
 
     <div class="app-container">
-        <div class="header"><h1>Delta Draft</h1></div>
-        <div class="controls">
-            <button id="reset-btn">Reset Draft</button>
-            <button id="swap-sides-btn">Swap Blue/Red Sides</button>
-            <button id="live-tracking-btn"><span id="live-indicator" class="live-indicator"></span>Start Live Tracking</button>
-        </div>
-        <div class="data-filters">
-            <div class="input-group">
-                <label for="time-period-select">Time Period</label>
-                <select id="time-period-select"></select>
+        <header class="header">
+            <div class="header-row">
+                <div class="header-title">Delta Draft</div>
+                <div class="header-meta">
+                    <div id="patch-info"></div>
+                    <div id="last-updated-info"></div>
+                </div>
             </div>
-            <div class="input-group">
-                <label for="rank-select">Rank</label>
-                <select id="rank-select"></select>
+            <div class="header-row">
+                <div class="header-controls">
+                    <button id="reset-btn">Reset Draft</button>
+                    <button id="swap-sides-btn">Swap Blue/Red Sides</button>
+                    <button id="live-tracking-btn"><span id="live-indicator" class="live-indicator"></span>Start Live Tracking</button>
+                </div>
+                <div class="header-controls">
+                    <div class="input-group">
+                        <label for="time-period-select">Time Period</label>
+                        <select id="time-period-select"></select>
+                    </div>
+                    <div class="input-group">
+                        <label for="rank-select">Rank</label>
+                        <select id="rank-select"></select>
+                    </div>
+                </div>
             </div>
-        </div>
+        </header>
         <div class="draft-area" id="draft-area">
             <div class="team-panel" id="left-team-panel"><h2 id="left-team-header"></h2></div>
             <div class="center-column">
                 <div id="champion-grid-container">
                     <div id="champion-grid-header">
-                        <div id="toggle-champion-grid-btn"><span id="grid-toggle-icon">▼</span></div>
+                        <button id="toggle-champion-grid-btn"><span id="grid-toggle-icon">▼</span></button>
                         <input type="text" id="search-champion" placeholder="Search for a champion...">
                     </div>
                     <div id="champion-grid"></div>
@@ -190,12 +198,9 @@
                         <button id="ban-rec-tab-btn" class="tab-btn">Ban Recommender</button>
                     </div>
                     <div id="recommendations-view" class="tab-content">
-                        <h3 id="recs-header">Recommendations:</h3>
                         <div class="recommendation-controls">
                             <div class="rec-controls-row">
                                 <input type="text" id="recommendation-search" placeholder="Search recommendations...">
-                            </div>
-                            <div class="rec-controls-row">
                                 <div class="input-group">
                                     <label for="sort-by-select">Sort By</label>
                                     <select id="sort-by-select">
@@ -203,6 +208,8 @@
                                         <option value="base_win_rate">Base WR</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div class="rec-controls-row">
                                 <div class="input-group">
                                     <label for="base-wr-filter">Min Base WR %</label>
                                     <input type="number" id="base-wr-filter" min="0" max="100">
@@ -332,6 +339,8 @@
             const toggleChampionGridBtn = document.getElementById('toggle-champion-grid-btn');
             const championGridContainer = document.getElementById('champion-grid-container');
             const gridToggleIcon = document.getElementById('grid-toggle-icon');
+            const patchInfoDiv = document.getElementById('patch-info');
+            const lastUpdatedInfoDiv = document.getElementById('last-updated-info');
 
             window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !isShiftPressed) { isShiftPressed = true; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, true); } });
             window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { isShiftPressed = false; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, false); } });
@@ -449,8 +458,30 @@
                 });
             }
 
+            function formatTimeAgo(date) {
+                const seconds = Math.floor((new Date() - date) / 1000);
+                let interval = seconds / 31536000;
+                if (interval > 1) return Math.floor(interval) + " years ago";
+                interval = seconds / 2592000;
+                if (interval > 1) return Math.floor(interval) + " months ago";
+                interval = seconds / 86400;
+                if (interval > 1) return Math.floor(interval) + " days ago";
+                interval = seconds / 3600;
+                if (interval > 1) return Math.floor(interval) + " hours ago";
+                interval = seconds / 60;
+                if (interval > 1) return Math.floor(interval) + " minutes ago";
+                return Math.floor(seconds) + " seconds ago";
+            }
+
             async function initializeApp() {
                 try {
+                    const metadata = await fetchWithRetry(`${API_BASE_URL}/metadata`);
+                    if (metadata) {
+                        patchInfoDiv.textContent = `Patch ${metadata.patch}`;
+                        const lastUpdatedDate = new Date(metadata.last_updated_utc);
+                        lastUpdatedInfoDiv.textContent = `Data updated ${formatTimeAgo(lastUpdatedDate)}`;
+                    }
+
                     timePeriodSelect.innerHTML = Object.entries(TIME_PERIODS).map(([val, name]) => `<option value="${val}">${name}</option>`).join('');
                     rankSelect.innerHTML = Object.entries(RANKS).map(([val, name]) => `<option value="${val}">${name}</option>`).join('');
                     
@@ -478,7 +509,6 @@
                     updateAllGridFavoriteStars();
                     resetDraft();
 
-                    // Collapse grid by default
                     championGrid.classList.add('collapsed');
                     gridToggleIcon.style.transform = 'rotate(-90deg)';
                 } catch (e) {
@@ -579,7 +609,6 @@
                 recommendationList.innerHTML = '';
                 analysisView.innerHTML = '';
                 banRecommendationList.innerHTML = '';
-                recsHeader.textContent = "Recommendations:";
                 swapSourceSlot = null;
                 recommendationTarget = null;
                 recommendationSearch.value = '';
@@ -613,10 +642,7 @@
 
             async function updateRecommendations() {
                 if (!recommendationTarget) return;
-                const targetIsBlue = (recommendationTarget.side === 'left' && leftPanelIsBlue) || (recommendationTarget.side === 'right' && !leftPanelIsBlue);
-                const recSideName = targetIsBlue ? "BLUE" : "RED";
-                recsHeader.textContent = `Recommendations for ${recSideName} ${recommendationTarget.role}:`;
-
+                
                 recommendationList.innerHTML = '<li>Calculating...</li>';
                 const myTeamPanelSide = recommendationTarget.side;
                 const enemyTeamPanelSide = myTeamPanelSide === 'left' ? 'right' : 'left';

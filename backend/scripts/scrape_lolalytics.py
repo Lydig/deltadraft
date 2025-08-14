@@ -309,6 +309,18 @@ async def main():
             print(f"✅ Finished processing dataset for {time_period}/{rank}/{REGION_TO_SCRAPE} with {num_roles} valid roles.")
 
     end_time = datetime.now()
+    
+    # --- NEW: Upload metadata file ---
+    metadata = {
+        "last_updated_utc": end_time.isoformat(),
+        "patch": latest_patch_full
+    }
+    try:
+        s3_client.put_object(Bucket=R2_BUCKET_NAME, Key='metadata.json', Body=json.dumps(metadata, indent=4))
+        print("\n✅ Successfully uploaded metadata.json to R2.")
+    except Exception as e:
+        print(f"\n❌ FAILED to upload metadata.json: {e}")
+
     print(f"\n✨ Full scraping complete. Total time: {end_time - start_time}")
 
 
