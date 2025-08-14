@@ -16,6 +16,10 @@ pressing the search bar to begin searching should not deselect the current role 
 
 min base wr % and mine role freq % has little arrow buttons that appear when you hover the field, these can be removed if possible
 
+application icon
+
+ui overhaul
+
 how to use
 
 rename to DraftDiff?

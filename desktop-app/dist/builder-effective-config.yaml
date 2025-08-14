@@ -9,4 +9,4 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
 files: []
-electronVersion: 31.7.7
+electronVersion: 25.9.8
