@@ -81,8 +81,11 @@
         .analysis-champ-info { font-size: 0.9rem; }
         .analysis-champ-name { font-weight: bold; }
         .analysis-champ-stats { font-size: 0.75rem; color: var(--text-secondary); }
-        .analysis-delta-separator { width: 100px; text-align: center; font-size: 0.8rem; color: var(--text-secondary); }
+        .analysis-delta-separator { width: 150px; text-align: center; font-size: 0.8rem; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .analysis-total-delta { text-align: center; padding: 10px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; }
+        .analysis-delta-value { font-size: 1.1rem; font-weight: bold; }
+        .analysis-delta-subtext { font-size: 0.75rem; }
+        .analysis-delta-games { font-size: 0.7rem; opacity: 0.7; }
         .ban-rec-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
         .ban-rec-controls select { flex-grow: 1; }
         .ban-rec-controls button { flex-shrink: 0; }
@@ -529,6 +532,8 @@
                         toggleLock(slot);
                     }
                 }
+                if (recommendationTarget) updateRecommendations();
+                if (activeTab === 'analysis') updateAnalysisView();
             }
 
             function resetDraft() {
@@ -557,6 +562,7 @@
                 });
                 updateAvailabilityUI();
                 updateBanSelectionUI();
+                if (activeTab === 'analysis') updateAnalysisView();
             }
 
             async function updateRecommendations() {
@@ -682,8 +688,6 @@
                 } else {
                     if (swapSourceSlot) {
                         setChampionForSlot(swapSourceSlot.side, swapSourceSlot.role, champName);
-                        if (recommendationTarget) updateRecommendations();
-                        updateAnalysisView();
                         clearSelections();
                     }
                 }
@@ -697,7 +701,7 @@
                 setChampionForSlot(source.side, source.role, destChamp);
                 setChampionForSlot(destination.side, destination.role, sourceChamp);
                 if (recommendationTarget) updateRecommendations();
-                updateAnalysisView();
+                if (activeTab === 'analysis') updateAnalysisView();
             }
 
             function clearSelections() {
@@ -715,6 +719,8 @@
                     e.stopPropagation();
                     const slot = recButton.closest('.role-slot');
                     recommendationTarget = { side: slot.dataset.side, role: slot.dataset.role };
+                    document.querySelectorAll('.role-slot').forEach(s => s.classList.remove('selected'));
+                    slot.classList.add('selected');
                     updateRecommendations();
                 } else if (lockIcon) {
                     e.stopPropagation();
@@ -733,8 +739,6 @@
                 const roleSlot = e.target.closest('.role-slot');
                 if (roleSlot && roleSlot.dataset.champion) {
                     setChampionForSlot(roleSlot.dataset.side, roleSlot.dataset.role, null);
-                    if (recommendationTarget) updateRecommendations();
-                    updateAnalysisView();
                 }
             });
 
@@ -806,10 +810,6 @@
                         setChampionForSlot('left', role, myAssignments[role]);
                         setChampionForSlot('right', role, theirAssignments[role]);
                     });
-                    if (recommendationTarget) {
-                        updateRecommendations();
-                    }
-                    updateAnalysisView();
                 }
                 updateAvailabilityUI();
             }
@@ -942,8 +942,87 @@
                 contextMenu.style.top = `${event.clientY}px`;
             }
             
-            async function updateAnalysisView() {}
-            function renderAnalysisView(analysisData) {}
+            async function updateAnalysisView() {
+                analysisView.innerHTML = '<div>Analyzing draft...</div>';
+                const myTeam = {};
+                const enemyTeam = {};
+                roles.forEach(role => {
+                    myTeam[role] = document.querySelector(`[data-side='left'][data-role='${role}']`).dataset.champion || null;
+                    enemyTeam[role] = document.querySelector(`[data-side='right'][data-role='${role}']`).dataset.champion || null;
+                });
+                try {
+                    const payload = {
+                        my_team: myTeam,
+                        enemy_team: enemyTeam,
+                        time_period: timePeriodSelect.value,
+                        rank: rankSelect.value,
+                        min_games: parseInt(minGamesFilter.value) || 0
+                    };
+                    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) };
+                    const analysisData = await fetchWithRetry(`${API_BASE_URL}/analyse`, options);
+                    renderAnalysisView(analysisData);
+                } catch (error) {
+                    console.error("Failed to get analysis:", error);
+                    analysisView.innerHTML = `<div>Error fetching analysis: ${error.message}</div>`;
+                }
+            }
+
+            function renderAnalysisView(analysisData) {
+                if (!analysisData || !analysisData.lane_analysis) {
+                    analysisView.innerHTML = '<div>Could not retrieve analysis.</div>';
+                    return;
+                }
+                const { lane_analysis, total_team_delta } = analysisData;
+                const totalDeltaClass = total_team_delta >= 0 ? 'delta-pos' : 'delta-neg';
+                const totalDeltaSign = total_team_delta >= 0 ? '+' : '';
+                const leftTeamColor = leftPanelIsBlue ? 'blue-text' : 'red-text';
+                const rightTeamColor = leftPanelIsBlue ? 'red-text' : 'blue-text';
+                let totalDeltaHTML = `
+                    <div class="analysis-total-delta">
+                        Total Delta Advantage: <span class="${leftTeamColor}">Left Team</span> 
+                        <span class="${totalDeltaClass}">(${totalDeltaSign}${(total_team_delta * 100).toFixed(2)}%)</span>
+                    </div>`;
+                let lanesHTML = lane_analysis.map(lane => {
+                    const { role, my_champ, enemy_champ, my_champ_wr, enemy_champ_wr, matchup_wr, games, delta } = lane;
+                    const getChampHTML = (champName, baseWr, teamColor) => {
+                        if (!champName) return `<div class="analysis-champ-info ${teamColor}">Missing</div>`;
+                        const champData = allChampions.find(c => c.id === champName);
+                        const imgSrc = champData ? `${DDRAGON_BASE_URL}/cdn/${latestPatch}/img/champion/${champData.image.full}` : '';
+                        const wrStr = baseWr ? `${(baseWr * 100).toFixed(1)}% WR` : 'N/A';
+                        return `
+                            <img src="${imgSrc}" alt="${champName}">
+                            <div class="analysis-champ-info">
+                                <div class="analysis-champ-name ${teamColor}">${champName}</div>
+                                <div class="analysis-champ-stats">${wrStr}</div>
+                            </div>`;
+                    };
+                    const leftChampHTML = getChampHTML(my_champ, my_champ_wr, leftTeamColor);
+                    const rightChampHTML = getChampHTML(enemy_champ, enemy_champ_wr, rightTeamColor);
+                    let deltaHTML;
+                    if (my_champ && enemy_champ) {
+                        if (matchup_wr !== null && matchup_wr !== undefined) {
+                            const deltaClass = delta >= 0 ? 'delta-pos' : 'delta-neg';
+                            const deltaSign = delta >= 0 ? '+' : '';
+                            deltaHTML = `
+                                <div class="analysis-delta-value ${deltaClass}">${deltaSign}${(delta * 100).toFixed(2)}%</div>
+                                <div class="analysis-delta-subtext">${(matchup_wr * 100).toFixed(1)}% vs ${(my_champ_wr * 100).toFixed(1)}%</div>
+                                <div class="analysis-delta-games">(${games} games)</div>`;
+                        } else {
+                            deltaHTML = `<div class="analysis-delta-subtext">No matchup data</div>`;
+                        }
+                    } else {
+                        deltaHTML = `<div class="analysis-delta-subtext">-</div>`;
+                    }
+                    return `
+                        <div class="analysis-row">
+                            <div class="analysis-cell left">${leftChampHTML}</div>
+                            <div class="analysis-delta-separator">${deltaHTML}</div>
+                            <div class="analysis-cell right">${rightChampHTML}</div>
+                        </div>`;
+                }).join('');
+                analysisView.innerHTML = totalDeltaHTML + lanesHTML;
+            }
+
             function updateBanSelectionUI() {}
             async function getBanRecommendations() {}
             function renderBanRecommendations(banRecs) {}
@@ -966,7 +1045,7 @@
             timePeriodSelect.addEventListener('change', handleFilterChange);
             rankSelect.addEventListener('change', handleFilterChange);
             balanceToggle.addEventListener('change', handleFilterChange);
-            sortBySelect.addEventListener('change', () => { saveCurrentSettings(); handleFilterChange(); });
+            sortBySelect.addEventListener('change', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
             minGamesFilter.addEventListener('change', handleFilterChange);
             baseWrFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
             roleRateFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
@@ -989,7 +1068,7 @@
                 leftPanelIsBlue = !leftPanelIsBlue;
                 updateTeamSideLabels();
                 if (recommendationTarget) updateRecommendations();
-                updateAnalysisView();
+                if (activeTab === 'analysis') updateAnalysisView();
             });
 
             recTabBtn.addEventListener('click', () => {
