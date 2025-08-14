@@ -1,12 +1,8 @@
 draft analysis could analyse lane matchups and expectations (gold, cs, kills, deaths, assists, level, at early timestamps (we have this data)) like the davi heatmap
 
-hovered champs detected?
-
 sanity check - is this delta approach better than a machine learning or deep learning approach?
 
 machine learning draft from win/lose and 10 champions
-
-it can detect which champions are available (you can pick)
 
 should we preload every dataset?
 

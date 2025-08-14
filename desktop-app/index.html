@@ -64,7 +64,7 @@
         .context-menu-item.favorited .star { color: var(--yellow-warn); }
         .unavailable { filter: grayscale(100%); opacity: 0.5; }
         .lock-icon { position: absolute; bottom: 4px; cursor: pointer; font-size: 1rem; display: none; color: var(--text-secondary); text-shadow: 0 0 3px black; }
-        .role-slot[data-champion] .lock-icon { display: block; }
+        .role-slot[data-champion] .lock-icon, .role-slot[data-hover] .lock-icon { display: block; }
         .role-slot[data-side="left"] .lock-icon { left: 5px; }
         .role-slot[data-side="right"] .lock-icon { right: 5px; }
         .lock-icon.locked { color: var(--accent-color); }
@@ -209,6 +209,9 @@
                                     <input type="checkbox" id="favorites-only-toggle"> Favorites Only
                                 </label>
                                 <label class="favorite-toggle-label">
+                                    <input type="checkbox" id="consider-hovers-toggle"> Consider Hovers
+                                </label>
+                                <label class="favorite-toggle-label">
                                     <input type="checkbox" id="balance-toggle"> Assume Perfect Balance
                                     <span class="tooltip-icon" id="balance-tooltip-icon">?</span>
                                 </label>
@@ -262,6 +265,7 @@
             let recommendationTarget = null;
             let championRoleStats = new Map();
             let lastKnownDraftState = '';
+            let lastKnownPickState = '';
             let swapSourceSlot = null;
             let lastRecommendations = [];
             let isShiftPressed = false;
@@ -269,10 +273,12 @@
             let leftPanelIsBlue = true;
             let favorites = {};
             let unavailableChampions = new Set();
-            let lockedSlots = new Set();
+            let pickableChampions = new Set();
+            let lockedSlots = new Map();
             let banConsiderationSet = new Set();
             let activeTab = 'recommendations';
             let latestPatch = '';
+            let considerHovers = false;
 
             const timePeriodSelect = document.getElementById('time-period-select');
             const rankSelect = document.getElementById('rank-select');
@@ -295,6 +301,7 @@
             const recommendationSearch = document.getElementById('recommendation-search');
             const contextMenu = document.getElementById('context-menu');
             const favoritesOnlyToggle = document.getElementById('favorites-only-toggle');
+            const considerHoversToggle = document.getElementById('consider-hovers-toggle');
             const swapSidesBtn = document.getElementById('swap-sides-btn');
             const recTabBtn = document.getElementById('rec-tab-btn');
             const analysisTabBtn = document.getElementById('analysis-tab-btn');
@@ -323,7 +330,8 @@
                 roleRate: '',
                 favoritesOnly: false,
                 assumeBalanced: false,
-                minGames: '10'
+                minGames: '10',
+                considerHovers: false
             };
 
             async function saveCurrentSettings() {
@@ -335,7 +343,8 @@
                     roleRate: roleRateFilter.value,
                     favoritesOnly: favoritesOnlyToggle.checked,
                     assumeBalanced: balanceToggle.checked,
-                    minGames: minGamesFilter.value
+                    minGames: minGamesFilter.value,
+                    considerHovers: considerHoversToggle.checked
                 };
                 await window.electronAPI.saveSettings(settings);
             }
@@ -350,6 +359,8 @@
                 favoritesOnlyToggle.checked = effectiveSettings.favoritesOnly;
                 balanceToggle.checked = effectiveSettings.assumeBalanced;
                 minGamesFilter.value = effectiveSettings.minGames;
+                considerHoversToggle.checked = effectiveSettings.considerHovers;
+                considerHovers = effectiveSettings.considerHovers;
             }
 
             async function fetchWithRetry(url, options = {}, isInitialLoad = false) {
@@ -513,7 +524,6 @@
                 const slot = document.querySelector(`[data-side='${side}'][data-role='${role}']`);
                 if (!slot) return;
 
-                // Clear previous state
                 slot.querySelector('.role-icon').style.display = 'block';
                 const existingPortrait = slot.querySelector('.champion-portrait');
                 if (existingPortrait) existingPortrait.remove();
@@ -541,10 +551,6 @@
                         toggleLock(slot);
                     }
                 }
-                if (!isHover) {
-                    if (recommendationTarget) updateRecommendations();
-                    if (activeTab === 'analysis') updateAnalysisView();
-                }
             }
 
             function resetDraft() {
@@ -566,6 +572,7 @@
                 leftPanelIsBlue = true;
                 updateTeamSideLabels();
                 unavailableChampions.clear();
+                pickableChampions.clear();
                 lockedSlots.clear();
                 banConsiderationSet.clear();
                 document.querySelectorAll('.lock-icon').forEach(icon => {
@@ -577,6 +584,19 @@
                 if (activeTab === 'analysis') updateAnalysisView();
             }
 
+            function getTeamForAPI(panelSide) {
+                const team = {};
+                roles.forEach(role => {
+                    const slot = document.querySelector(`[data-side='${panelSide}'][data-role='${role}']`);
+                    let champ = slot.dataset.champion || null;
+                    if (considerHovers && !champ) {
+                        champ = slot.dataset.hover || null;
+                    }
+                    team[role] = champ;
+                });
+                return team;
+            }
+
             async function updateRecommendations() {
                 if (!recommendationTarget) return;
                 const targetIsBlue = (recommendationTarget.side === 'left' && leftPanelIsBlue) || (recommendationTarget.side === 'right' && !leftPanelIsBlue);
@@ -586,11 +606,10 @@
                 recommendationList.innerHTML = '<li>Calculating...</li>';
                 const myTeamPanelSide = recommendationTarget.side;
                 const enemyTeamPanelSide = myTeamPanelSide === 'left' ? 'right' : 'left';
-                const myTeam = {}; const enemyTeam = {};
-                roles.forEach(role => {
-                    myTeam[role] = document.querySelector(`[data-side='${myTeamPanelSide}'][data-role='${role}']`).dataset.champion || null;
-                    enemyTeam[role] = document.querySelector(`[data-side='${enemyTeamPanelSide}'][data-role='${role}']`).dataset.champion || null;
-                });
+                
+                const myTeam = getTeamForAPI(myTeamPanelSide);
+                const enemyTeam = getTeamForAPI(enemyTeamPanelSide);
+
                 try {
                     const payload = { 
                         my_team: myTeam, 
@@ -700,6 +719,8 @@
                 } else {
                     if (swapSourceSlot) {
                         setChampionForSlot(swapSourceSlot.side, swapSourceSlot.role, champName);
+                        if (recommendationTarget) updateRecommendations();
+                        updateAnalysisView();
                         clearSelections();
                     }
                 }
@@ -751,6 +772,8 @@
                 const roleSlot = e.target.closest('.role-slot');
                 if (roleSlot && (roleSlot.dataset.champion || roleSlot.dataset.hover)) {
                     setChampionForSlot(roleSlot.dataset.side, roleSlot.dataset.role, null);
+                    if (recommendationTarget) updateRecommendations();
+                    updateAnalysisView();
                 }
             });
 
@@ -771,7 +794,7 @@
                     const champName = tile.dataset.championName;
                     tile.classList.toggle('unavailable', unavailableChampions.has(champName));
                 });
-                document.querySelectorAll('#ban-recommendation-list li').forEach(li => {
+                document.querySelectorAll('#ban-recommendation-list li, #recommendation-list li').forEach(li => {
                     const champName = li.dataset.championName;
                     li.classList.toggle('unavailable', unavailableChampions.has(champName));
                 });
@@ -781,109 +804,90 @@
                 const session = await window.electronAPI.getChampSelect();
                 if (!session) return;
 
-                let currentDraftState = JSON.stringify(session.myTeam) + JSON.stringify(session.theirTeam) + JSON.stringify(session.actions);
-                if (currentDraftState === lastKnownDraftState && !force) {
+                const sessionState = JSON.stringify(session);
+                if (sessionState === lastKnownDraftState && !force) {
                     return;
                 }
-                lastKnownDraftState = currentDraftState;
+                lastKnownDraftState = sessionState;
 
-                unavailableChampions.clear();
+                const pickableChampIds = await window.electronAPI.getPickableChampions();
+                const pickableChampKeys = pickableChampIds ? new Set(pickableChampIds.map(String)) : null;
+
+                const newUnavailable = new Set();
                 const bans = session.actions.flat().filter(a => a.type === 'ban' && a.completed);
                 for (const ban of bans) {
                     if (ban.championId !== 0 && champIdToName[ban.championId]) {
-                        unavailableChampions.add(champIdToName[ban.championId]);
+                        newUnavailable.add(champIdToName[ban.championId]);
                     }
                 }
-
-                const allPlayers = [...session.myTeam, ...session.theirTeam];
-                for (const player of allPlayers) {
-                    if (player.championId !== 0 && champIdToName[player.championId]) {
-                        unavailableChampions.add(champIdToName[player.championId]);
-                    }
-                }
-
-                // Clear all slots before repopulating
-                document.querySelectorAll('.role-slot').forEach(slot => {
-                    setChampionForSlot(slot.dataset.side, slot.dataset.role, null);
-                });
-
-                const myPicks = [], theirPicks = [];
-                const myHovers = [], theirHovers = [];
-                const myLockedSlots = new Map(), theirLockedSlots = new Map();
-
-                // Process locked slots first
-                lockedSlots.forEach(lockId => {
-                    const [side, role] = lockId.split('-');
-                    const slot = document.querySelector(`[data-side='${side}'][data-role='${role}']`);
-                    if (slot && slot.dataset.champion) {
-                        const map = side === 'left' ? myLockedSlots : theirLockedSlots;
-                        map.set(role, slot.dataset.champion);
-                    }
-                });
-
-                // Process locked-in picks
-                for (const player of session.myTeam) {
-                    if (player.championId !== 0 && champIdToName[player.championId]) {
-                        myPicks.push(champIdToName[player.championId]);
-                    }
-                }
-                for (const player of session.theirTeam) {
-                    if (player.championId !== 0 && champIdToName[player.championId]) {
-                        theirPicks.push(champIdToName[player.championId]);
-                    }
-                }
-
-                let myAssignments = inferRoles(myPicks, myLockedSlots);
-                let theirAssignments = inferRoles(theirPicks, theirLockedSlots);
-
-                // Process hovers for remaining slots
-                for (const player of session.myTeam) {
-                    if (player.championId === 0 && player.championPickIntent !== 0 && champIdToName[player.championPickIntent]) {
-                        myHovers.push(champIdToName[player.championPickIntent]);
-                    }
-                }
-                for (const player of session.theirTeam) {
-                    if (player.championId === 0 && player.championPickIntent !== 0 && champIdToName[player.championPickIntent]) {
-                        theirHovers.push(champIdToName[player.championPickIntent]);
-                    }
-                }
-
-                let myHoverAssignments = inferRoles(myHovers, myLockedSlots, myAssignments);
-                let theirHoverAssignments = inferRoles(theirHovers, theirLockedSlots, theirAssignments);
-
-                // Render everything
-                roles.forEach(role => {
-                    if (myAssignments[role]) {
-                        setChampionForSlot('left', role, myAssignments[role], false);
-                    } else if (myHoverAssignments[role]) {
-                        setChampionForSlot('left', role, myHoverAssignments[role], true);
-                    }
-                    if (theirAssignments[role]) {
-                        setChampionForSlot('right', role, theirAssignments[role], false);
-                    } else if (theirHoverAssignments[role]) {
-                        setChampionForSlot('right', role, theirHoverAssignments[role], true);
-                    }
-                });
                 
+                if (pickableChampKeys) {
+                    allChampions.forEach(champ => {
+                        if (!pickableChampKeys.has(champ.key)) {
+                            newUnavailable.add(champ.id);
+                        }
+                    });
+                }
+                unavailableChampions = newUnavailable;
+
+                const myPlayers = session.myTeam;
+                const theirPlayers = session.theirTeam;
+
+                const myLockedSlots = new Map();
+                const theirLockedSlots = new Map();
+                for (const [lockId, champName] of lockedSlots.entries()) {
+                    const [side, role] = lockId.split('-');
+                    const map = side === 'left' ? myLockedSlots : theirLockedSlots;
+                    map.set(role, champName);
+                }
+
+                const myPicks = myPlayers.filter(p => p.championId !== 0).map(p => champIdToName[p.championId]);
+                const theirPicks = theirPlayers.filter(p => p.championId !== 0).map(p => champIdToName[p.championId]);
+                const myHovers = myPlayers.filter(p => p.championId === 0 && p.championPickIntent !== 0).map(p => champIdToName[p.championPickIntent]);
+                const theirHovers = theirPlayers.filter(p => p.championId === 0 && p.championPickIntent !== 0).map(p => champIdToName[p.championPickIntent]);
+
+                const myAssignments = inferRoles(myPicks, myLockedSlots);
+                const theirAssignments = inferRoles(theirPicks, theirLockedSlots);
+
+                const myHoverAssignments = inferRoles(myHovers, myLockedSlots, myAssignments);
+                const theirHoverAssignments = inferRoles(theirHovers, theirLockedSlots, theirAssignments);
+
+                roles.forEach(role => {
+                    setChampionForSlot('left', role, myAssignments[role] || myHoverAssignments[role], !!myHoverAssignments[role] && !myAssignments[role]);
+                    setChampionForSlot('right', role, theirAssignments[role] || theirHoverAssignments[role], !!theirHoverAssignments[role] && !theirAssignments[role]);
+                });
+
                 updateAvailabilityUI();
-                if (recommendationTarget) updateRecommendations();
-                updateAnalysisView();
+
+                let currentRelevantState = '';
+                document.querySelectorAll('.role-slot').forEach(slot => {
+                    let champ = slot.dataset.champion || 'null';
+                    if (considerHovers) {
+                        champ += ':' + (slot.dataset.hover || 'null');
+                    }
+                    currentRelevantState += champ + ';';
+                });
+
+                if (currentRelevantState !== lastKnownPickState || force) {
+                    lastKnownPickState = currentRelevantState;
+                    if (recommendationTarget) updateRecommendations();
+                    updateAnalysisView();
+                }
             }
             
             function inferRoles(picks, lockedChamps, existingAssignments = {}) {
-                let finalAssignments = { ...existingAssignments };
-                let availableRoles = roles.filter(role => !finalAssignments[role]);
-                let availableChamps = picks.filter(champ => !Object.values(finalAssignments).includes(champ));
-
+                let finalAssignments = {};
+                
                 for (const [role, champ] of lockedChamps.entries()) {
-                    if (!finalAssignments[role]) {
+                    if (picks.includes(champ) && !Object.values(existingAssignments).includes(champ)) {
                         finalAssignments[role] = champ;
-                        availableRoles = availableRoles.filter(r => r !== role);
-                        availableChamps = availableChamps.filter(c => c !== champ);
                     }
                 }
 
-                if (availableChamps.length === 0) return finalAssignments;
+                let availableRoles = roles.filter(role => !finalAssignments[role] && !existingAssignments[role]);
+                let availableChamps = picks.filter(champ => !Object.values(finalAssignments).includes(champ) && !Object.values(existingAssignments).includes(champ));
+
+                if (availableChamps.length === 0) return { ...existingAssignments, ...finalAssignments };
 
                 let bestOverallAssignment = {};
                 let maxOverallProb = -1;
@@ -936,20 +940,37 @@
                     }
                 }
                 
-                Object.assign(finalAssignments, bestOverallAssignment);
-                return finalAssignments;
+                return { ...existingAssignments, ...finalAssignments, ...bestOverallAssignment };
             }
 
             function toggleLock(slot) {
-                if (!slot || !slot.dataset.champion) return;
+                const champToLock = slot.dataset.champion || slot.dataset.hover;
+                if (!slot || !champToLock) return;
+
                 const lockId = `${slot.dataset.side}-${slot.dataset.role}`;
                 const icon = slot.querySelector('.lock-icon');
+
                 if (lockedSlots.has(lockId)) {
                     lockedSlots.delete(lockId);
                     icon.classList.remove('locked');
                     icon.textContent = '🔓';
                 } else {
-                    lockedSlots.add(lockId);
+                    let champIsLockedElsewhere = false;
+                    for (const [id, champ] of lockedSlots.entries()) {
+                        if (champ === champToLock) {
+                            champIsLockedElsewhere = true;
+                            lockedSlots.delete(id);
+                            const [side, role] = id.split('-');
+                            const oldSlot = document.querySelector(`[data-side="${side}"][data-role="${role}"]`);
+                            if (oldSlot) {
+                                const oldIcon = oldSlot.querySelector('.lock-icon');
+                                oldIcon.classList.remove('locked');
+                                oldIcon.textContent = '🔓';
+                            }
+                            break; 
+                        }
+                    }
+                    lockedSlots.set(lockId, champToLock);
                     icon.classList.add('locked');
                     icon.textContent = '🔒';
                 }
@@ -1003,12 +1024,9 @@
             
             async function updateAnalysisView() {
                 analysisView.innerHTML = '<div>Analyzing draft...</div>';
-                const myTeam = {};
-                const enemyTeam = {};
-                roles.forEach(role => {
-                    myTeam[role] = document.querySelector(`[data-side='left'][data-role='${role}']`).dataset.champion || null;
-                    enemyTeam[role] = document.querySelector(`[data-side='right'][data-role='${role}']`).dataset.champion || null;
-                });
+                const myTeam = getTeamForAPI('left');
+                const enemyTeam = getTeamForAPI('right');
+
                 try {
                     const payload = {
                         my_team: myTeam,
@@ -1088,19 +1106,14 @@
 
             async function handleFilterChange() {
                 await saveCurrentSettings();
-                recommendationList.innerHTML = '';
-                analysisView.innerHTML = '';
-                banRecommendationList.innerHTML = '';
-                lastRecommendations = [];
-
-                if (recommendationTarget) {
-                    updateRecommendations();
-                }
-                if (activeTab === 'analysis') {
-                    updateAnalysisView();
-                }
+                if (recommendationTarget) updateRecommendations();
+                if (activeTab === 'analysis') updateAnalysisView();
             }
-
+            
+            considerHoversToggle.addEventListener('change', (e) => {
+                considerHovers = e.target.checked;
+                handleFilterChange();
+            });
             timePeriodSelect.addEventListener('change', handleFilterChange);
             rankSelect.addEventListener('change', handleFilterChange);
             balanceToggle.addEventListener('change', handleFilterChange);
@@ -1223,8 +1236,10 @@
                 let rightHTML = `<h5>${rightHeader}</h5>`;
 
                 roles.forEach(role => {
-                    const leftChamp = document.querySelector(`[data-side="left"][data-role="${role}"]`).dataset.champion;
-                    const rightChamp = document.querySelector(`[data-side="right"][data-role="${role}"]`).dataset.champion;
+                    const leftSlot = document.querySelector(`[data-side="left"][data-role="${role}"]`);
+                    const rightSlot = document.querySelector(`[data-side="right"][data-role="${role}"]`);
+                    const leftChamp = leftSlot.dataset.champion || (considerHovers ? leftSlot.dataset.hover : null);
+                    const rightChamp = rightSlot.dataset.champion || (considerHovers ? rightSlot.dataset.hover : null);
                     
                     const leftSideColor = leftPanelIsBlue ? 'blue' : 'red';
                     const rightSideColor = leftPanelIsBlue ? 'red' : 'blue';

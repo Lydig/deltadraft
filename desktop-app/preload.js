@@ -6,10 +6,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getFavorites: () => ipcRenderer.invoke('get-favorites'),
   saveFavorites: (favorites) => ipcRenderer.invoke('save-favorites', favorites),
   
-  // --- NEW: Settings ---
+  // Settings
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
 
-  // LCU (Placeholder, not used but good to have)
+  // LCU
   getChampSelect: () => ipcRenderer.invoke('get-champ-select'),
+  getPickableChampions: () => ipcRenderer.invoke('get-pickable-champions'),
 });

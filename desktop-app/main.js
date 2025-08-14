@@ -36,7 +36,7 @@ const httpsAgent = new https.Agent({
     rejectUnauthorized: false,
 });
 
-async function getChampSelect() {
+async function lcuRequest(path) {
     try {
         const credentials = await getLeagueCredentials();
         const { port, password } = credentials;
@@ -46,7 +46,7 @@ async function getChampSelect() {
             const req = https.get({
                 hostname: '127.0.0.1',
                 port: port,
-                path: '/lol-champ-select/v1/session',
+                path: path,
                 headers: { 'Authorization': `Basic ${auth}` },
                 agent: httpsAgent
             }, (res) => {
@@ -56,21 +56,20 @@ async function getChampSelect() {
                     if (res.statusCode === 200) {
                         resolve(JSON.parse(data));
                     } else {
-                        resolve(null); // Resolve with null for non-200 responses (e.g., not in champ select)
+                        resolve(null); // Resolve with null for non-200 responses
                     }
                 });
             });
             req.on('error', (err) => reject(err));
         });
     } catch (error) {
-        // This will catch errors from getLeagueCredentials, like the client not running.
-        // console.error(error.message); // Optional: for debugging
         return null;
     }
 }
 
 // --- IPC Handlers ---
-ipcMain.handle("get-champ-select", getChampSelect);
+ipcMain.handle("get-champ-select", () => lcuRequest('/lol-champ-select/v1/session'));
+ipcMain.handle("get-pickable-champions", () => lcuRequest('/lol-champ-select/v1/pickable-champion-ids'));
 
 ipcMain.handle('get-favorites', () => {
   try {
