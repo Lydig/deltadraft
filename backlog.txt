@@ -10,6 +10,10 @@ should we preload every dataset?
 
 arrow for minimizing champion grid
 
+sort by only updates on another update event, not when pressing another sort
+
+sort by columns instead
+
 right now i need to press the role first and then the champion from the pool, could we also make it possible to press the champion first, and then the role?
 
 pressing the search bar to begin searching should not deselect the current role i pressed
