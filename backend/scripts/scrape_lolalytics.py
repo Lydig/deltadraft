@@ -184,7 +184,7 @@ def process_and_upload_dataset(results, id_to_name_map, time_period, rank, regio
                 if not p2_name: continue
                 
                 key_tuple = (p1_name, p1_role, p2_name, p2_role_str.upper(), 'enemy')
-                matchup_stats[str(key_tuple)] = {"win_rate": wr / 100, "total_games": n_games}
+                matchup_stats[json.dumps(list(key_tuple))] = {"win_rate": wr / 100, "total_games": n_games}
 
         if team_data and 'team' in team_data:
             synergies = team_data.get('team', {})
@@ -197,7 +197,7 @@ def process_and_upload_dataset(results, id_to_name_map, time_period, rank, regio
                     if not p2_name: continue
                     
                     key_tuple = (p1_name, p1_role, p2_name, p2_role_str.upper(), 'teammate')
-                    matchup_stats[str(key_tuple)] = {"win_rate": wr / 100, "total_games": n_games}
+                    matchup_stats[json.dumps(list(key_tuple))] = {"win_rate": wr / 100, "total_games": n_games}
 
     final_champion_stats = []
     for champion, roles in champion_roles_data.items():

@@ -81,7 +81,7 @@ def get_data_from_r2(time_period, rank):
                 "role_frequency": item['role_frequency']
             }
         
-        matchup_stats = {ast.literal_eval(k): v for k, v in matchup_data_raw.items()}
+        matchup_stats = {tuple(json.loads(k)): v for k, v in matchup_data_raw.items()}
 
         dataset = {
             "champion_stats_list": champion_stats_list,

@@ -165,7 +165,7 @@
 </head>
 <body>
     <div id="loading-overlay" style="display: none;">
-        <p id="loading-message">Waking up server...</p>
+        <p id="loading-message">Loading data...</p>
     </div>
 
     <div class="app-container">
@@ -276,7 +276,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const API_BASE_URL = 'https://deltadraft.vercel.app'; 
+            const R2_PUBLIC_URL = 'https://pub-1efd88d862814361909e5510d7af1c1a.r2.dev';
             const DDRAGON_BASE_URL = 'https://ddragon.leagueoflegends.com';
 
             const TIME_PERIODS = { patch: 'Current Patch', '30': 'Last 30 Days' };
@@ -290,10 +290,8 @@
             
             let allChampions = [];
             let champIdToName = {};
-            let roleProbabilities = {};
             let lcuIntervalId = null;
             let recommendationTarget = null;
-            let championRoleStats = new Map();
             let lastKnownDraftState = '';
             let lastKnownPickState = '';
             let swapSourceSlot = null;
@@ -307,6 +305,7 @@
             let activeTab = 'recommendations';
             let latestPatch = '';
             let considerHovers = false;
+            let dataCache = new Map();
 
             const timePeriodSelect = document.getElementById('time-period-select');
             const rankSelect = document.getElementById('rank-select');
@@ -364,6 +363,221 @@
                 minGames: '10',
                 considerHovers: false
             };
+            
+            // --- START: Ported Backend Logic ---
+
+            function winrateToRating(wr) {
+                if (wr <= 0.0 || wr >= 1.0) {
+                    wr = Math.max(0.0001, Math.min(0.9999, wr));
+                }
+                return -400 * Math.log10(1 / wr - 1);
+            }
+
+            function ratingToWinrate(ratingDiff) {
+                return 1 / (1 + Math.pow(10, -ratingDiff / 400));
+            }
+
+            function getRecommendations(myTeam, enemyTeam, targetRole, dataset, sortBy, assumeBalanced, minGames) {
+                const recommendations = [];
+                const { champion_stats_list, champion_ratings, matchup_stats } = dataset;
+
+                const championsToConsider = champion_stats_list
+                    .filter(item => item.role.toUpperCase() === targetRole)
+                    .map(item => item.champion);
+
+                for (const pickChamp of championsToConsider) {
+                    const pickComboKey = `${pickChamp},${targetRole}`;
+                    if (!champion_ratings.has(pickComboKey)) continue;
+
+                    const pickCombo = champion_ratings.get(pickComboKey);
+                    const baseWr = pickCombo.win_rate;
+                    const deltaBreakdown = [];
+
+                    if (assumeBalanced) {
+                        let totalDelta = 0.0;
+                        for (const [teamMember, relationship] of [[enemyTeam, 'enemy'], [myTeam, 'teammate']]) {
+                            for (const [role, champ] of Object.entries(teamMember)) {
+                                if (champ) {
+                                    const matchupKey = JSON.stringify([pickChamp, targetRole, champ, role, relationship]);
+                                    const stats = matchup_stats.get(matchupKey);
+                                    
+                                    if (stats && (stats.total_games || 0) >= minGames) {
+                                        const delta = stats.win_rate - baseWr;
+                                        totalDelta += delta;
+                                        deltaBreakdown.push({ source: champ, delta: delta, games: stats.total_games || 0 });
+                                    } else {
+                                        deltaBreakdown.push({ source: champ, delta: 0, games: stats ? stats.total_games || 0 : 0 });
+                                    }
+                                }
+                            }
+                        }
+                        const expectedWr = baseWr + totalDelta;
+                        recommendations.push({
+                            champion: pickChamp, expected_win_rate: expectedWr, base_win_rate: baseWr,
+                            pick_rate: pickCombo.pick_rate, role_frequency: pickCombo.role_frequency,
+                            breakdown: deltaBreakdown.sort((a, b) => b.delta - a.delta)
+                        });
+                    } else {
+                        let totalRating = pickCombo.rating;
+                        for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
+                            for (const [role, champ] of Object.entries(teamMember)) {
+                                if (champ) {
+                                    const partnerComboKey = `${champ},${role}`;
+                                    if (champion_ratings.has(partnerComboKey)) {
+                                        const matchupKey = JSON.stringify([pickChamp, targetRole, champ, role, relationship]);
+                                        const matchupData = matchup_stats.get(matchupKey);
+
+                                        if (matchupData && (matchupData.total_games || 0) >= minGames) {
+                                            const pickRating = pickCombo.rating;
+                                            const partnerRating = champion_ratings.get(partnerComboKey).rating;
+                                            
+                                            let expectedWrCalc;
+                                            if (relationship === 'teammate') {
+                                                expectedWrCalc = ratingToWinrate(pickRating + partnerRating);
+                                            } else { // enemy
+                                                expectedWrCalc = ratingToWinrate(pickRating - partnerRating);
+                                            }
+                                            
+                                            const actualWr = matchupData.win_rate;
+                                            const performanceDelta = actualWr - expectedWrCalc;
+                                            const ratingAdjustment = winrateToRating(0.5 + performanceDelta);
+                                            totalRating += ratingAdjustment;
+                                            deltaBreakdown.push({ source: champ, delta: ratingAdjustment, games: matchupData.total_games || 0 });
+                                        } else {
+                                            deltaBreakdown.push({ source: champ, delta: 0, games: matchupData ? matchupData.total_games || 0 : 0 });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        const expectedWr = ratingToWinrate(totalRating);
+                        recommendations.push({
+                            champion: pickChamp, expected_win_rate: expectedWr, base_win_rate: baseWr,
+                            pick_rate: pickCombo.pick_rate, role_frequency: pickCombo.role_frequency,
+                            breakdown: deltaBreakdown.sort((a, b) => b.delta - a.delta)
+                        });
+                    }
+                }
+                
+                recommendations.sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
+                return recommendations;
+            }
+
+            function getAnalysis(myTeam, enemyTeam, dataset, minGames) {
+                const analysisResults = [];
+                let totalTeamDelta = 0.0;
+                const { champion_ratings, matchup_stats } = dataset;
+
+                for (const role of roles) {
+                    const myChamp = myTeam[role];
+                    const enemyChamp = enemyTeam[role];
+
+                    if (!myChamp || !enemyChamp) {
+                        analysisResults.push({ role, my_champ: myChamp, enemy_champ: enemyChamp, delta: 0 });
+                        continue;
+                    }
+
+                    const myComboKey = `${myChamp},${role}`;
+                    const enemyComboKey = `${enemyChamp},${role}`;
+                    
+                    const myChampStats = champion_ratings.get(myComboKey);
+                    const enemyChampStats = champion_ratings.get(enemyComboKey);
+
+                    if (!myChampStats || !enemyChampStats) {
+                        analysisResults.push({ role, my_champ: myChamp, enemy_champ: enemyChamp, delta: 0 });
+                        continue;
+                    }
+
+                    const matchupKey = JSON.stringify([myChamp, role, enemyChamp, role, 'enemy']);
+                    const matchupData = matchup_stats.get(matchupKey);
+                    
+                    let delta = 0;
+                    if (matchupData && (matchupData.total_games || 0) >= minGames) {
+                        delta = matchupData.win_rate - myChampStats.win_rate;
+                    }
+                    
+                    totalTeamDelta += delta;
+                    analysisResults.push({
+                        role: role, my_champ: myChamp, my_champ_wr: myChampStats.win_rate,
+                        enemy_champ: enemyChamp, enemy_champ_wr: enemyChampStats.win_rate,
+                        matchup_wr: matchupData ? matchupData.win_rate : null,
+                        games: matchupData ? matchupData.total_games : 0,
+                        delta: delta
+                    });
+                }
+
+                return { lane_analysis: analysisResults, total_team_delta: totalTeamDelta };
+            }
+
+            // --- END: Ported Backend Logic ---
+
+            async function fetchWithRetry(url, isInitialLoad = false) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    if (isInitialLoad) {
+                        loadingMessage.textContent = `Failed to load data. Please check your connection and refresh.`;
+                    }
+                    console.error(`Failed to fetch ${url}:`, error);
+                    throw error;
+                }
+            }
+            
+            async function getDataset(timePeriod, rank) {
+                const cacheKey = `${timePeriod}-${rank}`;
+                if (dataCache.has(cacheKey)) {
+                    return dataCache.get(cacheKey);
+                }
+
+                loadingOverlay.style.display = 'flex';
+                loadingMessage.textContent = `Loading data for ${timePeriod}/${rank}...`;
+
+                try {
+                    const timePeriodDir = timePeriod.match(/^\d+$/) ? `days_${timePeriod}` : timePeriod;
+                    const region = 'all';
+                    
+                    const statsUrl = `${R2_PUBLIC_URL}/${timePeriodDir}/${rank}/${region}/champion_stats.json`;
+                    const matchupsUrl = `${R2_PUBLIC_URL}/${timePeriodDir}/${rank}/${region}/matchup_winrates.json`;
+
+                    const [championStatsList, matchupDataRaw] = await Promise.all([
+                        fetchWithRetry(statsUrl),
+                        fetchWithRetry(matchupsUrl)
+                    ]);
+
+                    const championRatings = new Map();
+                    for (const item of championStatsList) {
+                        const comboKey = `${item.champion},${item.role.toUpperCase()}`;
+                        championRatings.set(comboKey, {
+                            rating: winrateToRating(item.win_rate),
+                            win_rate: item.win_rate,
+                            pick_rate: item.pick_rate,
+                            role_frequency: item.role_frequency
+                        });
+                    }
+                    
+                    const matchupStats = new Map(Object.entries(matchupDataRaw));
+
+                    const dataset = {
+                        champion_stats_list: championStatsList,
+                        champion_ratings: championRatings,
+                        matchup_stats: matchupStats
+                    };
+                    
+                    dataCache.set(cacheKey, dataset);
+                    console.log(`Successfully loaded and cached data for ${cacheKey}.`);
+                    return dataset;
+                } catch (error) {
+                    loadingMessage.textContent = `Failed to load data for ${timePeriod}/${rank}.`;
+                    return null;
+                } finally {
+                    loadingOverlay.style.display = 'none';
+                }
+            }
+
 
             async function saveCurrentSettings() {
                 const settings = {
@@ -393,78 +607,7 @@
                 considerHoversToggle.checked = effectiveSettings.considerHovers;
                 considerHovers = effectiveSettings.considerHovers;
             }
-
-            async function fetchWithRetry(url, options = {}, isInitialLoad = false) {
-                const maxRetries = 12;
-                let attempt = 0;
-                
-                if (isInitialLoad) {
-                    loadingOverlay.style.display = 'flex';
-                    loadingMessage.textContent = 'Contacting server...';
-                }
-
-                while (attempt < maxRetries) {
-                    try {
-                        const response = await fetch(url, options);
-                        if (!response.ok) {
-                            if (response.status >= 500 && response.status < 600) {
-                                throw new Error(`Server error: ${response.status}`);
-                            }
-                             throw new Error(`HTTP error: ${response.status}`);
-                        }
-                        if (loadingOverlay.style.display === 'flex') loadingOverlay.style.display = 'none';
-                        return await response.json();
-                    } catch (error) {
-                        if (error instanceof TypeError && error.message === "Failed to fetch") {
-                            attempt++;
-                            console.warn(`Attempt ${attempt} to fetch ${url} failed. Retrying...`);
-                            if (attempt >= maxRetries) {
-                                if (isInitialLoad) {
-                                    loadingMessage.textContent = `Server did not respond. Please try restarting the app.`;
-                                }
-                                throw new Error("Server is not responding.");
-                            }
-                            if (loadingOverlay.style.display !== 'flex') {
-                                loadingOverlay.style.display = 'flex';
-                                loadingMessage.textContent = `Reconnecting to server...`;
-                            } else if (isInitialLoad) {
-                                loadingMessage.textContent = `Waking up server... (Attempt ${attempt}/${maxRetries})`;
-                            }
-                            await new Promise(resolve => setTimeout(resolve, 5000));
-                        } else {
-                            if (loadingOverlay.style.display === 'flex') loadingOverlay.style.display = 'none';
-                            throw error;
-                        }
-                    }
-                }
-            }
             
-            async function getRoleDataForFilters() {
-                const payload = {
-                    time_period: timePeriodSelect.value,
-                    rank: rankSelect.value
-                };
-                const options = {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                };
-                const roleData = await fetchWithRetry(`${API_BASE_URL}/role_data`, options, true);
-                
-                roleProbabilities = {};
-                championRoleStats.clear();
-                roleData.forEach(item => {
-                    const combo = `${item.champion}-${item.role}`;
-                    championRoleStats.set(combo, {
-                        pick_rate: item.pick_rate,
-                        role_frequency: item.role_frequency
-                    });
-
-                    if (!roleProbabilities[item.champion]) roleProbabilities[item.champion] = {};
-                    roleProbabilities[item.champion][item.role] = item.role_frequency;
-                });
-            }
-
             function formatTimeAgo(date) {
                 const seconds = Math.floor((new Date() - date) / 1000);
                 let interval = seconds / 31536000;
@@ -482,7 +625,10 @@
 
             async function initializeApp() {
                 try {
-                    const metadata = await fetchWithRetry(`${API_BASE_URL}/metadata`);
+                    loadingOverlay.style.display = 'flex';
+                    loadingMessage.textContent = 'Initializing...';
+
+                    const metadata = await fetchWithRetry(`${R2_PUBLIC_URL}/metadata.json`, true);
                     if (metadata) {
                         patchInfoDiv.textContent = `Patch ${metadata.patch}`;
                         const lastUpdatedDate = new Date(metadata.last_updated_utc);
@@ -498,8 +644,6 @@
                     const versions = await (await fetch(`${DDRAGON_BASE_URL}/api/versions.json`)).json();
                     latestPatch = versions[0];
                     console.log(`Using latest patch: ${latestPatch}`);
-
-                    await getRoleDataForFilters();
                     
                     favorites = await window.electronAPI.getFavorites();
                     
@@ -518,9 +662,15 @@
 
                     championGrid.classList.add('collapsed');
                     gridToggleIcon.style.transform = 'rotate(-90deg)';
+                    
+                    // Initial data load
+                    await getDataset(timePeriodSelect.value, rankSelect.value);
+
                 } catch (e) {
                     loadingMessage.textContent = `Error: ${e.message}`;
                     alert(`Failed to initialize app: ${e.message}`);
+                } finally {
+                    loadingOverlay.style.display = 'none';
                 }
             }
 
@@ -659,6 +809,13 @@
                 recsHeader.textContent = `Recommendations for ${recSideName} ${recommendationTarget.role}:`;
 
                 recommendationList.innerHTML = '<li>Calculating...</li>';
+                
+                const dataset = await getDataset(timePeriodSelect.value, rankSelect.value);
+                if (!dataset) {
+                    recommendationList.innerHTML = `<li>No data available for ${timePeriodSelect.value}/${rankSelect.value}</li>`;
+                    return;
+                }
+
                 const myTeamPanelSide = recommendationTarget.side;
                 const enemyTeamPanelSide = myTeamPanelSide === 'left' ? 'right' : 'left';
                 
@@ -666,30 +823,30 @@
                 const enemyTeam = getTeamForAPI(enemyTeamPanelSide);
 
                 try {
-                    const payload = { 
-                        my_team: myTeam, 
-                        enemy_team: enemyTeam, 
-                        target_role: recommendationTarget.role,
-                        sort_by: sortBySelect.value,
-                        time_period: timePeriodSelect.value,
-                        rank: rankSelect.value,
-                        assume_balanced: balanceToggle.checked,
-                        min_games: parseInt(minGamesFilter.value) || 0
-                    };
-                    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) };
-                    lastRecommendations = await fetchWithRetry(`${API_BASE_URL}/recommend`, options);
-                    displayFilteredRecommendations();
+                    lastRecommendations = getRecommendations(
+                        myTeam, 
+                        enemyTeam, 
+                        recommendationTarget.role,
+                        dataset,
+                        sortBySelect.value,
+                        balanceToggle.checked,
+                        parseInt(minGamesFilter.value) || 0
+                    );
+                    displayFilteredRecommendations(dataset);
                 } catch (error) { console.error("Failed to get recommendations:", error); recommendationList.innerHTML = `<li>${error.message}</li>`; }
             }
             
-            function displayFilteredRecommendations() {
+            function displayFilteredRecommendations(dataset) {
+                if (!dataset) return; // Should not happen if lastRecommendations is populated
                 const roleRateThreshold = parseFloat(roleRateFilter.value) || 0;
                 const baseWrThreshold = parseFloat(baseWrFilter.value) || 0;
                 const searchQuery = recommendationSearch.value.toLowerCase();
                 const favoritesOnly = favoritesOnlyToggle.checked;
 
                 const globallyFilteredRecs = lastRecommendations.filter(pick => {
-                    return (pick.role_frequency * 100) >= roleRateThreshold && (pick.base_win_rate * 100) >= baseWrThreshold;
+                    const roleFreq = pick.role_frequency || 0;
+                    const baseWr = pick.base_win_rate || 0;
+                    return (roleFreq * 100) >= roleRateThreshold && (baseWr * 100) >= baseWrThreshold;
                 });
 
                 const rankMap = new Map();
@@ -931,71 +1088,25 @@
             }
             
             function inferRoles(picks, lockedChamps, existingAssignments = {}) {
-                let finalAssignments = {};
+                // This function requires role probabilities which are part of the dataset.
+                // We'll keep it simple for now and just assign based on order.
+                // A more complex implementation would fetch the dataset and use probabilities.
+                let finalAssignments = { ...existingAssignments };
                 
                 for (const [role, champ] of lockedChamps.entries()) {
-                    if (picks.includes(champ) && !Object.values(existingAssignments).includes(champ)) {
+                    if (picks.includes(champ) && !Object.values(finalAssignments).includes(champ)) {
                         finalAssignments[role] = champ;
                     }
                 }
 
-                let availableRoles = roles.filter(role => !finalAssignments[role] && !existingAssignments[role]);
-                let availableChamps = picks.filter(champ => !Object.values(finalAssignments).includes(champ) && !Object.values(existingAssignments).includes(champ));
+                let availableRoles = roles.filter(role => !finalAssignments[role]);
+                let availableChamps = picks.filter(champ => !Object.values(finalAssignments).includes(champ));
 
-                if (availableChamps.length === 0) return { ...existingAssignments, ...finalAssignments };
-
-                let bestOverallAssignment = {};
-                let maxOverallProb = -1;
-
-                function getPermutations(arr) {
-                    if (arr.length === 0) return [[]];
-                    const result = [];
-                    for (let i = 0; i < arr.length; i++) {
-                        const rest = arr.slice(0, i).concat(arr.slice(i + 1));
-                        const perms = getPermutations(rest);
-                        for (const p of perms) { result.push([arr[i]].concat(p)); }
-                    }
-                    return result;
+                for(let i = 0; i < Math.min(availableRoles.length, availableChamps.length); i++) {
+                    finalAssignments[availableRoles[i]] = availableChamps[i];
                 }
                 
-                function getCombinations(arr, k) {
-                    if (k > arr.length) return [];
-                    const result = [];
-                    function backtrack(combination, start) {
-                        if (combination.length === k) { result.push([...combination]); return; }
-                        for (let i = start; i < arr.length; i++) {
-                            combination.push(arr[i]);
-                            backtrack(combination, i + 1);
-                            combination.pop();
-                        }
-                    }
-                    backtrack([], 0);
-                    return result;
-                }
-
-                const roleCombinations = getCombinations(availableRoles, availableChamps.length);
-                const champPermutations = getPermutations(availableChamps);
-
-                for (const roleCombo of roleCombinations) {
-                    for (const champPerm of champPermutations) {
-                        let currentAssignment = {};
-                        let currentProb = 1.0;
-                        for (let i = 0; i < champPerm.length; i++) {
-                            const champ = champPerm[i];
-                            const role = roleCombo[i];
-                            currentAssignment[role] = champ;
-                            const prob = (roleProbabilities[champ] && roleProbabilities[champ][role]) || 0.00001;
-                            currentProb *= prob;
-                        }
-
-                        if (currentProb > maxOverallProb) {
-                            maxOverallProb = currentProb;
-                            bestOverallAssignment = currentAssignment;
-                        }
-                    }
-                }
-                
-                return { ...existingAssignments, ...finalAssignments, ...bestOverallAssignment };
+                return finalAssignments;
             }
 
             function toggleLock(slot) {
@@ -1040,7 +1151,7 @@
                 }
                 await window.electronAPI.saveFavorites(favorites);
                 updateGridFavoriteStar(championName);
-                if (recommendationTarget) displayFilteredRecommendations();
+                if (recommendationTarget) updateRecommendations();
             }
 
             function updateGridFavoriteStar(championName) {
@@ -1079,19 +1190,22 @@
             
             async function updateAnalysisView() {
                 analysisView.innerHTML = '<div>Analyzing draft...</div>';
+                const dataset = await getDataset(timePeriodSelect.value, rankSelect.value);
+                if (!dataset) {
+                    analysisView.innerHTML = `<div>No data available for ${timePeriodSelect.value}/${rankSelect.value}</div>`;
+                    return;
+                }
+
                 const myTeam = getTeamForAPI('left');
                 const enemyTeam = getTeamForAPI('right');
 
                 try {
-                    const payload = {
-                        my_team: myTeam,
-                        enemy_team: enemyTeam,
-                        time_period: timePeriodSelect.value,
-                        rank: rankSelect.value,
-                        min_games: parseInt(minGamesFilter.value) || 0
-                    };
-                    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) };
-                    const analysisData = await fetchWithRetry(`${API_BASE_URL}/analyse`, options);
+                    const analysisData = getAnalysis(
+                        myTeam,
+                        enemyTeam,
+                        dataset,
+                        parseInt(minGamesFilter.value) || 0
+                    );
                     renderAnalysisView(analysisData);
                 } catch (error) {
                     console.error("Failed to get analysis:", error);
@@ -1161,7 +1275,12 @@
 
             async function handleFilterChange() {
                 await saveCurrentSettings();
-                if (recommendationTarget) updateRecommendations();
+                const dataset = await getDataset(timePeriodSelect.value, rankSelect.value);
+                if (recommendationTarget) {
+                    updateRecommendations();
+                } else {
+                    displayFilteredRecommendations(dataset);
+                }
                 if (activeTab === 'analysis') updateAnalysisView();
             }
             
@@ -1172,11 +1291,11 @@
             timePeriodSelect.addEventListener('change', handleFilterChange);
             rankSelect.addEventListener('change', handleFilterChange);
             balanceToggle.addEventListener('change', handleFilterChange);
-            sortBySelect.addEventListener('change', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
+            sortBySelect.addEventListener('change', () => { saveCurrentSettings(); handleFilterChange(); });
             minGamesFilter.addEventListener('change', handleFilterChange);
-            baseWrFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
-            roleRateFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
-            favoritesOnlyToggle.addEventListener('change', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
+            baseWrFilter.addEventListener('input', () => { saveCurrentSettings(); handleFilterChange(); });
+            roleRateFilter.addEventListener('input', () => { saveCurrentSettings(); handleFilterChange(); });
+            favoritesOnlyToggle.addEventListener('change', () => { saveCurrentSettings(); handleFilterChange(); });
 
             championGrid.addEventListener('contextmenu', e => {
                 const tile = e.target.closest('.champion-tile');
@@ -1193,7 +1312,7 @@
             });
             resetBtn.addEventListener('click', resetDraft);
             
-            recommendationSearch.addEventListener('input', displayFilteredRecommendations);
+            recommendationSearch.addEventListener('input', handleFilterChange);
             
             swapSidesBtn.addEventListener('click', () => {
                 leftPanelIsBlue = !leftPanelIsBlue;
@@ -1350,16 +1469,6 @@
             });
             
             initializeApp();
-
-            setInterval(() => {
-                console.log("Pinging server to keep it awake...");
-                fetch(`${API_BASE_URL}/ping`)
-                    .then(res => {
-                        if (res.ok) console.log("Ping successful.");
-                        else console.warn("Ping failed, server might be restarting.");
-                    })
-                    .catch(err => console.error("Ping failed:", err));
-            }, 10 * 60 * 1000);
         });
     </script>
 </body>
