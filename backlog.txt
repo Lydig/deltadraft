@@ -14,6 +14,8 @@ sort by only updates on another update event, not when pressing another sort
 
 sort by columns instead
 
+default parameters in how to use
+
 right now i need to press the role first and then the champion from the pool, could we also make it possible to press the champion first, and then the role?
 
 pressing the search bar to begin searching should not deselect the current role i pressed

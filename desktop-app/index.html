@@ -298,8 +298,6 @@
             let lastKnownPickState = '';
             let swapSourceSlot = null;
             let lastRecommendations = [];
-            let isShiftPressed = false;
-            let lastHoveredRec = null;
             let leftPanelIsBlue = true;
             let favorites = {};
             let unavailableChampions = new Set();
@@ -353,8 +351,6 @@
             const patchInfoDiv = document.getElementById('patch-info');
             const lastUpdatedInfoDiv = document.getElementById('last-updated-info');
 
-            window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !isShiftPressed) { isShiftPressed = true; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, true); } });
-            window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { isShiftPressed = false; if (lastHoveredRec) updateTooltipContent(lastHoveredRec, false); } });
             document.addEventListener('click', () => contextMenu.style.display = 'none');
 
             const DEFAULT_SETTINGS = {
@@ -1276,23 +1272,21 @@
 
                     deltaTooltip.style.left = `${left}px`;
                     deltaTooltip.style.top = `${top}px`;
-                    updateTooltipContent(target, isShiftPressed);
+                    updateTooltipContent(target);
                 }
             });
             recommendationList.addEventListener('mouseover', e => {
                 const target = e.target.closest('[data-breakdown]');
-                lastHoveredRec = target;
                 if (target) {
-                    updateTooltipContent(target, isShiftPressed);
+                    updateTooltipContent(target);
                     deltaTooltip.style.opacity = '1';
                 }
             });
             recommendationList.addEventListener('mouseout', () => {
-                lastHoveredRec = null;
                 deltaTooltip.style.opacity = '0';
             });
             
-            function updateTooltipContent(target, shiftPressed) {
+            function updateTooltipContent(target) {
                 if (!target || !target.dataset.breakdown) return;
                 const breakdown = JSON.parse(target.dataset.breakdown);
                 const breakdownMap = Object.fromEntries(breakdown.map(item => [item.source, {delta: item.delta, games: item.games}]));
@@ -1312,8 +1306,8 @@
                     const leftSideColor = leftPanelIsBlue ? 'blue' : 'red';
                     const rightSideColor = leftPanelIsBlue ? 'red' : 'blue';
 
-                    leftHTML += buildTooltipRow(leftChamp, leftSideColor, role, breakdownMap, shiftPressed);
-                    rightHTML += buildTooltipRow(rightChamp, rightSideColor, role, breakdownMap, shiftPressed);
+                    leftHTML += buildTooltipRow(leftChamp, leftSideColor, role, breakdownMap);
+                    rightHTML += buildTooltipRow(rightChamp, rightSideColor, role, breakdownMap);
                 });
                 
                 const tooltipTitle = balanceToggle.checked ? "Win Rate Delta Breakdown" : "Rating Adjustment Breakdown";
@@ -1325,7 +1319,7 @@
                 return `${(num / 1000).toFixed(1)}k`;
             }
 
-            function buildTooltipRow(champ, side, role, breakdownMap, showGames) {
+            function buildTooltipRow(champ, side, role, breakdownMap) {
                 let recColor = null;
                 if (recommendationTarget) {
                     const targetIsBlue = (recommendationTarget.side === 'left' && leftPanelIsBlue) || (recommendationTarget.side === 'right' && !leftPanelIsBlue);
@@ -1338,7 +1332,7 @@
                     const stats = breakdownMap[champ] || {delta: 0, games: 0};
                     const delta = balanceToggle.checked ? stats.delta * 100 : stats.delta;
                     const deltaClass = delta >= 0 ? 'delta-pos' : 'delta-neg';
-                    const gamesHTML = showGames ? `<span class="games-count">(${formatGames(stats.games)})</span>` : '';
+                    const gamesHTML = `<span class="games-count">(${formatGames(stats.games)})</span>`;
                     const deltaSuffix = balanceToggle.checked ? '%' : '';
                     return `<div><span class="champ-name" title="${champ}">${champ}</span> ${gamesHTML}<span class="${deltaClass}">${delta.toFixed(2)}${deltaSuffix}</span></div>`;
                 } else {
