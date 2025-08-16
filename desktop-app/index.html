@@ -290,6 +290,7 @@
             
             let allChampions = [];
             let champIdToName = {};
+            let roleProbabilities = {};
             let lcuIntervalId = null;
             let recommendationTarget = null;
             let lastKnownDraftState = '';
@@ -549,6 +550,7 @@
                     ]);
 
                     const championRatings = new Map();
+                    roleProbabilities = {}; // Reset and repopulate
                     for (const item of championStatsList) {
                         const comboKey = `${item.champion},${item.role.toUpperCase()}`;
                         championRatings.set(comboKey, {
@@ -557,6 +559,11 @@
                             pick_rate: item.pick_rate,
                             role_frequency: item.role_frequency
                         });
+
+                        if (!roleProbabilities[item.champion]) {
+                            roleProbabilities[item.champion] = {};
+                        }
+                        roleProbabilities[item.champion][item.role.toUpperCase()] = item.role_frequency;
                     }
                     
                     const matchupStats = new Map(Object.entries(matchupDataRaw));
@@ -1088,25 +1095,71 @@
             }
             
             function inferRoles(picks, lockedChamps, existingAssignments = {}) {
-                // This function requires role probabilities which are part of the dataset.
-                // We'll keep it simple for now and just assign based on order.
-                // A more complex implementation would fetch the dataset and use probabilities.
-                let finalAssignments = { ...existingAssignments };
+                let finalAssignments = {};
                 
                 for (const [role, champ] of lockedChamps.entries()) {
-                    if (picks.includes(champ) && !Object.values(finalAssignments).includes(champ)) {
+                    if (picks.includes(champ) && !Object.values(existingAssignments).includes(champ)) {
                         finalAssignments[role] = champ;
                     }
                 }
 
-                let availableRoles = roles.filter(role => !finalAssignments[role]);
-                let availableChamps = picks.filter(champ => !Object.values(finalAssignments).includes(champ));
+                let availableRoles = roles.filter(role => !finalAssignments[role] && !existingAssignments[role]);
+                let availableChamps = picks.filter(champ => !Object.values(finalAssignments).includes(champ) && !Object.values(existingAssignments).includes(champ));
 
-                for(let i = 0; i < Math.min(availableRoles.length, availableChamps.length); i++) {
-                    finalAssignments[availableRoles[i]] = availableChamps[i];
+                if (availableChamps.length === 0) return { ...existingAssignments, ...finalAssignments };
+
+                let bestOverallAssignment = {};
+                let maxOverallProb = -1;
+
+                function getPermutations(arr) {
+                    if (arr.length === 0) return [[]];
+                    const result = [];
+                    for (let i = 0; i < arr.length; i++) {
+                        const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+                        const perms = getPermutations(rest);
+                        for (const p of perms) { result.push([arr[i]].concat(p)); }
+                    }
+                    return result;
                 }
                 
-                return finalAssignments;
+                function getCombinations(arr, k) {
+                    if (k > arr.length) return [];
+                    const result = [];
+                    function backtrack(combination, start) {
+                        if (combination.length === k) { result.push([...combination]); return; }
+                        for (let i = start; i < arr.length; i++) {
+                            combination.push(arr[i]);
+                            backtrack(combination, i + 1);
+                            combination.pop();
+                        }
+                    }
+                    backtrack([], 0);
+                    return result;
+                }
+
+                const roleCombinations = getCombinations(availableRoles, availableChamps.length);
+                const champPermutations = getPermutations(availableChamps);
+
+                for (const roleCombo of roleCombinations) {
+                    for (const champPerm of champPermutations) {
+                        let currentAssignment = {};
+                        let currentProb = 1.0;
+                        for (let i = 0; i < champPerm.length; i++) {
+                            const champ = champPerm[i];
+                            const role = roleCombo[i];
+                            currentAssignment[role] = champ;
+                            const prob = (roleProbabilities[champ] && roleProbabilities[champ][role]) || 0.00001;
+                            currentProb *= prob;
+                        }
+
+                        if (currentProb > maxOverallProb) {
+                            maxOverallProb = currentProb;
+                            bestOverallAssignment = currentAssignment;
+                        }
+                    }
+                }
+                
+                return { ...existingAssignments, ...finalAssignments, ...bestOverallAssignment };
             }
 
             function toggleLock(slot) {
@@ -1278,7 +1331,7 @@
                 const dataset = await getDataset(timePeriodSelect.value, rankSelect.value);
                 if (recommendationTarget) {
                     updateRecommendations();
-                } else {
+                } else if(lastRecommendations.length > 0) {
                     displayFilteredRecommendations(dataset);
                 }
                 if (activeTab === 'analysis') updateAnalysisView();
