@@ -1,3 +1,5 @@
+leaked key somewhere (github guard warning)?
+
 calculating... (ping Vercel sever to prevent it from going idle?)
 
 draft analysis could analyse lane matchups and expectations (gold, cs, kills, deaths, assists, level, at early timestamps (we have this data)) like the davi heatmap
