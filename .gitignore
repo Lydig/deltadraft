@@ -40,3 +40,6 @@ settings.json
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+# Distribution Files
+/desktop-app/dist/
