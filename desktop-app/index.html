@@ -56,12 +56,47 @@
         .champion-tile:hover img { border-color: var(--accent-color); }
         #results { background-color: var(--bg-secondary); padding: 15px; border-radius: 8px; flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
         #recommendations-view { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
-        #recommendation-list, #ban-recommendation-list { list-style: none; padding: 0; margin-top: 10px; flex-grow: 1; overflow-y: auto; min-height: 0; }
-        #recommendation-list li { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid var(--border-color); position: relative; transition: filter 0.2s, opacity 0.2s; }
+        
+        #recommendation-header {
+            display: grid;
+            grid-template-columns: 60px 1fr 110px 80px 90px 90px;
+            align-items: center;
+            gap: 10px;
+            padding: 0 8px 4px 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border-color);
+        }
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .sortable-header:hover { color: var(--text-primary); }
+        .rec-stat-header { text-align: right; }
+        .active-sort-desc::after { content: ' ▼'; font-size: 1em; }
+        .active-sort-asc::after { content: ' ▲'; font-size: 1em; }
+
+        #recommendation-list { list-style: none; padding: 0; margin-top: 0; flex-grow: 1; overflow-y: auto; min-height: 0; }
+        #recommendation-list li { 
+            display: grid;
+            grid-template-columns: 60px 1fr 110px 80px 90px 90px;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            transition: filter 0.2s, opacity 0.2s;
+        }
+
+        .rec-cell-champ { display: flex; align-items: center; gap: 10px; }
+        .rec-cell-stat { text-align: right; font-variant-numeric: tabular-nums; }
+        
         #ban-recommendation-list li { flex-direction: column; align-items: stretch; padding: 0; border-bottom: 1px solid var(--border-color); }
         .ban-rec-summary { display: flex; align-items: center; gap: 10px; padding: 8px; cursor: pointer; }
         .rec-img { width: 40px; height: 40px; border-radius: 4px; }
-        .rec-info { flex-grow: 1; }
         .rec-name { font-weight: bold; }
         .rec-stats { font-size: 0.8rem; color: var(--text-secondary); }
         .delta-pos { color: var(--green-pos); } .delta-neg { color: var(--red-neg); }
@@ -123,12 +158,11 @@
             color: var(--text-primary); font-size: 1.5rem; z-index: 2000;
             flex-direction: column;
         }
-        .rec-rank { font-size: 0.9rem; color: var(--text-secondary); width: 50px; text-align: right; flex-shrink: 0; }
         .recommendation-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
         .recommendation-controls .input-group { flex-shrink: 0; }
         #recommendation-search { flex-grow: 1; min-width: 150px; }
         .input-group { display: flex; flex-direction: column; }
-        .input-group label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; }
+        .input-group label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: flex; align-items: center; }
         .input-group input[type="number"], .input-group select { width: 120px; font-size: 0.9rem; }
         .blue-text { color: #5c9be4; font-weight: bold; }
         .red-text { color: #e84e4e; font-weight: bold; }
@@ -145,7 +179,7 @@
             cursor: help;
             margin-left: 5px;
         }
-        #balance-tooltip { width: 300px; text-align: justify; }
+        #balance-tooltip, #min-games-tooltip { width: 250px; text-align: justify; }
         .rec-button {
             position: absolute;
             top: 4px;
@@ -216,13 +250,6 @@
                         <div class="recommendation-controls">
                             <input type="text" id="recommendation-search" placeholder="Search...">
                             <div class="input-group">
-                                <label for="sort-by-select">Sort By</label>
-                                <select id="sort-by-select">
-                                    <option value="expected_win_rate" selected>Expected WR</option>
-                                    <option value="base_win_rate">Base WR</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
                                 <label for="base-wr-filter">Min Base WR %</label>
                                 <input type="number" id="base-wr-filter" min="0" max="100">
                             </div>
@@ -231,7 +258,7 @@
                                 <input type="number" id="role-rate-filter" min="0" max="100">
                             </div>
                             <div class="input-group">
-                                <label for="min-games-filter">Min Games</label>
+                                <label for="min-games-filter">Min Games <span class="tooltip-icon" id="min-games-tooltip-icon">?</span></label>
                                 <input type="number" id="min-games-filter" min="0">
                             </div>
                         </div>
@@ -246,6 +273,14 @@
                                 <input type="checkbox" id="balance-toggle"> Assume Perfect Balance
                                 <span class="tooltip-icon" id="balance-tooltip-icon">?</span>
                             </label>
+                        </div>
+                        <div id="recommendation-header">
+                            <div class="sortable-header" data-sort="rank">Rank</div>
+                            <div class="sortable-header" data-sort="champion">Champion</div>
+                            <div class="rec-stat-header sortable-header active-sort-desc" data-sort="expected_win_rate">Expected WR</div>
+                            <div class="rec-stat-header sortable-header" data-sort="delta">Δ</div>
+                            <div class="rec-stat-header sortable-header" data-sort="base_win_rate">Base WR</div>
+                            <div class="rec-stat-header sortable-header" data-sort="role_frequency">Role Freq</div>
                         </div>
                         <ol id="recommendation-list"></ol>
                     </div>
@@ -272,6 +307,7 @@
             <p><b>Unchecked (Default):</b> The "Performance Review" method. This is like a handicapped race where strong champions (high base win rate) are expected to perform better. A recommendation is good if it outperforms that expectation.</p>
             <p><b>Checked:</b> The "Simple Bonus" method. This assumes all champions are perfectly balanced (50% win rate). It recommends based purely on which champion gets the biggest raw synergy and counter-pick bonuses.</p>
         </div>
+        <div id="min-games-tooltip" class="tooltip">The minimum amount of games needed for a matchup or synergy to be considered in the Delta Breakdown.</div>
     </div>
 
     <script>
@@ -307,12 +343,16 @@
             let latestPatch = '';
             let considerHovers = false;
             let dataCache = new Map();
+            let sortBy = 'expected_win_rate';
+            let sortDirection = 'desc';
 
             const timePeriodSelect = document.getElementById('time-period-select');
             const rankSelect = document.getElementById('rank-select');
             const balanceToggle = document.getElementById('balance-toggle');
             const balanceTooltipIcon = document.getElementById('balance-tooltip-icon');
             const balanceTooltip = document.getElementById('balance-tooltip');
+            const minGamesTooltipIcon = document.getElementById('min-games-tooltip-icon');
+            const minGamesTooltip = document.getElementById('min-games-tooltip');
             const minGamesFilter = document.getElementById('min-games-filter');
             const championGrid = document.getElementById('champion-grid');
             const searchInput = document.getElementById('search-champion');
@@ -321,7 +361,6 @@
             const resetBtn = document.getElementById('reset-btn');
             const roleRateFilter = document.getElementById('role-rate-filter');
             const baseWrFilter = document.getElementById('base-wr-filter');
-            const sortBySelect = document.getElementById('sort-by-select');
             const deltaTooltip = document.getElementById('delta-tooltip');
             const draftArea = document.getElementById('draft-area');
             const leftTeamPanel = document.getElementById('left-team-panel');
@@ -356,7 +395,6 @@
             const DEFAULT_SETTINGS = {
                 timePeriod: 'patch',
                 rank: 'platinum_plus',
-                sortBy: 'expected_win_rate',
                 baseWr: '47',
                 roleRate: '',
                 favoritesOnly: false,
@@ -378,7 +416,7 @@
                 return 1 / (1 + Math.pow(10, -ratingDiff / 400));
             }
 
-            function getRecommendations(myTeam, enemyTeam, targetRole, dataset, sortBy, assumeBalanced, minGames) {
+            function getRecommendations(myTeam, enemyTeam, targetRole, dataset, assumeBalanced, minGames) {
                 const recommendations = [];
                 const { champion_stats_list, champion_ratings, matchup_stats } = dataset;
 
@@ -459,8 +497,6 @@
                         });
                     }
                 }
-                
-                recommendations.sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
                 return recommendations;
             }
 
@@ -590,7 +626,6 @@
                 const settings = {
                     timePeriod: timePeriodSelect.value,
                     rank: rankSelect.value,
-                    sortBy: sortBySelect.value,
                     baseWr: baseWrFilter.value,
                     roleRate: roleRateFilter.value,
                     favoritesOnly: favoritesOnlyToggle.checked,
@@ -605,7 +640,6 @@
                 const effectiveSettings = { ...DEFAULT_SETTINGS, ...settings };
                 timePeriodSelect.value = effectiveSettings.timePeriod;
                 rankSelect.value = effectiveSettings.rank;
-                sortBySelect.value = effectiveSettings.sortBy;
                 baseWrFilter.value = effectiveSettings.baseWr;
                 roleRateFilter.value = effectiveSettings.roleRate;
                 favoritesOnlyToggle.checked = effectiveSettings.favoritesOnly;
@@ -835,16 +869,14 @@
                         enemyTeam, 
                         recommendationTarget.role,
                         dataset,
-                        sortBySelect.value,
                         balanceToggle.checked,
                         parseInt(minGamesFilter.value) || 0
                     );
-                    displayFilteredRecommendations(dataset);
+                    displayFilteredRecommendations();
                 } catch (error) { console.error("Failed to get recommendations:", error); recommendationList.innerHTML = `<li>${error.message}</li>`; }
             }
             
-            function displayFilteredRecommendations(dataset) {
-                if (!dataset) return; // Should not happen if lastRecommendations is populated
+            function displayFilteredRecommendations() {
                 const roleRateThreshold = parseFloat(roleRateFilter.value) || 0;
                 const baseWrThreshold = parseFloat(baseWrFilter.value) || 0;
                 const searchQuery = recommendationSearch.value.toLowerCase();
@@ -857,16 +889,43 @@
                 });
 
                 const rankMap = new Map();
-                globallyFilteredRecs.forEach((pick, index) => {
-                    rankMap.set(pick.champion, index + 1);
-                });
+                globallyFilteredRecs
+                    .sort((a,b) => b.expected_win_rate - a.expected_win_rate)
+                    .forEach((pick, index) => {
+                        rankMap.set(pick.champion, index + 1);
+                    });
                 const totalRanks = globallyFilteredRecs.length;
 
-                const displayRecs = globallyFilteredRecs.filter(pick => {
+                let displayRecs = globallyFilteredRecs.filter(pick => {
                     const searchMatch = !searchQuery || pick.champion.toLowerCase().includes(searchQuery);
                     const favoriteMatch = !favoritesOnly || (recommendationTarget && favorites[`${pick.champion}-${recommendationTarget.role}`]);
                     return searchMatch && favoriteMatch;
                 });
+
+                displayRecs.sort((a, b) => {
+                    let valA, valB;
+                    if (sortBy === 'champion') {
+                        valA = a.champion;
+                        valB = b.champion;
+                        return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                    } else if (sortBy === 'rank') {
+                        valA = rankMap.get(a.champion);
+                        valB = rankMap.get(b.champion);
+                    } else if (sortBy === 'delta') {
+                        valA = a.expected_win_rate - a.base_win_rate;
+                        valB = b.expected_win_rate - b.base_win_rate;
+                    } else {
+                        valA = a[sortBy];
+                        valB = b[sortBy];
+                    }
+                    
+                    if (sortDirection === 'desc') {
+                        return (valB || 0) - (valA || 0);
+                    } else {
+                        return (valA || 0) - (valB || 0);
+                    }
+                });
+
 
                 recommendationList.innerHTML = '';
                 if (displayRecs.length === 0) {
@@ -898,17 +957,16 @@
                     const rankStr = `${rank}/${totalRanks}`;
 
                     li.innerHTML = `
-                        <div class="rec-rank">${rankStr}</div>
-                        <img class="rec-img" src="${DDRAGON_BASE_URL}/cdn/${latestPatch}/img/champion/${champData.image.full}">
-                        <div class="rec-info">
+                        <div class="rec-cell-stat">${rankStr}</div>
+                        <div class="rec-cell-champ">
+                            <img class="rec-img" src="${DDRAGON_BASE_URL}/cdn/${latestPatch}/img/champion/${champData.image.full}">
                             <div class="rec-name">${pick.champion}${favoriteStar}</div>
-                            <div class="rec-stats">
-                                <span>Exp: <b class="${pick.expected_win_rate >= 0.5 ? 'delta-pos' : 'delta-neg'}">${expectedWrStr}</b></span> | 
-                                <span>Base: ${baseWrStr}</span> | 
-                                <span>Δ: <b class="${delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</b></span> |
-                                <span>Role Freq: ${roleFreqStr}</span>
-                            </div>
-                        </div>`;
+                        </div>
+                        <div class="rec-cell-stat ${pick.expected_win_rate >= 0.5 ? 'delta-pos' : 'delta-neg'}"><b>${expectedWrStr}</b></div>
+                        <div class="rec-cell-stat ${delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</div>
+                        <div class="rec-cell-stat">${baseWrStr}</div>
+                        <div class="rec-cell-stat">${roleFreqStr}</div>
+                    `;
                     recommendationList.appendChild(li);
                 });
             }
@@ -1326,15 +1384,25 @@
             async function getBanRecommendations() {}
             function renderBanRecommendations(banRecs) {}
 
+            function updateSortHeaders() {
+                document.querySelectorAll('.sortable-header').forEach(header => {
+                    header.classList.remove('active-sort-asc', 'active-sort-desc');
+                    if (header.dataset.sort === sortBy) {
+                        header.classList.add(sortDirection === 'desc' ? 'active-sort-desc' : 'active-sort-asc');
+                    }
+                });
+            }
+
             async function handleFilterChange() {
                 await saveCurrentSettings();
-                const dataset = await getDataset(timePeriodSelect.value, rankSelect.value);
                 if (recommendationTarget) {
-                    updateRecommendations();
-                } else if(lastRecommendations.length > 0) {
-                    displayFilteredRecommendations(dataset);
+                    await updateRecommendations();
+                } else if (lastRecommendations.length > 0) {
+                    displayFilteredRecommendations();
                 }
-                if (activeTab === 'analysis') updateAnalysisView();
+                if (activeTab === 'analysis') {
+                    await updateAnalysisView();
+                }
             }
             
             considerHoversToggle.addEventListener('change', (e) => {
@@ -1344,11 +1412,24 @@
             timePeriodSelect.addEventListener('change', handleFilterChange);
             rankSelect.addEventListener('change', handleFilterChange);
             balanceToggle.addEventListener('change', handleFilterChange);
-            sortBySelect.addEventListener('change', () => { saveCurrentSettings(); handleFilterChange(); });
             minGamesFilter.addEventListener('change', handleFilterChange);
-            baseWrFilter.addEventListener('input', () => { saveCurrentSettings(); handleFilterChange(); });
-            roleRateFilter.addEventListener('input', () => { saveCurrentSettings(); handleFilterChange(); });
-            favoritesOnlyToggle.addEventListener('change', () => { saveCurrentSettings(); handleFilterChange(); });
+            baseWrFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
+            roleRateFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
+            favoritesOnlyToggle.addEventListener('change', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
+
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const newSortBy = header.dataset.sort;
+                    if (sortBy === newSortBy) {
+                        sortDirection = sortDirection === 'desc' ? 'asc' : 'desc';
+                    } else {
+                        sortBy = newSortBy;
+                        sortDirection = 'desc'; // Default to descending for new columns
+                    }
+                    updateSortHeaders();
+                    displayFilteredRecommendations();
+                });
+            });
 
             championGrid.addEventListener('contextmenu', e => {
                 const tile = e.target.closest('.champion-tile');
@@ -1365,7 +1446,7 @@
             });
             resetBtn.addEventListener('click', resetDraft);
             
-            recommendationSearch.addEventListener('input', handleFilterChange);
+            recommendationSearch.addEventListener('input', displayFilteredRecommendations);
             
             swapSidesBtn.addEventListener('click', () => {
                 leftPanelIsBlue = !leftPanelIsBlue;
@@ -1519,6 +1600,15 @@
             });
             balanceTooltipIcon.addEventListener('mouseout', () => {
                 balanceTooltip.style.opacity = '0';
+            });
+
+            minGamesTooltipIcon.addEventListener('mouseover', e => {
+                minGamesTooltip.style.left = `${e.clientX + 15}px`;
+                minGamesTooltip.style.top = `${e.clientY + 15}px`;
+                minGamesTooltip.style.opacity = '1';
+            });
+            minGamesTooltipIcon.addEventListener('mouseout', () => {
+                minGamesTooltip.style.opacity = '0';
             });
             
             initializeApp();

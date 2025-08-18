@@ -1,18 +1,4 @@
-leaked key somewhere (github guard warning)?
-
-calculating... (ping Vercel sever to prevent it from going idle?)
-
 draft analysis could analyse lane matchups and expectations (gold, cs, kills, deaths, assists, level, at early timestamps (we have this data)) like the davi heatmap
-
-sanity check - is this delta approach better than a machine learning or deep learning approach?
-
-machine learning draft from win/lose and 10 champions
-
-should we preload every dataset?
-
-Could you make it so the extra details that come up on the breakdown hover tooltip when the user presses SHIFT are just always there so they don't need to press SHIFT?
-
-sort by only updates on another update event, not when pressing another sort
 
 sort by columns instead
 
@@ -22,7 +8,11 @@ right now i need to press the role first and then the champion from the pool, co
 
 pressing the search bar to begin searching should not deselect the current role i pressed
 
-application icon
+untick lanes you don't want part of the breakdown
+
+perspective breakdown
+
+application icon (fill icon?)
 
 ui overhaul
 
@@ -33,6 +23,8 @@ rename monkeyking to wukong
 rename to DraftDiff?
 
 default, dark and pink themes
+
+machine learning / deep learning option
 
 red side blue side stats - need to scrape that data
 
