@@ -1,12 +1,14 @@
-draft analysis could analyse lane matchups and expectations (gold, cs, kills, deaths, assists, level, at early timestamps (we have this data)) like the davi heatmap
+draft analysis could analyse lane matchups and expectations (gold, cs, kills, deaths, assists, level, at early timestamps (we have this data)) like the davi heatmap.
 
-sort by columns instead
+lane opponent delta column add
 
 default parameters in how to use
 
 right now i need to press the role first and then the champion from the pool, could we also make it possible to press the champion first, and then the role?
 
 pressing the search bar to begin searching should not deselect the current role i pressed
+
+can swap wrong inferences, but not hovered
 
 untick lanes you don't want part of the breakdown
 
@@ -23,6 +25,8 @@ rename monkeyking to wukong
 rename to DraftDiff?
 
 default, dark and pink themes
+
+website also for downloading the installer
 
 machine learning / deep learning option
 
