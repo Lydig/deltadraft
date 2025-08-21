@@ -114,6 +114,8 @@ function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    title: 'DraftDiff',
+    icon: path.join(__dirname, 'assets/logo.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -121,6 +123,7 @@ function createWindow() {
     },
   });
 
+  mainWindow.setMenu(null);
   mainWindow.loadFile('index.html');
 }
 

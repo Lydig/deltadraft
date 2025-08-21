@@ -2,25 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Delta Draft</title>
+    <title>DraftDiff</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
     <style>
-        :root { --bg-primary: #0f172a; --bg-secondary: #1e293b; --border-color: #334155; --text-primary: #e2e8f0; --text-secondary: #94a3b8; --accent-color: #60a5fa; --green-pos: #22c55e; --red-neg: #ef4444; --yellow-warn: #facc15; }
+        :root { --bg-primary: #121212; --bg-secondary: #1e1e1e; --border-color: #2c2c2c; --text-primary: #e0e0e0; --text-secondary: #a0a0a0; --accent-color: #60a5fa; --green-pos: #22c55e; --red-neg: #ef4444; --yellow-warn: #facc15; }
         html, body { height: 100%; margin: 0; overflow: hidden; }
         body { font-family: system-ui, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); display: flex; justify-content: center; padding: 20px; }
         * { box-sizing: border-box; }
-        .app-container { width: 100%; max-width: 1200px; height: calc(100vh - 40px); display: flex; flex-direction: column; }
+        .app-container { width: 100%; max-width: 1400px; height: calc(100vh - 40px); display: flex; flex-direction: column; }
         
         .header { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
         .header-row { display: flex; justify-content: space-between; align-items: center; }
-        .header-title { font-size: 2rem; font-weight: bold; }
+        .header-title { font-size: 2rem; font-weight: bold; display: flex; align-items: center; gap: 15px; }
+        .header-logo { height: 40px; }
         .header-meta { font-size: 0.8rem; color: var(--text-secondary); text-align: right; }
         .header-controls { display: flex; gap: 10px; align-items: center; }
         .header-controls .input-group { flex-grow: 1; }
         .header-controls .input-group select { width: 100%; }
 
         button, input[type="number"], input[type="text"], select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
-        button:hover { background-color: var(--border-color); }
-        button:disabled { background-color: #1e293b; color: #475569; cursor: not-allowed; }
+        button:hover { background-color: #252525; }
+        button:disabled { background-color: #1a1a1a; color: #4a4a4a; cursor: not-allowed; }
         input[type="number"], input[type="text"], select { cursor: text; }
         input[type="number"]:focus, input[type="text"]:focus, select:focus { outline: 2px solid var(--accent-color); outline-offset: -1px; }
         input[type=number]::-webkit-inner-spin-button, 
@@ -30,15 +32,16 @@
         .live-indicator { width: 10px; height: 10px; border-radius: 50%; background-color: #64748b; margin-right: 8px; display: inline-block; transition: background-color 0.3s; }
         .live-indicator.active { background-color: var(--red-neg); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
-        .draft-area { display: flex; justify-content: space-between; gap: 20px; flex-grow: 1; min-height: 0; }
+        .draft-area { display: flex; justify-content: space-between; gap: 40px; flex-grow: 1; min-height: 0; position: relative; }
+        #connector-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         .team-panel { width: 150px; display: flex; flex-direction: column; gap: 10px; }
         .team-panel h2 { text-align: center; margin: 0 0 10px 0; color: var(--text-secondary); }
         #left-team-header.blue-side, #right-team-header.blue-side { color: #5c9be4; }
         #left-team-header.red-side, #right-team-header.red-side { color: #e84e4e; }
         .role-slot { width: 100%; aspect-ratio: 1 / 1; background-color: var(--bg-secondary); border: 2px dashed var(--border-color); border-radius: 8px; position: relative; cursor: pointer; transition: border-color 0.2s; overflow: hidden; }
-        .role-slot.selected { border-color: var(--accent-color); border-style: solid; }
+        .role-slot.selected { border-color: var(--accent-color); border-style: solid; box-shadow: 0 0 10px rgba(96, 165, 250, 0.7); }
         .role-slot.swap-source { border-color: var(--yellow-warn); border-style: solid; }
-        .role-icon { width: 50%; height: 50%; opacity: 0.2; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .role-icon { width: 50%; height: 50%; opacity: 0.4; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); filter: brightness(1.2); }
         .champion-portrait { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; pointer-events: none; }
         .champion-portrait.hovered { filter: grayscale(80%); }
         .center-column { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -52,14 +55,16 @@
         #champion-grid::-webkit-scrollbar, #recommendation-list::-webkit-scrollbar { display: none; }
         #champion-grid, #recommendation-list { -ms-overflow-style: none; scrollbar-width: none; }
         .champion-tile { cursor: pointer; position: relative; }
+        .champion-tile.grid-selected img { border-color: var(--yellow-warn); }
         .champion-tile img { width: 100%; display: block; border-radius: 4px; border: 2px solid transparent; transition: border-color 0.2s, filter 0.2s, opacity 0.2s; }
         .champion-tile:hover img { border-color: var(--accent-color); }
-        #results { background-color: var(--bg-secondary); padding: 15px; border-radius: 8px; flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
+        #results { background-color: var(--bg-secondary); padding: 15px; border-radius: 8px; flex-grow: 1; display: flex; flex-direction: column; min-height: 0; border: 2px solid transparent; transition: border-color 0.3s, box-shadow 0.3s; }
+        #results.highlighted { border-color: var(--accent-color); box-shadow: 0 0 10px rgba(96, 165, 250, 0.7); }
         #recommendations-view { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
         
         #recommendation-header {
             display: grid;
-            grid-template-columns: 60px 1fr 110px 80px 90px 90px;
+            grid-template-columns: 50px 1fr 95px 70px 70px 80px 80px;
             align-items: center;
             gap: 10px;
             padding: 0 8px 4px 8px;
@@ -82,20 +87,19 @@
         #recommendation-list { list-style: none; padding: 0; margin-top: 0; flex-grow: 1; overflow-y: auto; min-height: 0; }
         #recommendation-list li { 
             display: grid;
-            grid-template-columns: 60px 1fr 110px 80px 90px 90px;
+            grid-template-columns: 50px 1fr 95px 70px 70px 80px 80px;
             align-items: center;
             gap: 10px;
             padding: 8px;
             border-bottom: 1px solid var(--border-color);
             position: relative;
-            transition: filter 0.2s, opacity 0.2s;
+            transition: filter 0.2s, opacity 0.2s, background-color 0.2s;
         }
+        #recommendation-list li:hover { background-color: #252525; }
 
         .rec-cell-champ { display: flex; align-items: center; gap: 10px; }
         .rec-cell-stat { text-align: right; font-variant-numeric: tabular-nums; }
         
-        #ban-recommendation-list li { flex-direction: column; align-items: stretch; padding: 0; border-bottom: 1px solid var(--border-color); }
-        .ban-rec-summary { display: flex; align-items: center; gap: 10px; padding: 8px; cursor: pointer; }
         .rec-img { width: 40px; height: 40px; border-radius: 4px; }
         .rec-name { font-weight: bold; }
         .rec-stats { font-size: 0.8rem; color: var(--text-secondary); }
@@ -130,7 +134,8 @@
         .tab-btn.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
         .tab-content { padding-top: 15px; flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
         #analysis-view { display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
-        .analysis-row { display: flex; align-items: center; justify-content: space-between; padding: 5px; border-radius: 4px; background-color: #0f172a; }
+        .analysis-row { display: flex; align-items: center; justify-content: space-between; padding: 5px; border-radius: 4px; background-color: #181818; transition: background-color 0.2s; }
+        .analysis-row:hover { background-color: #252525; }
         .analysis-cell { display: flex; align-items: center; }
         .analysis-cell.left { flex: 1; justify-content: flex-start; }
         .analysis-cell.right { flex: 1; justify-content: flex-end; text-align: right; }
@@ -144,22 +149,30 @@
         .analysis-delta-value { font-size: 1.1rem; font-weight: bold; }
         .analysis-delta-subtext { font-size: 0.75rem; }
         .analysis-delta-games { font-size: 0.7rem; opacity: 0.7; }
-        .ban-rec-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
-        .ban-rec-controls select { flex-grow: 1; }
-        .ban-rec-controls button { flex-shrink: 0; }
-        .champion-tile.ban-selected img { border-color: var(--red-neg); }
-        .ban-rec-details { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background-color: #0f172a; padding: 0 15px; }
-        .ban-rec-details.visible { max-height: 500px; padding: 10px 15px; }
-        .ban-rec-details div { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 2px 0; }
-        #loading-overlay {
+        #loading-overlay, #how-to-use-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
             display: flex; justify-content: center; align-items: center;
             color: var(--text-primary); font-size: 1.5rem; z-index: 2000;
             flex-direction: column;
         }
-        .recommendation-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
-        .recommendation-controls .input-group { flex-shrink: 0; }
+        .modal-content {
+            background-color: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 8px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+        .modal-content h2 { margin-top: 0; color: var(--accent-color); }
+        .modal-content p, .modal-content li { font-size: 1rem; line-height: 1.6; color: var(--text-primary); }
+        .modal-content ul { padding-left: 20px; }
+        .modal-content code { background-color: var(--bg-primary); padding: 2px 5px; border-radius: 4px; font-family: monospace; }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer; }
+
+        .recommendation-controls-wrapper { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .recommendation-controls { display: flex; gap: 10px; align-items: flex-end; }
         #recommendation-search { flex-grow: 1; min-width: 150px; }
         .input-group { display: flex; flex-direction: column; }
         .input-group label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: flex; align-items: center; }
@@ -202,10 +215,39 @@
         <p id="loading-message">Loading data...</p>
     </div>
 
+    <div id="how-to-use-modal" style="display: none;">
+        <div class="modal-content">
+            <button id="how-to-use-close-btn" class="modal-close-btn">&times;</button>
+            <h2>How to Use DraftDiff</h2>
+            <p>DraftDiff helps you make better champion picks by analyzing team compositions in real-time.</p>
+            <ul>
+                <li><strong>Select a Role:</strong> Click an empty slot on your team's side to see recommendations for that role.</li>
+                <li><strong>Pick Champions:</strong> Click a champion from the grid to place them in the selected slot. You can also click a champion first, then a slot.</li>
+                <li><strong>Live Tracking:</strong> Click "Start Live Tracking" to automatically sync with the League of Legends client during champion select.</li>
+                <li><strong>Analyze Drafts:</strong> Use the "Draft Analysis" tab to see a detailed breakdown of lane matchups and team synergies.</li>
+            </ul>
+            <h2>How It Works</h2>
+            <p>The app calculates an "Expected Win Rate" for every possible pick. This is based on a champion's base strength, their synergy with your teammates, and their matchups against your enemies. The core logic uses a sophisticated Elo-based rating system to determine how much a champion is expected to over- or under-perform in any given draft.</p>
+            <p>All data is scraped from LoLalytics and updated twice daily. The data is fetched directly from a cloud storage bucket, ensuring speed and reliability.</p>
+            <h2>Default Settings</h2>
+            <p>For first-time users, the app starts with these recommended filter settings:</p>
+            <ul>
+                <li><strong>Min Base WR:</strong> 45%</li>
+                <li><strong>Min Role Freq:</strong> 5%</li>
+                <li><strong>Min Games:</strong> 35</li>
+                <li><strong>Consider Hovers:</strong> Ticked</li>
+                <li><strong>Assume Perfect Balance:</strong> Ticked</li>
+            </ul>
+        </div>
+    </div>
+
     <div class="app-container">
         <header class="header">
             <div class="header-row">
-                <div class="header-title">Delta Draft</div>
+                <div class="header-title">
+                    <img src="assets/logo.png" alt="DraftDiff Logo" class="header-logo">
+                    DraftDiff
+                </div>
                 <div class="header-meta">
                     <div id="patch-info"></div>
                     <div id="last-updated-info"></div>
@@ -214,7 +256,8 @@
             <div class="header-row">
                 <div class="header-controls">
                     <button id="reset-btn">Reset Draft</button>
-                    <button id="swap-sides-btn">Swap Blue/Red Sides</button>
+                    <button id="swap-sides-btn">Swap Sides</button>
+                    <button id="how-to-use-btn">How To Use</button>
                     <button id="live-tracking-btn"><span id="live-indicator" class="live-indicator"></span>Start Live Tracking</button>
                 </div>
                 <div class="header-controls">
@@ -230,6 +273,7 @@
             </div>
         </header>
         <div class="draft-area" id="draft-area">
+            <svg id="connector-svg"><path d="" stroke="var(--accent-color)" stroke-width="2" fill="none" stroke-dasharray="5,5"/></svg>
             <div class="team-panel" id="left-team-panel"><h2 id="left-team-header"></h2></div>
             <div class="center-column">
                 <div id="champion-grid-container">
@@ -243,59 +287,49 @@
                     <div class="tabs">
                         <button id="rec-tab-btn" class="tab-btn active">Recommendations</button>
                         <button id="analysis-tab-btn" class="tab-btn">Draft Analysis</button>
-                        <button id="ban-rec-tab-btn" class="tab-btn">Ban Recommender</button>
                     </div>
                     <div id="recommendations-view" class="tab-content">
-                        <h3 id="recs-header">Recommendations:</h3>
-                        <div class="recommendation-controls">
-                            <input type="text" id="recommendation-search" placeholder="Search...">
-                            <div class="input-group">
-                                <label for="base-wr-filter">Min Base WR %</label>
-                                <input type="number" id="base-wr-filter" min="0" max="100">
+                        <div class="recommendation-controls-wrapper">
+                            <div class="recommendation-controls">
+                                <input type="text" id="recommendation-search" placeholder="Search...">
+                                <div class="input-group">
+                                    <label for="base-wr-filter">Min Base WR %</label>
+                                    <input type="number" id="base-wr-filter" min="0" max="100">
+                                </div>
+                                <div class="input-group">
+                                    <label for="role-rate-filter">Min Role Freq %</label>
+                                    <input type="number" id="role-rate-filter" min="0" max="100">
+                                </div>
+                                <div class="input-group">
+                                    <label for="min-games-filter">Min Games <span class="tooltip-icon" id="min-games-tooltip-icon">?</span></label>
+                                    <input type="number" id="min-games-filter" min="0">
+                                </div>
                             </div>
-                            <div class="input-group">
-                                <label for="role-rate-filter">Min Role Freq %</label>
-                                <input type="number" id="role-rate-filter" min="0" max="100">
+                            <div class="recommendation-controls">
+                                <label class="favorite-toggle-label">
+                                    <input type="checkbox" id="favorites-only-toggle"> Favorites
+                                </label>
+                                <label class="favorite-toggle-label">
+                                    <input type="checkbox" id="consider-hovers-toggle"> Hovers
+                                </label>
+                                <label class="favorite-toggle-label">
+                                    <input type="checkbox" id="balance-toggle"> Simple
+                                    <span class="tooltip-icon" id="balance-tooltip-icon">?</span>
+                                </label>
                             </div>
-                            <div class="input-group">
-                                <label for="min-games-filter">Min Games <span class="tooltip-icon" id="min-games-tooltip-icon">?</span></label>
-                                <input type="number" id="min-games-filter" min="0">
-                            </div>
-                        </div>
-                        <div class="recommendation-controls" style="margin-top: 10px;">
-                            <label class="favorite-toggle-label">
-                                <input type="checkbox" id="favorites-only-toggle"> Favorites Only
-                            </label>
-                            <label class="favorite-toggle-label">
-                                <input type="checkbox" id="consider-hovers-toggle"> Consider Hovers
-                            </label>
-                            <label class="favorite-toggle-label">
-                                <input type="checkbox" id="balance-toggle"> Assume Perfect Balance
-                                <span class="tooltip-icon" id="balance-tooltip-icon">?</span>
-                            </label>
                         </div>
                         <div id="recommendation-header">
                             <div class="sortable-header" data-sort="rank">Rank</div>
                             <div class="sortable-header" data-sort="champion">Champion</div>
                             <div class="rec-stat-header sortable-header active-sort-desc" data-sort="expected_win_rate">Expected WR</div>
-                            <div class="rec-stat-header sortable-header" data-sort="delta">Δ</div>
+                            <div class="rec-stat-header sortable-header" data-sort="delta">Total Δ</div>
+                            <div class="rec-stat-header sortable-header" data-sort="lane_delta">Lane Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="base_win_rate">Base WR</div>
                             <div class="rec-stat-header sortable-header" data-sort="role_frequency">Role Freq</div>
                         </div>
                         <ol id="recommendation-list"></ol>
                     </div>
                     <div id="analysis-view" class="tab-content" style="display: none;">
-                    </div>
-                    <div id="ban-recommender-view" class="tab-content" style="display: none;">
-                        <div class="ban-rec-controls">
-                            <select id="ban-rec-role-select"></select>
-                            <button id="ban-rec-use-favorites-btn">Use Favorites</button>
-                            <label class="favorite-toggle-label">
-                                <input type="checkbox" id="ban-rec-teammates-toggle"> Consider Teammates
-                            </label>
-                            <button id="get-ban-recs-btn">Get Ban Recommendations</button>
-                        </div>
-                        <ol id="ban-recommendation-list"></ol>
                     </div>
                 </div>
             </div>
@@ -338,13 +372,13 @@
             let unavailableChampions = new Set();
             let pickableChampions = new Set();
             let lockedSlots = new Map();
-            let banConsiderationSet = new Set();
             let activeTab = 'recommendations';
             let latestPatch = '';
             let considerHovers = false;
             let dataCache = new Map();
             let sortBy = 'expected_win_rate';
             let sortDirection = 'desc';
+            let selectedChampionFromGrid = null;
 
             const timePeriodSelect = document.getElementById('time-period-select');
             const rankSelect = document.getElementById('rank-select');
@@ -372,16 +406,8 @@
             const swapSidesBtn = document.getElementById('swap-sides-btn');
             const recTabBtn = document.getElementById('rec-tab-btn');
             const analysisTabBtn = document.getElementById('analysis-tab-btn');
-            const banRecTabBtn = document.getElementById('ban-rec-tab-btn');
             const recommendationsView = document.getElementById('recommendations-view');
             const analysisView = document.getElementById('analysis-view');
-            const banRecommenderView = document.getElementById('ban-recommender-view');
-            const recsHeader = document.getElementById('recs-header');
-            const banRecRoleSelect = document.getElementById('ban-rec-role-select');
-            const banRecUseFavoritesBtn = document.getElementById('ban-rec-use-favorites-btn');
-            const banRecTeammatesToggle = document.getElementById('ban-rec-teammates-toggle');
-            const getBanRecsBtn = document.getElementById('get-ban-recs-btn');
-            const banRecommendationList = document.getElementById('ban-recommendation-list');
             const loadingOverlay = document.getElementById('loading-overlay');
             const loadingMessage = document.getElementById('loading-message');
             const toggleChampionGridBtn = document.getElementById('toggle-champion-grid-btn');
@@ -389,18 +415,23 @@
             const gridToggleIcon = document.getElementById('grid-toggle-icon');
             const patchInfoDiv = document.getElementById('patch-info');
             const lastUpdatedInfoDiv = document.getElementById('last-updated-info');
+            const howToUseBtn = document.getElementById('how-to-use-btn');
+            const howToUseModal = document.getElementById('how-to-use-modal');
+            const howToUseCloseBtn = document.getElementById('how-to-use-close-btn');
+            const resultsPanel = document.getElementById('results');
+            const connectorPath = document.querySelector('#connector-svg path');
 
             document.addEventListener('click', () => contextMenu.style.display = 'none');
 
             const DEFAULT_SETTINGS = {
                 timePeriod: 'patch',
                 rank: 'platinum_plus',
-                baseWr: '47',
-                roleRate: '',
+                baseWr: '45',
+                roleRate: '5',
                 favoritesOnly: false,
-                assumeBalanced: false,
-                minGames: '10',
-                considerHovers: false
+                assumeBalanced: true,
+                minGames: '35',
+                considerHovers: true
             };
             
             // --- START: Ported Backend Logic ---
@@ -423,6 +454,8 @@
                 const championsToConsider = champion_stats_list
                     .filter(item => item.role.toUpperCase() === targetRole)
                     .map(item => item.champion);
+                
+                const laneOpponent = enemyTeam[targetRole];
 
                 for (const pickChamp of championsToConsider) {
                     const pickComboKey = `${pickChamp},${targetRole}`;
@@ -431,6 +464,7 @@
                     const pickCombo = champion_ratings.get(pickComboKey);
                     const baseWr = pickCombo.win_rate;
                     const deltaBreakdown = [];
+                    let laneDelta = 0;
 
                     if (assumeBalanced) {
                         let totalDelta = 0.0;
@@ -439,14 +473,17 @@
                                 if (champ) {
                                     const matchupKey = JSON.stringify([pickChamp, targetRole, champ, role, relationship]);
                                     const stats = matchup_stats.get(matchupKey);
+                                    let delta = 0;
                                     
                                     if (stats && (stats.total_games || 0) >= minGames) {
-                                        const delta = stats.win_rate - baseWr;
+                                        delta = stats.win_rate - baseWr;
                                         totalDelta += delta;
-                                        deltaBreakdown.push({ source: champ, delta: delta, games: stats.total_games || 0 });
-                                    } else {
-                                        deltaBreakdown.push({ source: champ, delta: 0, games: stats ? stats.total_games || 0 : 0 });
                                     }
+                                    
+                                    if (champ === laneOpponent && role === targetRole) {
+                                        laneDelta = delta;
+                                    }
+                                    deltaBreakdown.push({ source: champ, delta: delta, games: stats ? stats.total_games || 0 : 0 });
                                 }
                             }
                         }
@@ -454,7 +491,8 @@
                         recommendations.push({
                             champion: pickChamp, expected_win_rate: expectedWr, base_win_rate: baseWr,
                             pick_rate: pickCombo.pick_rate, role_frequency: pickCombo.role_frequency,
-                            breakdown: deltaBreakdown.sort((a, b) => b.delta - a.delta)
+                            breakdown: deltaBreakdown.sort((a, b) => b.delta - a.delta),
+                            lane_delta: laneDelta
                         });
                     } else {
                         let totalRating = pickCombo.rating;
@@ -465,6 +503,7 @@
                                     if (champion_ratings.has(partnerComboKey)) {
                                         const matchupKey = JSON.stringify([pickChamp, targetRole, champ, role, relationship]);
                                         const matchupData = matchup_stats.get(matchupKey);
+                                        let ratingAdjustment = 0;
 
                                         if (matchupData && (matchupData.total_games || 0) >= minGames) {
                                             const pickRating = pickCombo.rating;
@@ -479,12 +518,14 @@
                                             
                                             const actualWr = matchupData.win_rate;
                                             const performanceDelta = actualWr - expectedWrCalc;
-                                            const ratingAdjustment = winrateToRating(0.5 + performanceDelta);
+                                            ratingAdjustment = winrateToRating(0.5 + performanceDelta);
                                             totalRating += ratingAdjustment;
-                                            deltaBreakdown.push({ source: champ, delta: ratingAdjustment, games: matchupData.total_games || 0 });
-                                        } else {
-                                            deltaBreakdown.push({ source: champ, delta: 0, games: matchupData ? matchupData.total_games || 0 : 0 });
                                         }
+                                        
+                                        if (champ === laneOpponent && role === targetRole) {
+                                            laneDelta = ratingAdjustment;
+                                        }
+                                        deltaBreakdown.push({ source: champ, delta: ratingAdjustment, games: matchupData ? matchupData.total_games || 0 : 0 });
                                     }
                                 }
                             }
@@ -493,7 +534,8 @@
                         recommendations.push({
                             champion: pickChamp, expected_win_rate: expectedWr, base_win_rate: baseWr,
                             pick_rate: pickCombo.pick_rate, role_frequency: pickCombo.role_frequency,
-                            breakdown: deltaBreakdown.sort((a, b) => b.delta - a.delta)
+                            breakdown: deltaBreakdown.sort((a, b) => b.delta - a.delta),
+                            lane_delta: laneDelta
                         });
                     }
                 }
@@ -694,7 +736,6 @@
                     allChampions = Object.values(champData.data);
                     allChampions.forEach(champ => { champIdToName[champ.key] = champ.id; });
                     
-                    banRecRoleSelect.innerHTML = roles.map(r => `<option value="${r}">${r}</option>`).join('');
                     createRoleSlots();
                     populateChampionGrid();
                     updateTeamSideLabels();
@@ -764,18 +805,18 @@
                 `).join('');
                 updateAllGridFavoriteStars();
                 updateAvailabilityUI();
-                updateBanSelectionUI();
             }
 
             function setChampionForSlot(side, role, championName, isHover = false) {
                 const slot = document.querySelector(`[data-side='${side}'][data-role='${role}']`);
                 if (!slot) return;
 
-                slot.querySelector('.role-icon').style.display = 'block';
+                // Nuke everything to start fresh.
                 const existingPortrait = slot.querySelector('.champion-portrait');
                 if (existingPortrait) existingPortrait.remove();
                 delete slot.dataset.champion;
                 delete slot.dataset.hover;
+                slot.querySelector('.role-icon').style.display = 'block';
 
                 if (championName) {
                     slot.querySelector('.role-icon').style.display = 'none';
@@ -806,8 +847,6 @@
                 });
                 recommendationList.innerHTML = '';
                 analysisView.innerHTML = '';
-                banRecommendationList.innerHTML = '';
-                recsHeader.textContent = "Select a role to see recommendations";
                 swapSourceSlot = null;
                 recommendationTarget = null;
                 recommendationSearch.value = '';
@@ -816,14 +855,13 @@
                 unavailableChampions.clear();
                 pickableChampions.clear();
                 lockedSlots.clear();
-                banConsiderationSet.clear();
                 document.querySelectorAll('.lock-icon').forEach(icon => {
                     icon.classList.remove('locked');
                     icon.textContent = '🔓';
                 });
                 updateAvailabilityUI();
-                updateBanSelectionUI();
                 if (activeTab === 'analysis') updateAnalysisView();
+                clearConnector();
             }
 
             function getTeamForAPI(panelSide) {
@@ -841,14 +879,10 @@
 
             async function updateRecommendations() {
                 if (!recommendationTarget) {
-                    recsHeader.textContent = "Select a role to see recommendations";
                     recommendationList.innerHTML = '';
                     return;
                 }
-                const targetIsBlue = (recommendationTarget.side === 'left' && leftPanelIsBlue) || (recommendationTarget.side === 'right' && !leftPanelIsBlue);
-                const recSideName = targetIsBlue ? "BLUE" : "RED";
-                recsHeader.textContent = `Recommendations for ${recSideName} ${recommendationTarget.role}:`;
-
+                
                 recommendationList.innerHTML = '<li>Calculating...</li>';
                 
                 const dataset = await getDataset(timePeriodSelect.value, rankSelect.value);
@@ -949,6 +983,8 @@
                     const expectedWrStr = (pick.expected_win_rate * 100).toFixed(2) + '%';
                     const delta = pick.expected_win_rate - pick.base_win_rate;
                     const deltaStr = (delta >= 0 ? '+' : '') + (delta * 100).toFixed(2) + '%';
+                    const laneDeltaVal = balanceToggle.checked ? pick.lane_delta * 100 : pick.lane_delta;
+                    const laneDeltaStr = (laneDeltaVal >= 0 ? '+' : '') + laneDeltaVal.toFixed(2) + (balanceToggle.checked ? '%' : '');
                     
                     const isFavorite = favorites[`${pick.champion}-${recommendationTarget?.role}`];
                     const favoriteStar = isFavorite ? '<span class="rec-favorite-star">★</span>' : '';
@@ -964,6 +1000,7 @@
                         </div>
                         <div class="rec-cell-stat ${pick.expected_win_rate >= 0.5 ? 'delta-pos' : 'delta-neg'}"><b>${expectedWrStr}</b></div>
                         <div class="rec-cell-stat ${delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</div>
+                        <div class="rec-cell-stat ${laneDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}">${laneDeltaStr}</div>
                         <div class="rec-cell-stat">${baseWrStr}</div>
                         <div class="rec-cell-stat">${roleFreqStr}</div>
                     `;
@@ -973,8 +1010,20 @@
 
             function handleRoleSlotClick(slot) {
                 const clickedSlotInfo = { side: slot.dataset.side, role: slot.dataset.role };
+
+                if (selectedChampionFromGrid) {
+                    setChampionForSlot(clickedSlotInfo.side, clickedSlotInfo.role, selectedChampionFromGrid);
+                    if (recommendationTarget) updateRecommendations();
+                    updateAnalysisView();
+                    clearSelections();
+                    return;
+                }
+
                 if (swapSourceSlot) {
-                    if (swapSourceSlot.side === clickedSlotInfo.side && swapSourceSlot.role === clickedSlotInfo.role) { clearSelections(); return; }
+                    if (swapSourceSlot.side === clickedSlotInfo.side && swapSourceSlot.role === clickedSlotInfo.role) { 
+                        clearSelections(); 
+                        return; 
+                    }
                     performSwap(swapSourceSlot, clickedSlotInfo);
                     clearSelections();
                 } else {
@@ -986,37 +1035,73 @@
 
             function handleChampionTileClick(tile) {
                 const champName = tile.dataset.championName;
-                if (activeTab === 'ban-recommender') {
-                    if (banConsiderationSet.has( champName)) {
-                        banConsiderationSet.delete(champName);
-                    } else {
-                        banConsiderationSet.add(champName);
-                    }
-                    updateBanSelectionUI();
+                if (swapSourceSlot) {
+                    setChampionForSlot(swapSourceSlot.side, swapSourceSlot.role, champName);
+                    if (recommendationTarget) updateRecommendations();
+                    updateAnalysisView();
+                    clearSelections();
                 } else {
-                    if (swapSourceSlot) {
-                        setChampionForSlot(swapSourceSlot.side, swapSourceSlot.role, champName);
-                        if (recommendationTarget) updateRecommendations();
-                        updateAnalysisView();
-                        clearSelections();
-                    }
+                    clearSelections();
+                    selectedChampionFromGrid = champName;
+                    tile.classList.add('grid-selected');
                 }
             }
             
             function performSwap(source, destination) {
                 const sourceEl = document.querySelector(`[data-side='${source.side}'][data-role='${source.role}']`);
                 const destEl = document.querySelector(`[data-side='${destination.side}'][data-role='${destination.role}']`);
+
                 const sourceChamp = sourceEl.dataset.champion;
+                const sourceHover = sourceEl.dataset.hover;
                 const destChamp = destEl.dataset.champion;
-                setChampionForSlot(source.side, source.role, destChamp);
-                setChampionForSlot(destination.side, destination.role, sourceChamp);
+                const destHover = destEl.dataset.hover;
+
+                const sourceLockId = `${source.side}-${source.role}`;
+                const destLockId = `${destination.side}-${destination.role}`;
+                const isSourceLocked = lockedSlots.has(sourceLockId);
+                const isDestLocked = lockedSlots.has(destLockId);
+
+                setChampionForSlot(source.side, source.role, destChamp, !!destHover && !destChamp);
+                setChampionForSlot(destination.side, destination.role, sourceChamp, !!sourceHover && !sourceChamp);
+                
+                if (isSourceLocked) lockedSlots.delete(sourceLockId);
+                if (isDestLocked) lockedSlots.delete(destLockId);
+
+                const newSourceContent = destChamp || destHover;
+                if (isDestLocked && newSourceContent) {
+                    lockedSlots.set(sourceLockId, newSourceContent);
+                }
+
+                const newDestContent = sourceChamp || sourceHover;
+                if (isSourceLocked && newDestContent) {
+                    lockedSlots.set(destLockId, newDestContent);
+                }
+
+                updateLockIconUI(sourceEl);
+                updateLockIconUI(destEl);
+
                 if (recommendationTarget) updateRecommendations();
                 if (activeTab === 'analysis') updateAnalysisView();
             }
 
+            function updateLockIconUI(slot) {
+                if (!slot) return;
+                const lockId = `${slot.dataset.side}-${slot.dataset.role}`;
+                const icon = slot.querySelector('.lock-icon');
+                if (lockedSlots.has(lockId)) {
+                    icon.classList.add('locked');
+                    icon.textContent = '🔒';
+                } else {
+                    icon.classList.remove('locked');
+                    icon.textContent = '🔓';
+                }
+            }
+
             function clearSelections() {
                 document.querySelectorAll('.role-slot').forEach(s => s.classList.remove('swap-source'));
+                document.querySelectorAll('.champion-tile').forEach(t => t.classList.remove('grid-selected'));
                 swapSourceSlot = null;
+                selectedChampionFromGrid = null;
             }
 
             draftArea.addEventListener('click', e => {
@@ -1027,11 +1112,13 @@
 
                 if (recButton) {
                     e.stopPropagation();
+                    clearSelections();
                     const slot = recButton.closest('.role-slot');
-                    recommendationTarget = { side: slot.dataset.side, role: slot.dataset.role };
                     document.querySelectorAll('.role-slot').forEach(s => s.classList.remove('selected'));
                     slot.classList.add('selected');
+                    recommendationTarget = { side: slot.dataset.side, role: slot.dataset.role };
                     updateRecommendations();
+                    drawConnector(slot);
                 } else if (lockIcon) {
                     e.stopPropagation();
                     toggleLock(lockIcon.closest('.role-slot'));
@@ -1039,7 +1126,7 @@
                     handleRoleSlotClick(roleSlotEl);
                 } else if (championTileEl) {
                     handleChampionTileClick(championTileEl);
-                } else {
+                } else if (!e.target.closest('#search-champion')) {
                     clearSelections();
                 }
             });
@@ -1071,7 +1158,7 @@
                     const champName = tile.dataset.championName;
                     tile.classList.toggle('unavailable', unavailableChampions.has(champName));
                 });
-                document.querySelectorAll('#ban-recommendation-list li, #recommendation-list li').forEach(li => {
+                document.querySelectorAll('#recommendation-list li').forEach(li => {
                     const champName = li.dataset.championName;
                     li.classList.toggle('unavailable', unavailableChampions.has(champName));
                 });
@@ -1341,20 +1428,22 @@
                     </div>`;
                 let lanesHTML = lane_analysis.map(lane => {
                     const { role, my_champ, enemy_champ, my_champ_wr, enemy_champ_wr, matchup_wr, games, delta } = lane;
-                    const getChampHTML = (champName, baseWr, teamColor) => {
+                    const getChampHTML = (champName, baseWr, teamColor, side) => {
                         if (!champName) return `<div class="analysis-champ-info ${teamColor}">Missing</div>`;
                         const champData = allChampions.find(c => c.id === champName);
                         const imgSrc = champData ? `${DDRAGON_BASE_URL}/cdn/${latestPatch}/img/champion/${champData.image.full}` : '';
                         const wrStr = baseWr ? `${(baseWr * 100).toFixed(1)}% WR` : 'N/A';
                         return `
-                            <img src="${imgSrc}" alt="${champName}">
-                            <div class="analysis-champ-info">
-                                <div class="analysis-champ-name ${teamColor}">${champName}</div>
-                                <div class="analysis-champ-stats">${wrStr}</div>
+                            <div data-champion-name="${champName}" data-team="${side}" data-role="${role}">
+                                <img src="${imgSrc}" alt="${champName}">
+                                <div class="analysis-champ-info">
+                                    <div class="analysis-champ-name ${teamColor}">${champName}</div>
+                                    <div class="analysis-champ-stats">${wrStr}</div>
+                                </div>
                             </div>`;
                     };
-                    const leftChampHTML = getChampHTML(my_champ, my_champ_wr, leftTeamColor);
-                    const rightChampHTML = getChampHTML(enemy_champ, enemy_champ_wr, rightTeamColor);
+                    const leftChampHTML = getChampHTML(my_champ, my_champ_wr, leftTeamColor, 'left');
+                    const rightChampHTML = getChampHTML(enemy_champ, enemy_champ_wr, rightTeamColor, 'right');
                     let deltaHTML;
                     if (my_champ && enemy_champ) {
                         if (matchup_wr !== null && matchup_wr !== undefined) {
@@ -1371,7 +1460,7 @@
                         deltaHTML = `<div class="analysis-delta-subtext">-</div>`;
                     }
                     return `
-                        <div class="analysis-row">
+                        <div class="analysis-row" data-role="${role}">
                             <div class="analysis-cell left">${leftChampHTML}</div>
                             <div class="analysis-delta-separator">${deltaHTML}</div>
                             <div class="analysis-cell right">${rightChampHTML}</div>
@@ -1379,10 +1468,6 @@
                 }).join('');
                 analysisView.innerHTML = totalDeltaHTML + lanesHTML;
             }
-
-            function updateBanSelectionUI() {}
-            async function getBanRecommendations() {}
-            function renderBanRecommendations(banRecs) {}
 
             function updateSortHeaders() {
                 document.querySelectorAll('.sortable-header').forEach(header => {
@@ -1459,32 +1544,17 @@
                 activeTab = 'recommendations';
                 recTabBtn.classList.add('active');
                 analysisTabBtn.classList.remove('active');
-                banRecTabBtn.classList.remove('active');
                 recommendationsView.style.display = 'flex';
                 analysisView.style.display = 'none';
-                banRecommenderView.style.display = 'none';
-                updateBanSelectionUI();
+                updateAnalysisView();
             });
             analysisTabBtn.addEventListener('click', () => {
                 activeTab = 'analysis';
                 analysisTabBtn.classList.add('active');
                 recTabBtn.classList.remove('active');
-                banRecTabBtn.classList.remove('active');
                 analysisView.style.display = 'flex';
                 recommendationsView.style.display = 'none';
-                banRecommenderView.style.display = 'none';
                 updateAnalysisView();
-                updateBanSelectionUI();
-            });
-            banRecTabBtn.addEventListener('click', () => {
-                activeTab = 'ban-recommender';
-                banRecTabBtn.classList.add('active');
-                recTabBtn.classList.remove('active');
-                analysisTabBtn.classList.remove('active');
-                banRecommenderView.style.display = 'block';
-                recommendationsView.style.display = 'none';
-                analysisView.style.display = 'none';
-                updateBanSelectionUI();
             });
 
             toggleChampionGridBtn.addEventListener('click', () => {
@@ -1492,23 +1562,92 @@
                 gridToggleIcon.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
             });
 
-            banRecUseFavoritesBtn.addEventListener('click', () => {
-                const selectedRole = banRecRoleSelect.value;
-                banConsiderationSet.clear();
-                allChampions.forEach(champ => {
-                    if (favorites[`${champ.id}-${selectedRole}`]) {
-                        banConsiderationSet.add(champ.id);
+            async function getBreakdownForChampion(championName, team, role) {
+                const dataset = await getDataset(timePeriodSelect.value, rankSelect.value);
+                if (!dataset) return [];
+                
+                const myTeam = getTeamForAPI(team);
+                const enemyTeam = getTeamForAPI(team === 'left' ? 'right' : 'left');
+                const assumeBalanced = balanceToggle.checked;
+                const minGames = parseInt(minGamesFilter.value) || 0;
+                
+                const { champion_ratings, matchup_stats } = dataset;
+                const pickComboKey = `${championName},${role}`;
+                if (!champion_ratings.has(pickComboKey)) return [];
+                const pickCombo = champion_ratings.get(pickComboKey);
+                const baseWr = pickCombo.win_rate;
+
+                const deltaBreakdown = [];
+                if (assumeBalanced) {
+                     for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
+                        for (const [otherRole, otherChamp] of Object.entries(teamMember)) {
+                           if (otherChamp && (otherChamp !== championName || otherRole !== role)) {
+                                const matchupKey = JSON.stringify([championName, role, otherChamp, otherRole, relationship]);
+                                const stats = matchup_stats.get(matchupKey);
+                                let delta = 0;
+                                if (stats && (stats.total_games || 0) >= minGames) {
+                                    delta = stats.win_rate - baseWr;
+                                }
+                                deltaBreakdown.push({ source: otherChamp, delta: delta, games: stats ? stats.total_games || 0 : 0 });
+                            }
+                        }
                     }
-                });
-                updateBanSelectionUI();
-            });
-            getBanRecsBtn.addEventListener('click', getBanRecommendations);
-            banRecommendationList.addEventListener('click', e => {
-                const summary = e.target.closest('.ban-rec-summary');
-                if (summary) {
-                    const details = summary.nextElementSibling;
-                    details.classList.toggle('visible');
+                } else {
+                    for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
+                        for (const [otherRole, otherChamp] of Object.entries(teamMember)) {
+                            if (otherChamp && (otherChamp !== championName || otherRole !== role)) {
+                                 const partnerComboKey = `${otherChamp},${otherRole}`;
+                                if (champion_ratings.has(partnerComboKey)) {
+                                    const matchupKey = JSON.stringify([championName, role, otherChamp, otherRole, relationship]);
+                                    const matchupData = matchup_stats.get(matchupKey);
+                                    let ratingAdjustment = 0;
+                                    if (matchupData && (matchupData.total_games || 0) >= minGames) {
+                                        const pickRating = pickCombo.rating;
+                                        const partnerRating = champion_ratings.get(partnerComboKey).rating;
+                                        const expectedWrCalc = relationship === 'teammate' ? ratingToWinrate(pickRating + partnerRating) : ratingToWinrate(pickRating - partnerRating);
+                                        const actualWr = matchupData.win_rate;
+                                        const performanceDelta = actualWr - expectedWrCalc;
+                                        ratingAdjustment = winrateToRating(0.5 + performanceDelta);
+                                    }
+                                    deltaBreakdown.push({ source: otherChamp, delta: ratingAdjustment, games: matchupData ? matchupData.total_games || 0 : 0 });
+                                }
+                            }
+                        }
+                    }
                 }
+                return deltaBreakdown.sort((a, b) => b.delta - a.delta);
+            }
+
+            analysisView.addEventListener('mouseover', async (e) => {
+                const target = e.target.closest('[data-champion-name]');
+                if (target) {
+                    const championName = target.dataset.championName;
+                    const side = target.dataset.team;
+                    const role = target.dataset.role;
+                    
+                    const breakdown = await getBreakdownForChampion(championName, side, role);
+                    updateTooltipContent(breakdown, { side, role, champion: championName });
+                    deltaTooltip.style.opacity = '1';
+                }
+            });
+
+            analysisView.addEventListener('mousemove', (e) => {
+                const target = e.target.closest('[data-champion-name]');
+                if (target) {
+                    const tooltipRect = deltaTooltip.getBoundingClientRect();
+                    let top = e.clientY - tooltipRect.height - 10;
+                    let left = e.clientX + 20;
+                    if (top < 0) top = 10;
+                    if (left + tooltipRect.width > window.innerWidth) {
+                        left = e.clientX - tooltipRect.width - 10;
+                    }
+                    deltaTooltip.style.left = `${left}px`;
+                    deltaTooltip.style.top = `${top}px`;
+                }
+            });
+
+            analysisView.addEventListener('mouseout', () => {
+                deltaTooltip.style.opacity = '0';
             });
 
             recommendationList.addEventListener('mousemove', e => {
@@ -1525,13 +1664,15 @@
 
                     deltaTooltip.style.left = `${left}px`;
                     deltaTooltip.style.top = `${top}px`;
-                    updateTooltipContent(target);
+                    const breakdown = JSON.parse(target.dataset.breakdown);
+                    updateTooltipContent(breakdown, recommendationTarget);
                 }
             });
             recommendationList.addEventListener('mouseover', e => {
                 const target = e.target.closest('[data-breakdown]');
                 if (target) {
-                    updateTooltipContent(target);
+                    const breakdown = JSON.parse(target.dataset.breakdown);
+                    updateTooltipContent(breakdown, recommendationTarget);
                     deltaTooltip.style.opacity = '1';
                 }
             });
@@ -1539,9 +1680,8 @@
                 deltaTooltip.style.opacity = '0';
             });
             
-            function updateTooltipContent(target) {
-                if (!target || !target.dataset.breakdown) return;
-                const breakdown = JSON.parse(target.dataset.breakdown);
+            function updateTooltipContent(breakdown, perspective) {
+                if (!breakdown) return;
                 const breakdownMap = Object.fromEntries(breakdown.map(item => [item.source, {delta: item.delta, games: item.games}]));
                 
                 const leftHeader = leftPanelIsBlue ? 'Blue Side' : 'Red Side';
@@ -1559,8 +1699,8 @@
                     const leftSideColor = leftPanelIsBlue ? 'blue' : 'red';
                     const rightSideColor = leftPanelIsBlue ? 'red' : 'blue';
 
-                    leftHTML += buildTooltipRow(leftChamp, leftSideColor, role, breakdownMap);
-                    rightHTML += buildTooltipRow(rightChamp, rightSideColor, role, breakdownMap);
+                    leftHTML += buildTooltipRow(leftChamp, 'left', role, breakdownMap, perspective);
+                    rightHTML += buildTooltipRow(rightChamp, 'right', role, breakdownMap, perspective);
                 });
                 
                 const tooltipTitle = balanceToggle.checked ? "Win Rate Delta Breakdown" : "Rating Adjustment Breakdown";
@@ -1572,15 +1712,9 @@
                 return `${(num / 1000).toFixed(1)}k`;
             }
 
-            function buildTooltipRow(champ, side, role, breakdownMap) {
-                let recColor = null;
-                if (recommendationTarget) {
-                    const targetIsBlue = (recommendationTarget.side === 'left' && leftPanelIsBlue) || (recommendationTarget.side === 'right' && !leftPanelIsBlue);
-                    recColor = targetIsBlue ? 'blue' : 'red';
-                }
-
-                if (recommendationTarget && recColor === side && recommendationTarget.role === role) {
-                    return `<div><span class="delta-neutral">RECOMMENDING</span></div>`;
+            function buildTooltipRow(champ, side, role, breakdownMap, perspective) {
+                if (perspective && perspective.side === side && perspective.role === role) {
+                     return `<div><span class="delta-neutral">${perspective.champion ? 'HOVERING' : 'RECOMMENDING'}</span></div>`;
                 } else if (champ) {
                     const stats = breakdownMap[champ] || {delta: 0, games: 0};
                     const delta = balanceToggle.checked ? stats.delta * 100 : stats.delta;
@@ -1610,6 +1744,55 @@
             minGamesTooltipIcon.addEventListener('mouseout', () => {
                 minGamesTooltip.style.opacity = '0';
             });
+            
+            howToUseBtn.addEventListener('click', () => {
+                howToUseModal.style.display = 'flex';
+            });
+            howToUseCloseBtn.addEventListener('click', () => {
+                howToUseModal.style.display = 'none';
+            });
+            howToUseModal.addEventListener('click', (e) => {
+                if (e.target === howToUseModal) {
+                    howToUseModal.style.display = 'none';
+                }
+            });
+
+            function drawConnector(slot) {
+                resultsPanel.classList.add('highlighted');
+                const draftAreaRect = draftArea.getBoundingClientRect();
+                const slotRect = slot.getBoundingClientRect();
+                const resultsRect = resultsPanel.getBoundingClientRect();
+
+                const startX = slot.dataset.side === 'left' 
+                    ? slotRect.right - draftAreaRect.left 
+                    : slotRect.left - draftAreaRect.left;
+                const startY = slotRect.top - draftAreaRect.top + slotRect.height / 2;
+
+                const endX = slot.dataset.side === 'left'
+                    ? resultsRect.left - draftAreaRect.left
+                    : resultsRect.right - draftAreaRect.left;
+                const endY = resultsRect.top - draftAreaRect.top + resultsRect.height / 2;
+                
+                const midX = startX + (endX - startX) / 2;
+
+                const pathData = `M ${startX} ${startY} H ${midX} V ${endY} H ${endX}`;
+                connectorPath.setAttribute('d', pathData);
+            }
+
+            function clearConnector() {
+                resultsPanel.classList.remove('highlighted');
+                connectorPath.setAttribute('d', '');
+                document.querySelectorAll('.role-slot.selected').forEach(s => s.classList.remove('selected'));
+                recommendationTarget = null;
+                updateRecommendations();
+            }
+
+            new ResizeObserver(() => {
+                const selectedSlot = document.querySelector('.role-slot.selected');
+                if (selectedSlot) {
+                    drawConnector(selectedSlot);
+                }
+            }).observe(document.body);
             
             initializeApp();
         });

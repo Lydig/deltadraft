@@ -1,6 +1,6 @@
 {
-  "name": "deltadraft",
-  "version": "4.1.0",
+  "name": "draftdiff",
+  "version": "4.2.0",
   "description": "Real-time League of Legends draft analysis and recommendation tool.",
   "main": "main.js",
   "scripts": {
@@ -14,10 +14,11 @@
     "electron-builder": "^24.0.0"
   },
   "build": {
-    "appId": "com.deltadraft.app",
-    "productName": "DeltaDraft",
+    "appId": "com.draftdiff.app",
+    "productName": "DraftDiff",
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.png"
     },
     "nsis": {
       "oneClick": false,
