@@ -115,7 +115,13 @@
         .analysis-delta-value { font-size: 1.1rem; font-weight: bold; }
         .analysis-delta-subtext { font-size: 0.75rem; }
         .analysis-delta-games { font-size: 0.7rem; opacity: 0.7; }
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; color: var(--text-primary); font-size: 1.5rem; z-index: 2000; flex-direction: column; }
+        #loading-overlay, #how-to-use-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; color: var(--text-primary); font-size: 1.5rem; z-index: 2000; flex-direction: column; }
+        .modal-content { background-color: var(--bg-secondary); padding: 25px; border-radius: 8px; max-width: 600px; max-height: 80vh; overflow-y: auto; border: 1px solid var(--border-color); }
+        .modal-content h2 { margin-top: 0; color: var(--accent-color); }
+        .modal-content p, .modal-content li { font-size: 1rem; line-height: 1.6; color: var(--text-primary); }
+        .modal-content ul { padding-left: 20px; }
+        .modal-content code { background-color: var(--bg-primary); padding: 2px 5px; border-radius: 4px; font-family: monospace; }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer; }
         
         .recommendation-controls-wrapper { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
         .recommendation-controls { display: flex; gap: 10px; align-items: flex-end; }
@@ -131,12 +137,8 @@
         .role-slot[data-side="left"] .rec-button { left: 4px; }
         .role-slot[data-side="right"] .rec-button { right: 4px; }
         
-        /* New Download Section Styles */
-        #download-section { background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 20px; }
-        #download-section h3 { margin-top: 0; font-size: 1.5rem; color: var(--accent-color); }
-        #download-section p { margin: 10px 0 20px 0; color: var(--text-secondary); }
-        .download-buttons { display: flex; justify-content: center; gap: 20px; }
-        .download-button { background-color: var(--accent-color); color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; transition: background-color 0.2s; }
+        #download-section { flex-grow: 1; text-align: center; }
+        .download-button { background-color: var(--accent-color); color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; transition: background-color 0.2s; font-size: 0.9rem; }
         .download-button:hover { background-color: #3b82f6; }
     </style>
 </head>
@@ -145,12 +147,32 @@
         <p id="loading-message">Loading data...</p>
     </div>
 
+    <div id="how-to-use-modal" style="display: none;">
+        <div class="modal-content">
+            <button id="how-to-use-close-btn" class="modal-close-btn">&times;</button>
+            <h2>How to Use DraftDiff</h2>
+            <p>DraftDiff helps you make better champion picks by analyzing team compositions.</p>
+            <ul>
+                <li><strong>Select a Role:</strong> Click an empty slot on your team's side to see recommendations for that role.</li>
+                <li><strong>Pick Champions:</strong> Click a champion from the grid to place them in the selected slot. You can also click a champion first, then a slot.</li>
+                <li><strong>Analyze Drafts:</strong> Use the "Draft Analysis" tab to see a detailed breakdown of lane matchups and team synergies.</li>
+                <li><strong>Get the Desktop App:</strong> For live tracking that syncs with the League client, download the desktop version.</li>
+            </ul>
+            <h2>How It Works</h2>
+            <p>The app calculates an "Expected Win Rate" for every possible pick. This is based on a champion's base strength, their synergy with your teammates, and their matchups against your enemies. The core logic uses a sophisticated Elo-based rating system to determine how much a champion is expected to over- or under-perform in any given draft.</p>
+            <p>All data is scraped from LoLalytics and updated twice daily. The data is fetched directly from a cloud storage bucket, ensuring speed and reliability.</p>
+        </div>
+    </div>
+
     <div class="app-container">
         <header class="header">
             <div class="header-row">
                 <div class="header-title">
                     <img src="assets/logo.png" alt="DraftDiff Logo" class="header-logo">
                     DraftDiff
+                </div>
+                <div id="download-section">
+                    <a href="https://github.com/Lydig/deltadraft/releases/latest/download/DraftDiff%20Setup%204.2.0.exe" class="download-button">Download Desktop App</a>
                 </div>
                 <div class="header-meta">
                     <div id="patch-info"></div>
@@ -161,6 +183,7 @@
                 <div class="header-controls">
                     <button id="reset-btn">Reset Draft</button>
                     <button id="swap-sides-btn">Swap Sides</button>
+                    <button id="how-to-use-btn">How To Use</button>
                 </div>
                 <div class="header-controls">
                     <div class="input-group">
@@ -175,15 +198,6 @@
             </div>
         </header>
         
-        <div id="download-section">
-            <h3>Get the Desktop App</h3>
-            <p>For live champion select tracking and automatic draft updates, download the full desktop application.</p>
-            <div class="download-buttons">
-                <a href="https://github.com/Lydig/deltadraft/releases/download/v4.2.0/DraftDiff.Setup.4.2.0.exe" class="download-button">Download for Windows</a>
-                <a href="#" class="download-button">Download for macOS (Coming Soon)</a>
-            </div>
-        </div>
-
         <div class="draft-area" id="draft-area">
             <svg id="connector-svg"><path d="" stroke="var(--accent-color)" stroke-width="2" fill="none" stroke-dasharray="5,5"/></svg>
             <div class="team-panel" id="left-team-panel"><h2 id="left-team-header"></h2></div>
@@ -314,11 +328,14 @@
             const lastUpdatedInfoDiv = document.getElementById('last-updated-info');
             const resultsPanel = document.getElementById('results');
             const connectorPath = document.querySelector('#connector-svg path');
+            const howToUseBtn = document.getElementById('how-to-use-btn');
+            const howToUseModal = document.getElementById('how-to-use-modal');
+            const howToUseCloseBtn = document.getElementById('how-to-use-close-btn');
 
             document.addEventListener('click', () => contextMenu.style.display = 'none');
 
             const DEFAULT_SETTINGS = {
-                timePeriod: 'patch',
+                timePeriod: '30',
                 rank: 'platinum_plus',
                 baseWr: '45',
                 roleRate: '5',
@@ -1164,8 +1181,6 @@
             });
             resetBtn.addEventListener('click', resetDraft);
             
-            recommendationSearch.addEventListener('input', displayFilteredRecommendations);
-            
             swapSidesBtn.addEventListener('click', () => {
                 leftPanelIsBlue = !leftPanelIsBlue;
                 updateTeamSideLabels();
@@ -1283,6 +1298,18 @@
             });
             minGamesTooltipIcon.addEventListener('mouseout', () => {
                 minGamesTooltip.style.opacity = '0';
+            });
+
+            howToUseBtn.addEventListener('click', () => {
+                howToUseModal.style.display = 'flex';
+            });
+            howToUseCloseBtn.addEventListener('click', () => {
+                howToUseModal.style.display = 'none';
+            });
+            howToUseModal.addEventListener('click', (e) => {
+                if (e.target === howToUseModal) {
+                    howToUseModal.style.display = 'none';
+                }
             });
 
             function drawConnector(slot) {
