@@ -265,6 +265,22 @@ async def main():
     except Exception as e:
         print(f"❌ FAILED to upload champion_mapping.json: {e}")
 
+    # --- NEW: Set CORS Policy on the bucket ---
+    print("Setting CORS policy on R2 bucket...")
+    try:
+        cors_configuration = {
+            'CORSRules': [{
+                'AllowedHeaders': ['*'],
+                'AllowedMethods': ['GET'],
+                'AllowedOrigins': ['*'],
+                'MaxAgeSeconds': 3000
+            }]
+        }
+        s3_client.put_bucket_cors(Bucket=R2_BUCKET_NAME, CORSConfiguration=cors_configuration)
+        print("✅ Successfully set CORS policy.")
+    except Exception as e:
+        print(f"❌ FAILED to set CORS policy: {e}")
+
     champions_to_scrape = list(name_to_id_map.keys())
     
     filter_combinations = list(itertools.product(TIME_PERIODS, RANKS))
@@ -310,7 +326,6 @@ async def main():
 
     end_time = datetime.now()
     
-    # --- NEW: Upload metadata file ---
     metadata = {
         "last_updated_utc": end_time.isoformat(),
         "patch": latest_patch_full
