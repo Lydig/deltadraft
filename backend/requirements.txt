@@ -1,4 +1,0 @@
-Flask
-Flask-Cors
-boto3
-gunicorn

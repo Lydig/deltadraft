@@ -23,13 +23,12 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt
           pip install httpx tqdm boto3
 
       - name: Run Scraper Script
         # This command runs the script. The script will automatically read the
         # secrets because GitHub makes them available as environment variables.
-        run: python backend/scripts/scrape_lolalytics.py
+        run: python scripts/scrape_lolalytics.py
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

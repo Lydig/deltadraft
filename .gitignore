@@ -19,13 +19,11 @@ __pycache__/
 # Data Files & Scripts
 # =================================
 # IGNORE the entire new data directory structure. This is the most important rule.
-/backend/data/
+/data/
 # IGNORE old data backups.
-/backend/data_old/
+/data_old/
 # IGNORE one-off utility scripts that are not part of the core application.
 /download_assets.js
-# IGNORE old server backups.
-/backend/server_v*.py
 # IGNORE personal notes.
 /riot.txt
 # IGNORE personal workspace
