@@ -441,15 +441,20 @@
             }
 
             function calculateGameWeight(games, totalGamesInDataset) {
-                if (games < 10) return 0;
-                
-                // These parameters are tunable.
-                const midpoint = 35; 
-                // A higher steepness means we trust low game counts more quickly.
-                // We make it steeper for smaller datasets (like a new patch).
-                const steepness = totalGamesInDataset > 5000000 ? 0.08 : 0.12; 
+                // --- TUNABLE PARAMETERS ---
+                const FLOOR = 10; // Below this many games, weight is always 0.
+                const BASE_TOTAL_GAMES = 3200000; // The dataset size our midpoint is based on.
+                const BASE_MIDPOINT = 35; // At the base dataset size, this is the number of games for 50% weight.
+                const MINIMUM_MIDPOINT = 15; // The midpoint will not be allowed to drop below this value.
+                const STEEPNESS = 0.1; // A constant steepness for simplicity. Higher = trusts low game counts faster.
+                // --- END TUNABLE PARAMETERS ---
 
-                return 1 / (1 + Math.exp(-steepness * (games - midpoint)));
+                if (games < FLOOR) return 0;
+
+                const scalingFactor = totalGamesInDataset / BASE_TOTAL_GAMES;
+                const dynamicMidpoint = Math.max(MINIMUM_MIDPOINT, BASE_MIDPOINT * scalingFactor);
+
+                return 1 / (1 + Math.exp(-STEEPNESS * (games - dynamicMidpoint)));
             }
 
             function getRecommendations(myTeam, enemyTeam, targetRole, dataset) {
