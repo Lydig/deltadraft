@@ -36,8 +36,6 @@
         #connector-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         .team-panel { width: 150px; display: flex; flex-direction: column; gap: 10px; }
         .team-panel h2 { text-align: center; margin: 0 0 10px 0; color: var(--text-secondary); }
-        #left-team-header.blue-side, #right-team-header.blue-side { color: #5c9be4; }
-        #left-team-header.red-side, #right-team-header.red-side { color: #e84e4e; }
         .role-slot { width: 100%; aspect-ratio: 1 / 1; background-color: var(--bg-secondary); border: 2px dashed var(--border-color); border-radius: 8px; position: relative; cursor: pointer; transition: border-color 0.2s; overflow: hidden; }
         .role-slot.selected { border-color: var(--accent-color); border-style: solid; box-shadow: 0 0 10px rgba(96, 165, 250, 0.7); }
         .role-slot.swap-source { border-color: var(--yellow-warn); border-style: solid; }
@@ -64,7 +62,7 @@
         
         #recommendation-header {
             display: grid;
-            grid-template-columns: 50px 1fr 95px 70px 70px 80px 80px;
+            grid-template-columns: 50px 1fr 95px 70px 70px 70px 70px 80px 80px;
             align-items: center;
             gap: 10px;
             padding: 0 8px 4px 8px;
@@ -87,7 +85,7 @@
         #recommendation-list { list-style: none; padding: 0; margin-top: 0; flex-grow: 1; overflow-y: auto; min-height: 0; }
         #recommendation-list li { 
             display: grid;
-            grid-template-columns: 50px 1fr 95px 70px 70px 80px 80px;
+            grid-template-columns: 50px 1fr 95px 70px 70px 70px 70px 80px 80px;
             align-items: center;
             gap: 10px;
             padding: 8px;
@@ -144,11 +142,13 @@
         .analysis-champ-info { font-size: 0.9rem; }
         .analysis-champ-name { font-weight: bold; }
         .analysis-champ-stats { font-size: 0.75rem; color: var(--text-secondary); }
-        .analysis-delta-separator { width: 150px; text-align: center; font-size: 0.8rem; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .analysis-total-delta { text-align: center; padding: 10px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; }
-        .analysis-delta-value { font-size: 1.1rem; font-weight: bold; }
-        .analysis-delta-subtext { font-size: 0.75rem; }
-        .analysis-delta-games { font-size: 0.7rem; opacity: 0.7; }
+        .analysis-delta-separator { width: 200px; text-align: center; font-size: 0.8rem; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .analysis-total-delta { text-align: center; padding: 10px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .analysis-lane-delta { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.1rem; font-weight: bold; width: 120px; }
+        .analysis-lane-delta-box { padding: 2px 6px; border-radius: 4px; flex-grow: 1; text-align: center; }
+        .analysis-lane-delta-box.delta-pos { background-color: rgba(34, 197, 94, 0.2); }
+        .analysis-lane-delta-box.delta-neg { background-color: rgba(239, 68, 68, 0.2); }
+        .arrow { font-size: 1.5rem; line-height: 1; width: 24px; text-align: center; }
         #loading-overlay, #how-to-use-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
@@ -177,8 +177,6 @@
         .input-group { display: flex; flex-direction: column; }
         .input-group label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: flex; align-items: center; }
         .input-group input[type="number"], .input-group select { width: 120px; font-size: 0.9rem; }
-        .blue-text { color: #5c9be4; font-weight: bold; }
-        .red-text { color: #e84e4e; font-weight: bold; }
         .tooltip-icon {
             display: inline-block;
             width: 16px;
@@ -192,7 +190,7 @@
             cursor: help;
             margin-left: 5px;
         }
-        #balance-tooltip, #min-games-tooltip { width: 250px; text-align: justify; }
+        #min-games-tooltip { width: 250px; text-align: justify; }
         .rec-button {
             position: absolute;
             top: 4px;
@@ -208,6 +206,7 @@
         }
         .role-slot[data-side="left"] .rec-button { left: 4px; }
         .role-slot[data-side="right"] .rec-button { right: 4px; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -236,7 +235,6 @@
                 <li><strong>Min Role Freq:</strong> 5%</li>
                 <li><strong>Min Games:</strong> 35</li>
                 <li><strong>Consider Hovers:</strong> Ticked</li>
-                <li><strong>Assume Perfect Balance:</strong> Ticked</li>
             </ul>
         </div>
     </div>
@@ -256,7 +254,6 @@
             <div class="header-row">
                 <div class="header-controls">
                     <button id="reset-btn">Reset Draft</button>
-                    <button id="swap-sides-btn">Swap Sides</button>
                     <button id="how-to-use-btn">How To Use</button>
                     <button id="live-tracking-btn"><span id="live-indicator" class="live-indicator"></span>Start Live Tracking</button>
                 </div>
@@ -274,7 +271,7 @@
         </header>
         <div class="draft-area" id="draft-area">
             <svg id="connector-svg"><path d="" stroke="var(--accent-color)" stroke-width="2" fill="none" stroke-dasharray="5,5"/></svg>
-            <div class="team-panel" id="left-team-panel"><h2 id="left-team-header"></h2></div>
+            <div class="team-panel" id="left-team-panel"><h2 id="left-team-header">Left Team</h2></div>
             <div class="center-column">
                 <div id="champion-grid-container">
                     <div id="champion-grid-header">
@@ -301,7 +298,14 @@
                                     <input type="number" id="role-rate-filter" min="0" max="100">
                                 </div>
                                 <div class="input-group">
-                                    <label for="min-games-filter">Min Games <span class="tooltip-icon" id="min-games-tooltip-icon">?</span></label>
+                                    <label for="low-sample-method-select">Low Sample Method</label>
+                                    <select id="low-sample-method-select">
+                                        <option value="sigmoid">Sigmoid Weight</option>
+                                        <option value="threshold">Hard Threshold</option>
+                                    </select>
+                                </div>
+                                <div class="input-group hidden" id="min-games-container">
+                                    <label for="min-games-filter">Min Games</label>
                                     <input type="number" id="min-games-filter" min="0">
                                 </div>
                             </div>
@@ -312,10 +316,6 @@
                                 <label class="favorite-toggle-label">
                                     <input type="checkbox" id="consider-hovers-toggle"> Hovers
                                 </label>
-                                <label class="favorite-toggle-label">
-                                    <input type="checkbox" id="balance-toggle"> Simple
-                                    <span class="tooltip-icon" id="balance-tooltip-icon">?</span>
-                                </label>
                             </div>
                         </div>
                         <div id="recommendation-header">
@@ -324,6 +324,8 @@
                             <div class="rec-stat-header sortable-header active-sort-desc" data-sort="expected_win_rate">Expected WR</div>
                             <div class="rec-stat-header sortable-header" data-sort="delta">Total Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="lane_delta">Lane Δ</div>
+                            <div class="rec-stat-header sortable-header" data-sort="ally_delta">Ally Δ</div>
+                            <div class="rec-stat-header sortable-header" data-sort="enemy_delta">Enemy Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="base_win_rate">Base WR</div>
                             <div class="rec-stat-header sortable-header" data-sort="role_frequency">Role Freq</div>
                         </div>
@@ -333,15 +335,10 @@
                     </div>
                 </div>
             </div>
-            <div class="team-panel" id="right-team-panel"><h2 id="right-team-header"></h2></div>
+            <div class="team-panel" id="right-team-panel"><h2 id="right-team-header">Right Team</h2></div>
         </div>
         <div id="delta-tooltip" class="tooltip"></div>
         <div id="context-menu"></div>
-        <div id="balance-tooltip" class="tooltip">
-            <p><b>Unchecked (Default):</b> The "Performance Review" method. This is like a handicapped race where strong champions (high base win rate) are expected to perform better. A recommendation is good if it outperforms that expectation.</p>
-            <p><b>Checked:</b> The "Simple Bonus" method. This assumes all champions are perfectly balanced (50% win rate). It recommends based purely on which champion gets the biggest raw synergy and counter-pick bonuses.</p>
-        </div>
-        <div id="min-games-tooltip" class="tooltip">The minimum amount of games needed for a matchup or synergy to be considered in the Delta Breakdown.</div>
     </div>
 
     <script>
@@ -367,7 +364,6 @@
             let lastKnownPickState = '';
             let swapSourceSlot = null;
             let lastRecommendations = [];
-            let leftPanelIsBlue = true;
             let favorites = {};
             let unavailableChampions = new Set();
             let pickableChampions = new Set();
@@ -379,14 +375,10 @@
             let sortBy = 'expected_win_rate';
             let sortDirection = 'desc';
             let selectedChampionFromGrid = null;
+            let metadata = {};
 
             const timePeriodSelect = document.getElementById('time-period-select');
             const rankSelect = document.getElementById('rank-select');
-            const balanceToggle = document.getElementById('balance-toggle');
-            const balanceTooltipIcon = document.getElementById('balance-tooltip-icon');
-            const balanceTooltip = document.getElementById('balance-tooltip');
-            const minGamesTooltipIcon = document.getElementById('min-games-tooltip-icon');
-            const minGamesTooltip = document.getElementById('min-games-tooltip');
             const minGamesFilter = document.getElementById('min-games-filter');
             const championGrid = document.getElementById('champion-grid');
             const searchInput = document.getElementById('search-champion');
@@ -403,7 +395,6 @@
             const contextMenu = document.getElementById('context-menu');
             const favoritesOnlyToggle = document.getElementById('favorites-only-toggle');
             const considerHoversToggle = document.getElementById('consider-hovers-toggle');
-            const swapSidesBtn = document.getElementById('swap-sides-btn');
             const recTabBtn = document.getElementById('rec-tab-btn');
             const analysisTabBtn = document.getElementById('analysis-tab-btn');
             const recommendationsView = document.getElementById('recommendations-view');
@@ -420,6 +411,8 @@
             const howToUseCloseBtn = document.getElementById('how-to-use-close-btn');
             const resultsPanel = document.getElementById('results');
             const connectorPath = document.querySelector('#connector-svg path');
+            const lowSampleMethodSelect = document.getElementById('low-sample-method-select');
+            const minGamesContainer = document.getElementById('min-games-container');
 
             document.addEventListener('click', () => contextMenu.style.display = 'none');
 
@@ -429,12 +422,12 @@
                 baseWr: '45',
                 roleRate: '5',
                 favoritesOnly: false,
-                assumeBalanced: true,
                 minGames: '35',
-                considerHovers: true
+                considerHovers: true,
+                lowSampleMethod: 'sigmoid'
             };
             
-            // --- START: Ported Backend Logic ---
+            // --- START: Core Logic ---
 
             function winrateToRating(wr) {
                 if (wr <= 0.0 || wr >= 1.0) {
@@ -447,9 +440,25 @@
                 return 1 / (1 + Math.pow(10, -ratingDiff / 400));
             }
 
-            function getRecommendations(myTeam, enemyTeam, targetRole, dataset, assumeBalanced, minGames) {
+            function calculateGameWeight(games, totalGamesInDataset) {
+                if (games < 10) return 0;
+                
+                // These parameters are tunable.
+                const midpoint = 35; 
+                // A higher steepness means we trust low game counts more quickly.
+                // We make it steeper for smaller datasets (like a new patch).
+                const steepness = totalGamesInDataset > 5000000 ? 0.08 : 0.12; 
+
+                return 1 / (1 + Math.exp(-steepness * (games - midpoint)));
+            }
+
+            function getRecommendations(myTeam, enemyTeam, targetRole, dataset) {
                 const recommendations = [];
                 const { champion_stats_list, champion_ratings, matchup_stats } = dataset;
+                const lowSampleMethod = lowSampleMethodSelect.value;
+                const minGames = parseInt(minGamesFilter.value) || 0;
+                const datasetKey = `${timePeriodSelect.value}_${rankSelect.value}`;
+                const totalGamesInDataset = metadata.total_games_by_dataset ? (metadata.total_games_by_dataset[datasetKey] || 10000000) : 10000000;
 
                 const championsToConsider = champion_stats_list
                     .filter(item => item.role.toUpperCase() === targetRole)
@@ -464,131 +473,191 @@
                     const pickCombo = champion_ratings.get(pickComboKey);
                     const baseWr = pickCombo.win_rate;
                     const deltaBreakdown = [];
-                    let laneDelta = 0;
+                    
+                    let allyDelta = 0.0;
+                    let enemyDelta = 0.0;
+                    let laneDelta = 0.0;
 
-                    if (assumeBalanced) {
-                        let totalDelta = 0.0;
-                        for (const [teamMember, relationship] of [[enemyTeam, 'enemy'], [myTeam, 'teammate']]) {
-                            for (const [role, champ] of Object.entries(teamMember)) {
-                                if (champ) {
-                                    const matchupKey = JSON.stringify([pickChamp, targetRole, champ, role, relationship]);
-                                    const stats = matchup_stats.get(matchupKey);
-                                    let delta = 0;
-                                    
-                                    if (stats && (stats.total_games || 0) >= minGames) {
-                                        delta = stats.win_rate - baseWr;
-                                        totalDelta += delta;
-                                    }
-                                    
-                                    if (champ === laneOpponent && role === targetRole) {
-                                        laneDelta = delta;
-                                    }
-                                    deltaBreakdown.push({ source: champ, delta: delta, games: stats ? stats.total_games || 0 : 0 });
+                    for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
+                        for (const [role, champ] of Object.entries(teamMember)) {
+                            if (champ) {
+                                const partnerComboKey = `${champ},${role}`;
+                                if (!champion_ratings.has(partnerComboKey)) continue;
+
+                                const matchupKey = JSON.stringify([pickChamp, targetRole, champ, role, relationship]);
+                                const stats = matchup_stats.get(matchupKey);
+                                const games = stats ? (stats.total_games || 0) : 0;
+                                let delta = 0;
+                                
+                                let weight = 1.0;
+                                if (lowSampleMethod === 'sigmoid') {
+                                    weight = calculateGameWeight(games, totalGamesInDataset);
+                                } else { // threshold
+                                    if (games < minGames) weight = 0;
                                 }
-                            }
-                        }
-                        const expectedWr = baseWr + totalDelta;
-                        recommendations.push({
-                            champion: pickChamp, expected_win_rate: expectedWr, base_win_rate: baseWr,
-                            pick_rate: pickCombo.pick_rate, role_frequency: pickCombo.role_frequency,
-                            breakdown: deltaBreakdown.sort((a, b) => b.delta - a.delta),
-                            lane_delta: laneDelta
-                        });
-                    } else {
-                        let totalRating = pickCombo.rating;
-                        for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
-                            for (const [role, champ] of Object.entries(teamMember)) {
-                                if (champ) {
-                                    const partnerComboKey = `${champ},${role}`;
-                                    if (champion_ratings.has(partnerComboKey)) {
-                                        const matchupKey = JSON.stringify([pickChamp, targetRole, champ, role, relationship]);
-                                        const matchupData = matchup_stats.get(matchupKey);
-                                        let ratingAdjustment = 0;
 
-                                        if (matchupData && (matchupData.total_games || 0) >= minGames) {
-                                            const pickRating = pickCombo.rating;
-                                            const partnerRating = champion_ratings.get(partnerComboKey).rating;
-                                            
-                                            let expectedWrCalc;
-                                            if (relationship === 'teammate') {
-                                                expectedWrCalc = ratingToWinrate(pickRating + partnerRating);
-                                            } else { // enemy
-                                                expectedWrCalc = ratingToWinrate(pickRating - partnerRating);
-                                            }
-                                            
-                                            const actualWr = matchupData.win_rate;
-                                            const performanceDelta = actualWr - expectedWrCalc;
-                                            ratingAdjustment = winrateToRating(0.5 + performanceDelta);
-                                            totalRating += ratingAdjustment;
-                                        }
-                                        
-                                        if (champ === laneOpponent && role === targetRole) {
-                                            laneDelta = ratingAdjustment;
-                                        }
-                                        deltaBreakdown.push({ source: champ, delta: ratingAdjustment, games: matchupData ? matchupData.total_games || 0 : 0 });
+                                if (weight > 0) {
+                                    const partnerCombo = champion_ratings.get(partnerComboKey);
+                                    const actualMatchupWr = stats.win_rate;
+                                    
+                                    let expectedMatchupWr;
+                                    if (relationship === 'enemy') {
+                                        expectedMatchupWr = 0.5 + (baseWr - 0.5) - (partnerCombo.win_rate - 0.5);
+                                    } else { // teammate
+                                        expectedMatchupWr = 0.5 + (baseWr - 0.5) + (partnerCombo.win_rate - 0.5);
+                                    }
+                                    
+                                    delta = (actualMatchupWr - expectedMatchupWr) * weight;
+                                    
+                                    if (relationship === 'enemy') {
+                                        enemyDelta += delta;
+                                    } else {
+                                        allyDelta += delta;
                                     }
                                 }
+                                
+                                if (champ === laneOpponent && role === targetRole) {
+                                    laneDelta = delta;
+                                }
+                                deltaBreakdown.push({ source: champ, delta: delta, games: games });
                             }
                         }
-                        const expectedWr = ratingToWinrate(totalRating);
-                        recommendations.push({
-                            champion: pickChamp, expected_win_rate: expectedWr, base_win_rate: baseWr,
-                            pick_rate: pickCombo.pick_rate, role_frequency: pickCombo.role_frequency,
-                            breakdown: deltaBreakdown.sort((a, b) => b.delta - a.delta),
-                            lane_delta: laneDelta
-                        });
                     }
+                    
+                    const totalDelta = allyDelta + enemyDelta;
+                    const expectedWr = baseWr + totalDelta;
+                    
+                    recommendations.push({
+                        champion: pickChamp, 
+                        expected_win_rate: expectedWr, 
+                        base_win_rate: baseWr,
+                        pick_rate: pickCombo.pick_rate, 
+                        role_frequency: pickCombo.role_frequency,
+                        breakdown: deltaBreakdown.sort((a, b) => b.delta - a.delta),
+                        lane_delta: laneDelta,
+                        ally_delta: allyDelta,
+                        enemy_delta: enemyDelta
+                    });
                 }
                 return recommendations;
             }
 
-            function getAnalysis(myTeam, enemyTeam, dataset, minGames) {
-                const analysisResults = [];
-                let totalTeamDelta = 0.0;
+            function getAnalysis(myTeam, enemyTeam, dataset) {
                 const { champion_ratings, matchup_stats } = dataset;
+                const lowSampleMethod = lowSampleMethodSelect.value;
+                const minGames = parseInt(minGamesFilter.value) || 0;
+                const datasetKey = `${timePeriodSelect.value}_${rankSelect.value}`;
+                const totalGamesInDataset = metadata.total_games_by_dataset ? (metadata.total_games_by_dataset[datasetKey] || 10000000) : 10000000;
+
+                let myTeamTotalDelta = 0;
+                let enemyTeamTotalDelta = 0;
+                const analysisResults = [];
+
+                function calculateChampionDeltas(champ, role, friendlyTeam, opposingTeam) {
+                    let totalDelta = 0;
+                    let laneDelta = 0;
+                    const champComboKey = `${champ},${role}`;
+                    if (!champion_ratings.has(champComboKey)) return { total_delta: 0, lane_delta: 0 };
+                    
+                    const champCombo = champion_ratings.get(champComboKey);
+                    const baseWr = champCombo.win_rate;
+
+                    // Teammates
+                    for (const [friendlyRole, friendlyChamp] of Object.entries(friendlyTeam)) {
+                        if (friendlyChamp && friendlyChamp !== champ) {
+                            const partnerComboKey = `${friendlyChamp},${friendlyRole}`;
+                            if (!champion_ratings.has(partnerComboKey)) continue;
+                            
+                            const matchupKey = JSON.stringify([champ, role, friendlyChamp, friendlyRole, 'teammate']);
+                            const stats = matchup_stats.get(matchupKey);
+                            const games = stats ? (stats.total_games || 0) : 0;
+                            let weight = 1.0;
+                            if (lowSampleMethod === 'sigmoid') {
+                                weight = calculateGameWeight(games, totalGamesInDataset);
+                            } else {
+                                if (games < minGames) weight = 0;
+                            }
+
+                            if (weight > 0) {
+                                const partnerCombo = champion_ratings.get(partnerComboKey);
+                                const actualWr = stats.win_rate;
+                                const expectedWr = 0.5 + (baseWr - 0.5) + (partnerCombo.win_rate - 0.5);
+                                totalDelta += (actualWr - expectedWr) * weight;
+                            }
+                        }
+                    }
+                    // Enemies
+                    for (const [opposingRole, opposingChamp] of Object.entries(opposingTeam)) {
+                        if (opposingChamp) {
+                            const partnerComboKey = `${opposingChamp},${opposingRole}`;
+                            if (!champion_ratings.has(partnerComboKey)) continue;
+
+                            const matchupKey = JSON.stringify([champ, role, opposingChamp, opposingRole, 'enemy']);
+                            const stats = matchup_stats.get(matchupKey);
+                            const games = stats ? (stats.total_games || 0) : 0;
+                            let weight = 1.0;
+                            if (lowSampleMethod === 'sigmoid') {
+                                weight = calculateGameWeight(games, totalGamesInDataset);
+                            } else {
+                                if (games < minGames) weight = 0;
+                            }
+
+                            if (weight > 0) {
+                                const partnerCombo = champion_ratings.get(partnerComboKey);
+                                const actualWr = stats.win_rate;
+                                const expectedWr = 0.5 + (baseWr - 0.5) - (partnerCombo.win_rate - 0.5);
+                                const delta = (actualWr - expectedWr) * weight;
+                                totalDelta += delta;
+                                if (role === opposingRole) {
+                                    laneDelta = delta;
+                                }
+                            }
+                        }
+                    }
+                    return { total_delta: totalDelta, lane_delta: laneDelta };
+                }
 
                 for (const role of roles) {
                     const myChamp = myTeam[role];
                     const enemyChamp = enemyTeam[role];
 
-                    if (!myChamp || !enemyChamp) {
-                        analysisResults.push({ role, my_champ: myChamp, enemy_champ: enemyChamp, delta: 0 });
-                        continue;
+                    let myChampData = null;
+                    if (myChamp) {
+                        const deltas = calculateChampionDeltas(myChamp, role, myTeam, enemyTeam);
+                        myTeamTotalDelta += deltas.total_delta;
+                        const champStats = champion_ratings.get(`${myChamp},${role}`);
+                        myChampData = {
+                            champion: myChamp,
+                            total_delta: deltas.total_delta,
+                            lane_delta: deltas.lane_delta,
+                            base_wr: champStats ? champStats.win_rate : 0
+                        };
                     }
 
-                    const myComboKey = `${myChamp},${role}`;
-                    const enemyComboKey = `${enemyChamp},${role}`;
-                    
-                    const myChampStats = champion_ratings.get(myComboKey);
-                    const enemyChampStats = champion_ratings.get(enemyComboKey);
-
-                    if (!myChampStats || !enemyChampStats) {
-                        analysisResults.push({ role, my_champ: myChamp, enemy_champ: enemyChamp, delta: 0 });
-                        continue;
-                    }
-
-                    const matchupKey = JSON.stringify([myChamp, role, enemyChamp, role, 'enemy']);
-                    const matchupData = matchup_stats.get(matchupKey);
-                    
-                    let delta = 0;
-                    if (matchupData && (matchupData.total_games || 0) >= minGames) {
-                        delta = matchupData.win_rate - myChampStats.win_rate;
+                    let enemyChampData = null;
+                    if (enemyChamp) {
+                        const deltas = calculateChampionDeltas(enemyChamp, role, enemyTeam, myTeam);
+                        enemyTeamTotalDelta += deltas.total_delta;
+                        const champStats = champion_ratings.get(`${enemyChamp},${role}`);
+                        enemyChampData = {
+                            champion: enemyChamp,
+                            total_delta: deltas.total_delta,
+                            lane_delta: deltas.lane_delta,
+                            base_wr: champStats ? champStats.win_rate : 0
+                        };
                     }
                     
-                    totalTeamDelta += delta;
                     analysisResults.push({
-                        role: role, my_champ: myChamp, my_champ_wr: myChampStats.win_rate,
-                        enemy_champ: enemyChamp, enemy_champ_wr: enemyChampStats.win_rate,
-                        matchup_wr: matchupData ? matchupData.win_rate : null,
-                        games: matchupData ? matchupData.total_games : 0,
-                        delta: delta
+                        role: role,
+                        my_champ: myChampData,
+                        enemy_champ: enemyChampData
                     });
                 }
-
-                return { lane_analysis: analysisResults, total_team_delta: totalTeamDelta };
+                
+                return { analysis_results: analysisResults, my_team_total_delta: myTeamTotalDelta, enemy_team_total_delta: enemyTeamTotalDelta };
             }
 
-            // --- END: Ported Backend Logic ---
+            // --- END: Core Logic ---
 
             async function fetchWithRetry(url, isInitialLoad = false) {
                 try {
@@ -671,9 +740,9 @@
                     baseWr: baseWrFilter.value,
                     roleRate: roleRateFilter.value,
                     favoritesOnly: favoritesOnlyToggle.checked,
-                    assumeBalanced: balanceToggle.checked,
                     minGames: minGamesFilter.value,
-                    considerHovers: considerHoversToggle.checked
+                    considerHovers: considerHoversToggle.checked,
+                    lowSampleMethod: lowSampleMethodSelect.value
                 };
                 await window.electronAPI.saveSettings(settings);
             }
@@ -685,10 +754,12 @@
                 baseWrFilter.value = effectiveSettings.baseWr;
                 roleRateFilter.value = effectiveSettings.roleRate;
                 favoritesOnlyToggle.checked = effectiveSettings.favoritesOnly;
-                balanceToggle.checked = effectiveSettings.assumeBalanced;
                 minGamesFilter.value = effectiveSettings.minGames;
                 considerHoversToggle.checked = effectiveSettings.considerHovers;
                 considerHovers = effectiveSettings.considerHovers;
+                lowSampleMethodSelect.value = effectiveSettings.lowSampleMethod;
+
+                minGamesContainer.classList.toggle('hidden', lowSampleMethodSelect.value !== 'threshold');
             }
             
             function formatTimeAgo(date) {
@@ -711,7 +782,7 @@
                     loadingOverlay.style.display = 'flex';
                     loadingMessage.textContent = 'Initializing...';
 
-                    const metadata = await fetchWithRetry(`${R2_PUBLIC_URL}/metadata.json`, true);
+                    metadata = await fetchWithRetry(`${R2_PUBLIC_URL}/metadata.json`, true);
                     if (metadata) {
                         patchInfoDiv.textContent = `Patch ${metadata.patch}`;
                         const lastUpdatedDate = new Date(metadata.last_updated_utc);
@@ -738,8 +809,6 @@
                     
                     createRoleSlots();
                     populateChampionGrid();
-                    updateTeamSideLabels();
-                    updateAllGridFavoriteStars();
                     resetDraft();
 
                     championGrid.classList.add('collapsed');
@@ -756,25 +825,9 @@
                 }
             }
 
-            function updateTeamSideLabels() {
-                const leftHeader = document.getElementById('left-team-header');
-                const rightHeader = document.getElementById('right-team-header');
-                if (leftPanelIsBlue) {
-                    leftHeader.textContent = 'Blue Side';
-                    leftHeader.className = 'blue-side';
-                    rightHeader.textContent = 'Red Side';
-                    rightHeader.className = 'red-side';
-                } else {
-                    leftHeader.textContent = 'Red Side';
-                    leftHeader.className = 'red-side';
-                    rightHeader.textContent = 'Blue Side';
-                    rightHeader.className = 'blue-side';
-                }
-            }
-
             function createRoleSlots() {
-                leftTeamPanel.innerHTML = '<h2 id="left-team-header"></h2>';
-                rightTeamPanel.innerHTML = '<h2 id="right-team-header"></h2>';
+                leftTeamPanel.innerHTML = '<h2 id="left-team-header">Left Team</h2>';
+                rightTeamPanel.innerHTML = '<h2 id="right-team-header">Right Team</h2>';
                 roles.forEach(role => {
                     let iconRoleName = role.toLowerCase();
                     if (iconRoleName === 'support') {
@@ -850,8 +903,6 @@
                 swapSourceSlot = null;
                 recommendationTarget = null;
                 recommendationSearch.value = '';
-                leftPanelIsBlue = true;
-                updateTeamSideLabels();
                 unavailableChampions.clear();
                 pickableChampions.clear();
                 lockedSlots.clear();
@@ -902,9 +953,7 @@
                         myTeam, 
                         enemyTeam, 
                         recommendationTarget.role,
-                        dataset,
-                        balanceToggle.checked,
-                        parseInt(minGamesFilter.value) || 0
+                        dataset
                     );
                     displayFilteredRecommendations();
                 } catch (error) { console.error("Failed to get recommendations:", error); recommendationList.innerHTML = `<li>${error.message}</li>`; }
@@ -983,8 +1032,12 @@
                     const expectedWrStr = (pick.expected_win_rate * 100).toFixed(2) + '%';
                     const delta = pick.expected_win_rate - pick.base_win_rate;
                     const deltaStr = (delta >= 0 ? '+' : '') + (delta * 100).toFixed(2) + '%';
-                    const laneDeltaVal = balanceToggle.checked ? pick.lane_delta * 100 : pick.lane_delta;
-                    const laneDeltaStr = (laneDeltaVal >= 0 ? '+' : '') + laneDeltaVal.toFixed(2) + (balanceToggle.checked ? '%' : '');
+                    const laneDeltaVal = pick.lane_delta * 100;
+                    const laneDeltaStr = (laneDeltaVal >= 0 ? '+' : '') + laneDeltaVal.toFixed(2) + '%';
+                    const allyDeltaVal = pick.ally_delta * 100;
+                    const allyDeltaStr = (allyDeltaVal >= 0 ? '+' : '') + allyDeltaVal.toFixed(2) + '%';
+                    const enemyDeltaVal = pick.enemy_delta * 100;
+                    const enemyDeltaStr = (enemyDeltaVal >= 0 ? '+' : '') + enemyDeltaVal.toFixed(2) + '%';
                     
                     const isFavorite = favorites[`${pick.champion}-${recommendationTarget?.role}`];
                     const favoriteStar = isFavorite ? '<span class="rec-favorite-star">★</span>' : '';
@@ -1001,6 +1054,8 @@
                         <div class="rec-cell-stat ${pick.expected_win_rate >= 0.5 ? 'delta-pos' : 'delta-neg'}"><b>${expectedWrStr}</b></div>
                         <div class="rec-cell-stat ${delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</div>
                         <div class="rec-cell-stat ${laneDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}">${laneDeltaStr}</div>
+                        <div class="rec-cell-stat ${allyDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}">${allyDeltaStr}</div>
+                        <div class="rec-cell-stat ${enemyDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}">${enemyDeltaStr}</div>
                         <div class="rec-cell-stat">${baseWrStr}</div>
                         <div class="rec-cell-stat">${roleFreqStr}</div>
                     `;
@@ -1401,8 +1456,7 @@
                     const analysisData = getAnalysis(
                         myTeam,
                         enemyTeam,
-                        dataset,
-                        parseInt(minGamesFilter.value) || 0
+                        dataset
                     );
                     renderAnalysisView(analysisData);
                 } catch (error) {
@@ -1412,57 +1466,73 @@
             }
 
             function renderAnalysisView(analysisData) {
-                if (!analysisData || !analysisData.lane_analysis) {
+                if (!analysisData) {
                     analysisView.innerHTML = '<div>Could not retrieve analysis.</div>';
                     return;
                 }
-                const { lane_analysis, total_team_delta } = analysisData;
-                const totalDeltaClass = total_team_delta >= 0 ? 'delta-pos' : 'delta-neg';
-                const totalDeltaSign = total_team_delta >= 0 ? '+' : '';
-                const leftTeamColor = leftPanelIsBlue ? 'blue-text' : 'red-text';
-                const rightTeamColor = leftPanelIsBlue ? 'red-text' : 'blue-text';
+                const { analysis_results, my_team_total_delta, enemy_team_total_delta } = analysisData;
+                
+                const myTeamTotalDeltaClass = my_team_total_delta >= 0 ? 'delta-pos' : 'delta-neg';
+                const myTeamTotalDeltaSign = my_team_total_delta >= 0 ? '+' : '';
+                const enemyTeamTotalDeltaClass = enemy_team_total_delta >= 0 ? 'delta-pos' : 'delta-neg';
+                const enemyTeamTotalDeltaSign = enemy_team_total_delta >= 0 ? '+' : '';
+
                 let totalDeltaHTML = `
                     <div class="analysis-total-delta">
-                        Total Delta Advantage: <span class="${leftTeamColor}">Left Team</span> 
-                        <span class="${totalDeltaClass}">(${totalDeltaSign}${(total_team_delta * 100).toFixed(2)}%)</span>
+                        <span>Left Team Total Δ: <span class="${myTeamTotalDeltaClass}">${myTeamTotalDeltaSign}${(my_team_total_delta * 100).toFixed(2)}%</span></span>
+                        <span>Right Team Total Δ: <span class="${enemyTeamTotalDeltaClass}">${enemyTeamTotalDeltaSign}${(enemy_team_total_delta * 100).toFixed(2)}%</span></span>
                     </div>`;
-                let lanesHTML = lane_analysis.map(lane => {
-                    const { role, my_champ, enemy_champ, my_champ_wr, enemy_champ_wr, matchup_wr, games, delta } = lane;
-                    const getChampHTML = (champName, baseWr, teamColor, side) => {
-                        if (!champName) return `<div class="analysis-champ-info ${teamColor}">Missing</div>`;
-                        const champData = allChampions.find(c => c.id === champName);
-                        const imgSrc = champData ? `${DDRAGON_BASE_URL}/cdn/${latestPatch}/img/champion/${champData.image.full}` : '';
-                        const wrStr = baseWr ? `${(baseWr * 100).toFixed(1)}% WR` : 'N/A';
+
+                let lanesHTML = analysis_results.map(lane => {
+                    const { role, my_champ, enemy_champ } = lane;
+
+                    const getChampHTML = (champData, side) => {
+                        if (!champData || !champData.champion) return `<div class="analysis-champ-info">Missing</div>`;
+                        
+                        const champ = allChampions.find(c => c.id === champData.champion);
+                        const imgSrc = champ ? `${DDRAGON_BASE_URL}/cdn/${latestPatch}/img/champion/${champ.image.full}` : '';
+                        const baseWrStr = champData.base_wr ? `${(champData.base_wr * 100).toFixed(1)}% WR` : 'N/A';
+                        const deltaClass = champData.total_delta >= 0 ? 'delta-pos' : 'delta-neg';
+                        const deltaSign = champData.total_delta >= 0 ? '+' : '';
+                        const deltaStr = `${deltaSign}${(champData.total_delta * 100).toFixed(2)}% Δ`;
+
                         return `
-                            <div data-champion-name="${champName}" data-team="${side}" data-role="${role}">
-                                <img src="${imgSrc}" alt="${champName}">
+                            <div data-champion-name="${champData.champion}" data-team="${side}" data-role="${role}">
+                                <img src="${imgSrc}" alt="${champData.champion}">
                                 <div class="analysis-champ-info">
-                                    <div class="analysis-champ-name ${teamColor}">${champName}</div>
-                                    <div class="analysis-champ-stats">${wrStr}</div>
+                                    <div class="analysis-champ-name">${champData.champion}</div>
+                                    <div class="analysis-champ-stats">${baseWrStr} | <span class="${deltaClass}">${deltaStr}</span></div>
                                 </div>
                             </div>`;
                     };
-                    const leftChampHTML = getChampHTML(my_champ, my_champ_wr, leftTeamColor, 'left');
-                    const rightChampHTML = getChampHTML(enemy_champ, enemy_champ_wr, rightTeamColor, 'right');
-                    let deltaHTML;
-                    if (my_champ && enemy_champ) {
-                        if (matchup_wr !== null && matchup_wr !== undefined) {
-                            const deltaClass = delta >= 0 ? 'delta-pos' : 'delta-neg';
-                            const deltaSign = delta >= 0 ? '+' : '';
-                            deltaHTML = `
-                                <div class="analysis-delta-value ${deltaClass}">${deltaSign}${(delta * 100).toFixed(2)}%</div>
-                                <div class="analysis-delta-subtext">${(matchup_wr * 100).toFixed(1)}% vs ${(my_champ_wr * 100).toFixed(1)}%</div>
-                                <div class="analysis-delta-games">(${games} games)</div>`;
-                        } else {
-                            deltaHTML = `<div class="analysis-delta-subtext">No matchup data</div>`;
-                        }
+                    
+                    const leftChampHTML = getChampHTML(my_champ, 'left');
+                    const rightChampHTML = getChampHTML(enemy_champ, 'right');
+                    
+                    let laneDeltaHTML = '';
+                    if (my_champ && my_champ.champion && enemy_champ && enemy_champ.champion) {
+                        const laneDelta = my_champ.lane_delta;
+                        const deltaClass = laneDelta >= 0 ? 'delta-pos' : 'delta-neg';
+                        const deltaSign = laneDelta >= 0 ? '+' : '';
+                        const deltaStr = `${deltaSign}${(laneDelta * 100).toFixed(2)}%`;
+                        const leftArrow = laneDelta >= 0 ? '←' : '';
+                        const rightArrow = laneDelta < 0 ? '→' : '';
+                        laneDeltaHTML = `
+                            <div class="analysis-lane-delta">
+                                <span class="arrow ${deltaClass}">${leftArrow}</span>
+                                <div class="analysis-lane-delta-box ${deltaClass}">${deltaStr}</div>
+                                <span class="arrow ${deltaClass}">${rightArrow}</span>
+                            </div>`;
                     } else {
-                        deltaHTML = `<div class="analysis-delta-subtext">-</div>`;
+                        laneDeltaHTML = `<div>-</div>`;
                     }
+
                     return `
                         <div class="analysis-row" data-role="${role}">
                             <div class="analysis-cell left">${leftChampHTML}</div>
-                            <div class="analysis-delta-separator">${deltaHTML}</div>
+                            <div class="analysis-delta-separator">
+                                ${laneDeltaHTML}
+                            </div>
                             <div class="analysis-cell right">${rightChampHTML}</div>
                         </div>`;
                 }).join('');
@@ -1496,8 +1566,8 @@
             });
             timePeriodSelect.addEventListener('change', handleFilterChange);
             rankSelect.addEventListener('change', handleFilterChange);
-            balanceToggle.addEventListener('change', handleFilterChange);
-            minGamesFilter.addEventListener('change', handleFilterChange);
+            lowSampleMethodSelect.addEventListener('change', handleFilterChange);
+            minGamesFilter.addEventListener('input', handleFilterChange);
             baseWrFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
             roleRateFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
             favoritesOnlyToggle.addEventListener('change', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
@@ -1533,13 +1603,6 @@
             
             recommendationSearch.addEventListener('input', displayFilteredRecommendations);
             
-            swapSidesBtn.addEventListener('click', () => {
-                leftPanelIsBlue = !leftPanelIsBlue;
-                updateTeamSideLabels();
-                if (recommendationTarget) updateRecommendations();
-                if (activeTab === 'analysis') updateAnalysisView();
-            });
-
             recTabBtn.addEventListener('click', () => {
                 activeTab = 'recommendations';
                 recTabBtn.classList.add('active');
@@ -1568,8 +1631,10 @@
                 
                 const myTeam = getTeamForAPI(team);
                 const enemyTeam = getTeamForAPI(team === 'left' ? 'right' : 'left');
-                const assumeBalanced = balanceToggle.checked;
+                const lowSampleMethod = lowSampleMethodSelect.value;
                 const minGames = parseInt(minGamesFilter.value) || 0;
+                const datasetKey = `${timePeriodSelect.value}_${rankSelect.value}`;
+                const totalGamesInDataset = metadata.total_games_by_dataset ? (metadata.total_games_by_dataset[datasetKey] || 10000000) : 10000000;
                 
                 const { champion_ratings, matchup_stats } = dataset;
                 const pickComboKey = `${championName},${role}`;
@@ -1578,40 +1643,38 @@
                 const baseWr = pickCombo.win_rate;
 
                 const deltaBreakdown = [];
-                if (assumeBalanced) {
-                     for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
-                        for (const [otherRole, otherChamp] of Object.entries(teamMember)) {
-                           if (otherChamp && (otherChamp !== championName || otherRole !== role)) {
-                                const matchupKey = JSON.stringify([championName, role, otherChamp, otherRole, relationship]);
-                                const stats = matchup_stats.get(matchupKey);
-                                let delta = 0;
-                                if (stats && (stats.total_games || 0) >= minGames) {
-                                    delta = stats.win_rate - baseWr;
-                                }
-                                deltaBreakdown.push({ source: otherChamp, delta: delta, games: stats ? stats.total_games || 0 : 0 });
+                for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
+                    for (const [otherRole, otherChamp] of Object.entries(teamMember)) {
+                        if (otherChamp && (otherChamp !== championName || otherRole !== role)) {
+                            const partnerComboKey = `${otherChamp},${otherRole}`;
+                            if (!champion_ratings.has(partnerComboKey)) continue;
+
+                            const matchupKey = JSON.stringify([championName, role, otherChamp, otherRole, relationship]);
+                            const stats = matchup_stats.get(matchupKey);
+                            const games = stats ? (stats.total_games || 0) : 0;
+                            let delta = 0;
+                            
+                            let weight = 1.0;
+                            if (lowSampleMethod === 'sigmoid') {
+                                weight = calculateGameWeight(games, totalGamesInDataset);
+                            } else {
+                                if (games < minGames) weight = 0;
                             }
-                        }
-                    }
-                } else {
-                    for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
-                        for (const [otherRole, otherChamp] of Object.entries(teamMember)) {
-                            if (otherChamp && (otherChamp !== championName || otherRole !== role)) {
-                                 const partnerComboKey = `${otherChamp},${otherRole}`;
-                                if (champion_ratings.has(partnerComboKey)) {
-                                    const matchupKey = JSON.stringify([championName, role, otherChamp, otherRole, relationship]);
-                                    const matchupData = matchup_stats.get(matchupKey);
-                                    let ratingAdjustment = 0;
-                                    if (matchupData && (matchupData.total_games || 0) >= minGames) {
-                                        const pickRating = pickCombo.rating;
-                                        const partnerRating = champion_ratings.get(partnerComboKey).rating;
-                                        const expectedWrCalc = relationship === 'teammate' ? ratingToWinrate(pickRating + partnerRating) : ratingToWinrate(pickRating - partnerRating);
-                                        const actualWr = matchupData.win_rate;
-                                        const performanceDelta = actualWr - expectedWrCalc;
-                                        ratingAdjustment = winrateToRating(0.5 + performanceDelta);
-                                    }
-                                    deltaBreakdown.push({ source: otherChamp, delta: ratingAdjustment, games: matchupData ? matchupData.total_games || 0 : 0 });
+
+                            if (weight > 0) {
+                                const partnerCombo = champion_ratings.get(partnerComboKey);
+                                const actualMatchupWr = stats.win_rate;
+                                
+                                let expectedMatchupWr;
+                                if (relationship === 'enemy') {
+                                    expectedMatchupWr = 0.5 + (baseWr - 0.5) - (partnerCombo.win_rate - 0.5);
+                                } else { // teammate
+                                    expectedMatchupWr = 0.5 + (baseWr - 0.5) + (partnerCombo.win_rate - 0.5);
                                 }
+                                
+                                delta = (actualMatchupWr - expectedMatchupWr) * weight;
                             }
+                            deltaBreakdown.push({ source: otherChamp, delta: delta, games: games });
                         }
                     }
                 }
@@ -1684,8 +1747,8 @@
                 if (!breakdown) return;
                 const breakdownMap = Object.fromEntries(breakdown.map(item => [item.source, {delta: item.delta, games: item.games}]));
                 
-                const leftHeader = leftPanelIsBlue ? 'Blue Side' : 'Red Side';
-                const rightHeader = leftPanelIsBlue ? 'Red Side' : 'Blue Side';
+                const leftHeader = 'Left Team';
+                const rightHeader = 'Right Team';
                 
                 let leftHTML = `<h5>${leftHeader}</h5>`;
                 let rightHTML = `<h5>${rightHeader}</h5>`;
@@ -1696,14 +1759,11 @@
                     const leftChamp = leftSlot.dataset.champion || (considerHovers ? leftSlot.dataset.hover : null);
                     const rightChamp = rightSlot.dataset.champion || (considerHovers ? rightSlot.dataset.hover : null);
                     
-                    const leftSideColor = leftPanelIsBlue ? 'blue' : 'red';
-                    const rightSideColor = leftPanelIsBlue ? 'red' : 'blue';
-
                     leftHTML += buildTooltipRow(leftChamp, 'left', role, breakdownMap, perspective);
                     rightHTML += buildTooltipRow(rightChamp, 'right', role, breakdownMap, perspective);
                 });
                 
-                const tooltipTitle = balanceToggle.checked ? "Win Rate Delta Breakdown" : "Rating Adjustment Breakdown";
+                const tooltipTitle = "Win Rate Delta Breakdown";
                 deltaTooltip.innerHTML = `<h4>${tooltipTitle}</h4><div class="tooltip-columns"><div class="tooltip-col">${leftHTML}</div><div class="tooltip-col">${rightHTML}</div></div>`;
             }
 
@@ -1717,33 +1777,15 @@
                      return `<div><span class="delta-neutral">${perspective.champion ? 'HOVERING' : 'RECOMMENDING'}</span></div>`;
                 } else if (champ) {
                     const stats = breakdownMap[champ] || {delta: 0, games: 0};
-                    const delta = balanceToggle.checked ? stats.delta * 100 : stats.delta;
+                    const delta = stats.delta * 100;
                     const deltaClass = delta >= 0 ? 'delta-pos' : 'delta-neg';
                     const gamesHTML = `<span class="games-count">(${formatGames(stats.games)})</span>`;
-                    const deltaSuffix = balanceToggle.checked ? '%' : '';
+                    const deltaSuffix = '%';
                     return `<div><span class="champ-name" title="${champ}">${champ}</span> ${gamesHTML}<span class="${deltaClass}">${delta.toFixed(2)}${deltaSuffix}</span></div>`;
                 } else {
                     return `<div><span class="delta-neutral">${role} MISSING</span></div>`;
                 }
             }
-            
-            balanceTooltipIcon.addEventListener('mouseover', e => {
-                balanceTooltip.style.left = `${e.clientX + 15}px`;
-                balanceTooltip.style.top = `${e.clientY + 15}px`;
-                balanceTooltip.style.opacity = '1';
-            });
-            balanceTooltipIcon.addEventListener('mouseout', () => {
-                balanceTooltip.style.opacity = '0';
-            });
-
-            minGamesTooltipIcon.addEventListener('mouseover', e => {
-                minGamesTooltip.style.left = `${e.clientX + 15}px`;
-                minGamesTooltip.style.top = `${e.clientY + 15}px`;
-                minGamesTooltip.style.opacity = '1';
-            });
-            minGamesTooltipIcon.addEventListener('mouseout', () => {
-                minGamesTooltip.style.opacity = '0';
-            });
             
             howToUseBtn.addEventListener('click', () => {
                 howToUseModal.style.display = 'flex';

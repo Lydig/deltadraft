@@ -265,7 +265,6 @@ async def main():
     except Exception as e:
         print(f"❌ FAILED to upload champion_mapping.json: {e}")
 
-    # --- NEW: Set CORS Policy on the bucket ---
     print("Setting CORS policy on R2 bucket...")
     try:
         cors_configuration = {
@@ -285,6 +284,8 @@ async def main():
     
     filter_combinations = list(itertools.product(TIME_PERIODS, RANKS))
     
+    total_games_by_dataset = {}
+
     for time_period, rank in filter_combinations:
         print(f"\n--- Scraping for: Time={time_period}, Rank={rank}, Region={REGION_TO_SCRAPE} ---")
         
@@ -319,6 +320,12 @@ async def main():
         if not valid_results:
             print("No data fetched for this combination, skipping.")
             continue
+        
+        # --- NEW: Calculate total games for this dataset ---
+        total_games = sum(r['enemy_data']['header']['n'] for r in valid_results if r and r.get('enemy_data') and r['enemy_data'].get('header')) // 10
+        dataset_key = f"{time_period}_{rank}"
+        total_games_by_dataset[dataset_key] = total_games
+        print(f"Total analyzed games for {dataset_key}: {total_games}")
 
         num_roles = process_and_upload_dataset(valid_results, id_to_name_map, time_period, rank, REGION_TO_SCRAPE, s3_client)
         if num_roles > 0:
@@ -328,7 +335,8 @@ async def main():
     
     metadata = {
         "last_updated_utc": end_time.isoformat(),
-        "patch": latest_patch_full
+        "patch": latest_patch_full,
+        "total_games_by_dataset": total_games_by_dataset
     }
     try:
         s3_client.put_object(Bucket=R2_BUCKET_NAME, Key='metadata.json', Body=json.dumps(metadata, indent=4))
