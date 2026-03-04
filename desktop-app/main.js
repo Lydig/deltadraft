@@ -9,6 +9,7 @@ const https = require('https');
 const userDataPath = app.getPath('userData');
 const favoritesFilePath = path.join(userDataPath, 'favorites.json');
 const settingsFilePath = path.join(userDataPath, 'settings.json');
+const windowStateFilePath = path.join(userDataPath, 'window-state.json'); // Added for saving window size/position
 
 // --- START: LCU Credential & Champ Select Logic ---
 async function getLeagueCredentials() {
@@ -110,10 +111,43 @@ ipcMain.handle('save-settings', (event, settings) => {
 });
 // --- END: IPC Handlers ---
 
+
+// --- Window State Logic ---
+function getWindowState() {
+  // Default values for first-time launch
+  const defaultState = { width: 1280, height: 800, isMaximized: true };
+  try {
+    if (fs.existsSync(windowStateFilePath)) {
+      const savedState = JSON.parse(fs.readFileSync(windowStateFilePath, 'utf-8'));
+      return { ...defaultState, ...savedState };
+    }
+  } catch (error) {
+    console.error('Failed to read window state:', error);
+  }
+  return defaultState;
+}
+
+function saveWindowState(window) {
+  try {
+    const isMaximized = window.isMaximized();
+    // getNormalBounds saves the width/height the window falls back to when un-maximized
+    const bounds = window.getNormalBounds(); 
+    fs.writeFileSync(windowStateFilePath, JSON.stringify({ ...bounds, isMaximized }, null, 2));
+  } catch (error) {
+    console.error('Failed to save window state:', error);
+  }
+}
+// --- END: Window State Logic ---
+
+
 function createWindow() {
+  const windowState = getWindowState();
+
   const mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    x: windowState.x,
+    y: windowState.y,
+    width: windowState.width,
+    height: windowState.height,
     title: 'DraftDiff',
     icon: path.join(__dirname, 'assets/logo.png'),
     webPreferences: {
@@ -124,7 +158,28 @@ function createWindow() {
   });
 
   mainWindow.setMenu(null);
+  
+  // If it was maximized when last closed (or if it's the first launch), maximize it now
+  if (windowState.isMaximized) {
+    mainWindow.maximize();
+  }
+
   mainWindow.loadFile('index.html');
+
+  // Set up listeners to save the window state when you move/resize/maximize it
+  let saveTimeout;
+  const debouncedSave = () => {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => saveWindowState(mainWindow), 500);
+  };
+
+  mainWindow.on('resize', debouncedSave);
+  mainWindow.on('move', debouncedSave);
+  mainWindow.on('maximize', debouncedSave);
+  mainWindow.on('unmaximize', debouncedSave);
+  
+  // Also save reliably right before it closes
+  mainWindow.on('close', () => saveWindowState(mainWindow));
 }
 
 app.whenReady().then(() => {

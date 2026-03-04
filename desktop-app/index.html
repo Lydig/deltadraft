@@ -62,7 +62,7 @@
         
         #recommendation-header {
             display: grid;
-            grid-template-columns: 50px 1fr 95px 70px 70px 70px 70px 80px 80px;
+            grid-template-columns: 50px 1fr 70px 70px 70px 70px 80px 80px;
             align-items: center;
             gap: 10px;
             padding: 0 8px 4px 8px;
@@ -85,7 +85,7 @@
         #recommendation-list { list-style: none; padding: 0; margin-top: 0; flex-grow: 1; overflow-y: auto; min-height: 0; }
         #recommendation-list li { 
             display: grid;
-            grid-template-columns: 50px 1fr 95px 70px 70px 70px 70px 80px 80px;
+            grid-template-columns: 50px 1fr 70px 70px 70px 70px 80px 80px;
             align-items: center;
             gap: 10px;
             padding: 8px;
@@ -160,14 +160,15 @@
             background-color: var(--bg-secondary);
             padding: 25px;
             border-radius: 8px;
-            max-width: 600px;
+            max-width: 650px;
             max-height: 80vh;
             overflow-y: auto;
             border: 1px solid var(--border-color);
         }
         .modal-content h2 { margin-top: 0; color: var(--accent-color); }
+        .modal-content h3 { color: var(--accent-color); margin-top: 25px; margin-bottom: 10px; font-size: 1.2rem; }
         .modal-content p, .modal-content li { font-size: 1rem; line-height: 1.6; color: var(--text-primary); }
-        .modal-content ul { padding-left: 20px; }
+        .modal-content ul, .modal-content ol { padding-left: 20px; }
         .modal-content code { background-color: var(--bg-primary); padding: 2px 5px; border-radius: 4px; font-family: monospace; }
         .modal-close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer; }
 
@@ -177,20 +178,6 @@
         .input-group { display: flex; flex-direction: column; }
         .input-group label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: flex; align-items: center; }
         .input-group input[type="number"], .input-group select { width: 120px; font-size: 0.9rem; }
-        .tooltip-icon {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 1px solid var(--text-secondary);
-            border-radius: 50%;
-            color: var(--text-secondary);
-            text-align: center;
-            font-size: 0.8rem;
-            line-height: 14px;
-            cursor: help;
-            margin-left: 5px;
-        }
-        #min-games-tooltip { width: 250px; text-align: justify; }
         .rec-button {
             position: absolute;
             top: 4px;
@@ -206,7 +193,6 @@
         }
         .role-slot[data-side="left"] .rec-button { left: 4px; }
         .role-slot[data-side="right"] .rec-button { right: 4px; }
-        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -218,25 +204,30 @@
         <div class="modal-content">
             <button id="how-to-use-close-btn" class="modal-close-btn">&times;</button>
             <h2>How to Use DraftDiff</h2>
-            <p>DraftDiff helps you make better champion picks by analyzing team compositions in real-time.</p>
+            <p>DraftDiff helps you make mathematically sound champion picks by analyzing team compositions in real-time.</p>
             <ul>
                 <li><strong>Select a Role:</strong> Click an empty slot on your team's side to see recommendations for that role.</li>
                 <li><strong>Pick Champions:</strong> Click a champion from the grid to place them in the selected slot. You can also click a champion first, then a slot.</li>
                 <li><strong>Live Tracking:</strong> Click "Start Live Tracking" to automatically sync with the League of Legends client during champion select.</li>
                 <li><strong>Analyze Drafts:</strong> Use the "Draft Analysis" tab to see a detailed breakdown of lane matchups and team synergies.</li>
             </ul>
-            <h2>How It Works</h2>
-            <p>The app calculates an "Expected Win Rate" for every possible pick. The core logic relies on LoLalytics' Normalized Delta (Delta 2) to determine exactly how much a champion over- or under-performs in any given matchup, removing the guesswork.</p>
-            <p>All data is scraped from LoLalytics and updated twice daily. The data is fetched directly from a cloud storage bucket, ensuring speed and reliability.</p>
-            <h2>Default Settings</h2>
-            <p>For first-time users, the app starts with these recommended filter settings:</p>
-            <ul>
-                <li><strong>Min Base WR:</strong> 45%</li>
-                <li><strong>Min Role Freq:</strong> 5%</li>
-                <li><strong>Low Sample Method:</strong> Hard Threshold</li>
-                <li><strong>Min Games:</strong> 35</li>
-                <li><strong>Consider Hovers:</strong> Ticked</li>
-            </ul>
+
+            <h3>Understanding the Math (Delta 2)</h3>
+            <p><strong>What is Delta 2?</strong><br>
+            Delta 2 (or Normalized Delta) is the purest isolation of a specific champion-to-champion interaction. It removes all outside noise to answer one question: <em>"How much does picking Champion A into Champion B change the outcome of the game, purely because of how their kits interact?"</em></p>
+            
+            <p>It adjusts for three things to ensure accuracy:</p>
+            <ol>
+                <li>Champion A's base win rate (How strong your champion is overall).</li>
+                <li>Champion B's base win rate (How strong the other champion is overall).</li>
+                <li>The average win rate of the tier (e.g., Emerald+ average win rate is usually around 51-52%, not 50%).</li>
+            </ol>
+            
+            <p><strong>What a +3.26 value literally means:</strong><br>
+            Based on how strong Champion A is right now, and how strong Champion B is right now, Champion A <em>should</em> beat Champion B X% of the time. However, Champion A actually beats Champion B X + 3.26% of the time. That +3.26 advantage is strictly generated by the specific dynamic between the two champions.</p>
+
+            <p><strong>Trusting the Data (Min Games):</strong><br>
+            Because Delta 2 is trustworthy only when the sample size is high enough, the <strong>Min Games</strong> filter is the most important setting. A matchup with 150 games might show a Delta of +8.00. This is statistical noise, not a true counter. If you set "Min Games" to a reasonable threshold (e.g., 300), you can trust that the math is entirely objective and stripped of meta-bias.</p>
         </div>
     </div>
 
@@ -298,13 +289,6 @@
                                     <label for="role-rate-filter">Min Role Freq %</label>
                                     <input type="number" id="role-rate-filter" min="0" max="100">
                                 </div>
-                                <div class="input-group">
-                                    <label for="low-sample-method-select">Low Sample Method</label>
-                                    <select id="low-sample-method-select">
-                                        <option value="threshold">Hard Threshold</option>
-                                        <option value="sigmoid">Sigmoid Weight</option>
-                                    </select>
-                                </div>
                                 <div class="input-group" id="min-games-container">
                                     <label for="min-games-filter">Min Games</label>
                                     <input type="number" id="min-games-filter" min="0">
@@ -322,8 +306,7 @@
                         <div id="recommendation-header">
                             <div class="sortable-header" data-sort="rank">Rank</div>
                             <div class="sortable-header" data-sort="champion">Champion</div>
-                            <div class="rec-stat-header sortable-header active-sort-desc" data-sort="expected_win_rate">Expected WR</div>
-                            <div class="rec-stat-header sortable-header" data-sort="delta">Total Δ</div>
+                            <div class="rec-stat-header sortable-header active-sort-desc" data-sort="total_delta">Total Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="lane_delta">Lane Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="ally_delta">Ally Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="enemy_delta">Enemy Δ</div>
@@ -373,7 +356,7 @@
             let latestPatch = '';
             let considerHovers = false;
             let dataCache = new Map();
-            let sortBy = 'expected_win_rate';
+            let sortBy = 'total_delta';
             let sortDirection = 'desc';
             let selectedChampionFromGrid = null;
             let metadata = {};
@@ -412,8 +395,6 @@
             const howToUseCloseBtn = document.getElementById('how-to-use-close-btn');
             const resultsPanel = document.getElementById('results');
             const connectorPath = document.querySelector('#connector-svg path');
-            const lowSampleMethodSelect = document.getElementById('low-sample-method-select');
-            const minGamesContainer = document.getElementById('min-games-container');
 
             document.addEventListener('click', () => contextMenu.style.display = 'none');
 
@@ -423,48 +404,16 @@
                 baseWr: '45',
                 roleRate: '5',
                 favoritesOnly: false,
-                minGames: '35',
-                considerHovers: true,
-                lowSampleMethod: 'threshold'
+                minGames: '300',
+                considerHovers: true
             };
             
             // --- START: Core Logic ---
 
-            function winrateToRating(wr) {
-                if (wr <= 0.0 || wr >= 1.0) {
-                    wr = Math.max(0.0001, Math.min(0.9999, wr));
-                }
-                return -400 * Math.log10(1 / wr - 1);
-            }
-
-            function ratingToWinrate(ratingDiff) {
-                return 1 / (1 + Math.pow(10, -ratingDiff / 400));
-            }
-
-            function calculateGameWeight(games, totalGamesInDataset) {
-                // --- TUNABLE PARAMETERS ---
-                const FLOOR = 10; // Below this many games, weight is always 0.
-                const BASE_TOTAL_GAMES = 3200000; // The dataset size our midpoint is based on.
-                const BASE_MIDPOINT = 35; // At the base dataset size, this is the number of games for 50% weight.
-                const MINIMUM_MIDPOINT = 15; // The midpoint will not be allowed to drop below this value.
-                const STEEPNESS = 0.1; // A constant steepness for simplicity. Higher = trusts low game counts faster.
-                // --- END TUNABLE PARAMETERS ---
-
-                if (games < FLOOR) return 0;
-
-                const scalingFactor = totalGamesInDataset / BASE_TOTAL_GAMES;
-                const dynamicMidpoint = Math.max(MINIMUM_MIDPOINT, BASE_MIDPOINT * scalingFactor);
-
-                return 1 / (1 + Math.exp(-STEEPNESS * (games - dynamicMidpoint)));
-            }
-
             function getRecommendations(myTeam, enemyTeam, targetRole, dataset) {
                 const recommendations =[];
                 const { champion_stats_list, champion_ratings, matchup_stats } = dataset;
-                const lowSampleMethod = lowSampleMethodSelect.value;
                 const minGames = parseInt(minGamesFilter.value) || 0;
-                const datasetKey = `${timePeriodSelect.value}_${rankSelect.value}`;
-                const totalGamesInDataset = metadata.total_games_by_dataset ? (metadata.total_games_by_dataset[datasetKey] || 10000000) : 10000000;
 
                 const championsToConsider = champion_stats_list
                     .filter(item => item.role.toUpperCase() === targetRole)
@@ -484,7 +433,7 @@
                     let enemyDelta = 0.0;
                     let laneDelta = 0.0;
 
-                    for (const [teamMember, relationship] of [[myTeam, 'teammate'],[enemyTeam, 'enemy']]) {
+                    for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
                         for (const [role, champ] of Object.entries(teamMember)) {
                             if (champ) {
                                 const partnerComboKey = `${champ},${role}`;
@@ -495,14 +444,7 @@
                                 const games = stats ? (stats.total_games || 0) : 0;
                                 let delta = 0;
                                 
-                                let weight = 1.0;
-                                if (lowSampleMethod === 'sigmoid') {
-                                    weight = calculateGameWeight(games, totalGamesInDataset);
-                                } else { // threshold
-                                    if (games < minGames) weight = 0;
-                                }
-
-                                if (weight > 0 && stats) {
+                                if (games >= minGames && stats) {
                                     let rawDelta = stats.delta2;
                                     
                                     // Fallback for older dataset formats that don't have delta2
@@ -518,7 +460,7 @@
                                         rawDelta = actualMatchupWr - expectedMatchupWr;
                                     }
                                     
-                                    delta = rawDelta * weight;
+                                    delta = rawDelta;
                                     
                                     if (relationship === 'enemy') {
                                         enemyDelta += delta;
@@ -536,11 +478,10 @@
                     }
                     
                     const totalDelta = allyDelta + enemyDelta;
-                    const expectedWr = baseWr + totalDelta;
                     
                     recommendations.push({
                         champion: pickChamp, 
-                        expected_win_rate: expectedWr, 
+                        total_delta: totalDelta,
                         base_win_rate: baseWr,
                         pick_rate: pickCombo.pick_rate, 
                         role_frequency: pickCombo.role_frequency,
@@ -555,10 +496,7 @@
 
             function getAnalysis(myTeam, enemyTeam, dataset) {
                 const { champion_ratings, matchup_stats } = dataset;
-                const lowSampleMethod = lowSampleMethodSelect.value;
                 const minGames = parseInt(minGamesFilter.value) || 0;
-                const datasetKey = `${timePeriodSelect.value}_${rankSelect.value}`;
-                const totalGamesInDataset = metadata.total_games_by_dataset ? (metadata.total_games_by_dataset[datasetKey] || 10000000) : 10000000;
 
                 let myTeamTotalDelta = 0;
                 let enemyTeamTotalDelta = 0;
@@ -574,7 +512,7 @@
                     const baseWr = champCombo.win_rate;
 
                     // Teammates
-                    for (const[friendlyRole, friendlyChamp] of Object.entries(friendlyTeam)) {
+                    for (const [friendlyRole, friendlyChamp] of Object.entries(friendlyTeam)) {
                         if (friendlyChamp && friendlyChamp !== champ) {
                             const partnerComboKey = `${friendlyChamp},${friendlyRole}`;
                             if (!champion_ratings.has(partnerComboKey)) continue;
@@ -582,20 +520,14 @@
                             const matchupKey = JSON.stringify([champ, role, friendlyChamp, friendlyRole, 'teammate']);
                             const stats = matchup_stats.get(matchupKey);
                             const games = stats ? (stats.total_games || 0) : 0;
-                            let weight = 1.0;
-                            if (lowSampleMethod === 'sigmoid') {
-                                weight = calculateGameWeight(games, totalGamesInDataset);
-                            } else {
-                                if (games < minGames) weight = 0;
-                            }
 
-                            if (weight > 0 && stats) {
+                            if (games >= minGames && stats) {
                                 let rawDelta = stats.delta2;
                                 if (rawDelta === undefined) {
                                     const partnerCombo = champion_ratings.get(partnerComboKey);
                                     rawDelta = stats.win_rate - (0.5 + (baseWr - 0.5) + (partnerCombo.win_rate - 0.5));
                                 }
-                                totalDelta += rawDelta * weight;
+                                totalDelta += rawDelta;
                             }
                         }
                     }
@@ -608,20 +540,14 @@
                             const matchupKey = JSON.stringify([champ, role, opposingChamp, opposingRole, 'enemy']);
                             const stats = matchup_stats.get(matchupKey);
                             const games = stats ? (stats.total_games || 0) : 0;
-                            let weight = 1.0;
-                            if (lowSampleMethod === 'sigmoid') {
-                                weight = calculateGameWeight(games, totalGamesInDataset);
-                            } else {
-                                if (games < minGames) weight = 0;
-                            }
 
-                            if (weight > 0 && stats) {
+                            if (games >= minGames && stats) {
                                 let rawDelta = stats.delta2;
                                 if (rawDelta === undefined) {
                                     const partnerCombo = champion_ratings.get(partnerComboKey);
                                     rawDelta = stats.win_rate - (0.5 + (baseWr - 0.5) - (partnerCombo.win_rate - 0.5));
                                 }
-                                const delta = rawDelta * weight;
+                                const delta = rawDelta;
                                 totalDelta += delta;
                                 if (role === opposingRole) {
                                     laneDelta = delta;
@@ -706,7 +632,7 @@
                     const statsUrl = `${R2_PUBLIC_URL}/${timePeriodDir}/${rank}/${region}/champion_stats.json`;
                     const matchupsUrl = `${R2_PUBLIC_URL}/${timePeriodDir}/${rank}/${region}/matchup_winrates.json`;
 
-                    const [championStatsList, matchupDataRaw] = await Promise.all([
+                    const[championStatsList, matchupDataRaw] = await Promise.all([
                         fetchWithRetry(statsUrl),
                         fetchWithRetry(matchupsUrl)
                     ]);
@@ -716,7 +642,6 @@
                     for (const item of championStatsList) {
                         const comboKey = `${item.champion},${item.role.toUpperCase()}`;
                         championRatings.set(comboKey, {
-                            rating: winrateToRating(item.win_rate),
                             win_rate: item.win_rate,
                             pick_rate: item.pick_rate,
                             role_frequency: item.role_frequency
@@ -756,8 +681,7 @@
                     roleRate: roleRateFilter.value,
                     favoritesOnly: favoritesOnlyToggle.checked,
                     minGames: minGamesFilter.value,
-                    considerHovers: considerHoversToggle.checked,
-                    lowSampleMethod: lowSampleMethodSelect.value
+                    considerHovers: considerHoversToggle.checked
                 };
                 await window.electronAPI.saveSettings(settings);
             }
@@ -772,9 +696,6 @@
                 minGamesFilter.value = effectiveSettings.minGames;
                 considerHoversToggle.checked = effectiveSettings.considerHovers;
                 considerHovers = effectiveSettings.considerHovers;
-                lowSampleMethodSelect.value = effectiveSettings.lowSampleMethod;
-
-                minGamesContainer.classList.toggle('hidden', lowSampleMethodSelect.value !== 'threshold');
             }
             
             function formatTimeAgo(date) {
@@ -988,7 +909,7 @@
 
                 const rankMap = new Map();
                 globallyFilteredRecs
-                    .sort((a,b) => b.expected_win_rate - a.expected_win_rate)
+                    .sort((a,b) => b.total_delta - a.total_delta)
                     .forEach((pick, index) => {
                         rankMap.set(pick.champion, index + 1);
                     });
@@ -1009,9 +930,6 @@
                     } else if (sortBy === 'rank') {
                         valA = rankMap.get(a.champion);
                         valB = rankMap.get(b.champion);
-                    } else if (sortBy === 'delta') {
-                        valA = a.expected_win_rate - a.base_win_rate;
-                        valB = b.expected_win_rate - b.base_win_rate;
                     } else {
                         valA = a[sortBy];
                         valB = b[sortBy];
@@ -1023,7 +941,6 @@
                         return (valA || 0) - (valB || 0);
                     }
                 });
-
 
                 recommendationList.innerHTML = '';
                 if (displayRecs.length === 0) {
@@ -1044,15 +961,18 @@
 
                     const baseWrStr = (pick.base_win_rate * 100).toFixed(2) + '%';
                     const roleFreqStr = (pick.role_frequency * 100).toFixed(1) + '%';
-                    const expectedWrStr = (pick.expected_win_rate * 100).toFixed(2) + '%';
-                    const delta = pick.expected_win_rate - pick.base_win_rate;
-                    const deltaStr = (delta >= 0 ? '+' : '') + (delta * 100).toFixed(2) + '%';
+                    
+                    const totalDeltaVal = pick.total_delta * 100;
+                    const totalDeltaStr = (totalDeltaVal >= 0 ? '+' : '') + totalDeltaVal.toFixed(2);
+                    
                     const laneDeltaVal = pick.lane_delta * 100;
-                    const laneDeltaStr = (laneDeltaVal >= 0 ? '+' : '') + laneDeltaVal.toFixed(2) + '%';
+                    const laneDeltaStr = (laneDeltaVal >= 0 ? '+' : '') + laneDeltaVal.toFixed(2);
+                    
                     const allyDeltaVal = pick.ally_delta * 100;
-                    const allyDeltaStr = (allyDeltaVal >= 0 ? '+' : '') + allyDeltaVal.toFixed(2) + '%';
+                    const allyDeltaStr = (allyDeltaVal >= 0 ? '+' : '') + allyDeltaVal.toFixed(2);
+                    
                     const enemyDeltaVal = pick.enemy_delta * 100;
-                    const enemyDeltaStr = (enemyDeltaVal >= 0 ? '+' : '') + enemyDeltaVal.toFixed(2) + '%';
+                    const enemyDeltaStr = (enemyDeltaVal >= 0 ? '+' : '') + enemyDeltaVal.toFixed(2);
                     
                     const isFavorite = favorites[`${pick.champion}-${recommendationTarget?.role}`];
                     const favoriteStar = isFavorite ? '<span class="rec-favorite-star">★</span>' : '';
@@ -1066,8 +986,7 @@
                             <img class="rec-img" src="${DDRAGON_BASE_URL}/cdn/${latestPatch}/img/champion/${champData.image.full}">
                             <div class="rec-name">${pick.champion}${favoriteStar}</div>
                         </div>
-                        <div class="rec-cell-stat ${pick.expected_win_rate >= 0.5 ? 'delta-pos' : 'delta-neg'}"><b>${expectedWrStr}</b></div>
-                        <div class="rec-cell-stat ${delta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaStr}</div>
+                        <div class="rec-cell-stat ${totalDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}"><b>${totalDeltaStr}</b></div>
                         <div class="rec-cell-stat ${laneDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}">${laneDeltaStr}</div>
                         <div class="rec-cell-stat ${allyDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}">${allyDeltaStr}</div>
                         <div class="rec-cell-stat ${enemyDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}">${enemyDeltaStr}</div>
@@ -1338,7 +1257,7 @@
                 }
                 
                 function getCombinations(arr, k) {
-                    if (k > arr.length) return[];
+                    if (k > arr.length) return [];
                     const result =[];
                     function backtrack(combination, start) {
                         if (combination.length === k) { result.push([...combination]); return; }
@@ -1390,7 +1309,7 @@
                     icon.textContent = '🔓';
                 } else {
                     let champIsLockedElsewhere = false;
-                    for (const [id, champ] of lockedSlots.entries()) {
+                    for (const[id, champ] of lockedSlots.entries()) {
                         if (champ === champToLock) {
                             champIsLockedElsewhere = true;
                             lockedSlots.delete(id);
@@ -1494,8 +1413,8 @@
 
                 let totalDeltaHTML = `
                     <div class="analysis-total-delta">
-                        <span>Left Team Total Δ: <span class="${myTeamTotalDeltaClass}">${myTeamTotalDeltaSign}${(my_team_total_delta * 100).toFixed(2)}%</span></span>
-                        <span>Right Team Total Δ: <span class="${enemyTeamTotalDeltaClass}">${enemyTeamTotalDeltaSign}${(enemy_team_total_delta * 100).toFixed(2)}%</span></span>
+                        <span>Left Team Total Δ: <span class="${myTeamTotalDeltaClass}">${myTeamTotalDeltaSign}${(my_team_total_delta * 100).toFixed(2)}</span></span>
+                        <span>Right Team Total Δ: <span class="${enemyTeamTotalDeltaClass}">${enemyTeamTotalDeltaSign}${(enemy_team_total_delta * 100).toFixed(2)}</span></span>
                     </div>`;
 
                 let lanesHTML = analysis_results.map(lane => {
@@ -1509,7 +1428,7 @@
                         const baseWrStr = champData.base_wr ? `${(champData.base_wr * 100).toFixed(1)}% WR` : 'N/A';
                         const deltaClass = champData.total_delta >= 0 ? 'delta-pos' : 'delta-neg';
                         const deltaSign = champData.total_delta >= 0 ? '+' : '';
-                        const deltaStr = `${deltaSign}${(champData.total_delta * 100).toFixed(2)}% Δ`;
+                        const deltaStr = `${deltaSign}${(champData.total_delta * 100).toFixed(2)} Δ`;
 
                         return `
                             <div data-champion-name="${champData.champion}" data-team="${side}" data-role="${role}">
@@ -1529,7 +1448,7 @@
                         const laneDelta = my_champ.lane_delta;
                         const deltaClass = laneDelta >= 0 ? 'delta-pos' : 'delta-neg';
                         const deltaSign = laneDelta >= 0 ? '+' : '';
-                        const deltaStr = `${deltaSign}${(laneDelta * 100).toFixed(2)}%`;
+                        const deltaStr = `${deltaSign}${(laneDelta * 100).toFixed(2)}`;
                         const leftArrow = laneDelta >= 0 ? '←' : '';
                         const rightArrow = laneDelta < 0 ? '→' : '';
                         laneDeltaHTML = `
@@ -1581,7 +1500,6 @@
             });
             timePeriodSelect.addEventListener('change', handleFilterChange);
             rankSelect.addEventListener('change', handleFilterChange);
-            lowSampleMethodSelect.addEventListener('change', handleFilterChange);
             minGamesFilter.addEventListener('input', handleFilterChange);
             baseWrFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
             roleRateFilter.addEventListener('input', () => { saveCurrentSettings(); displayFilteredRecommendations(); });
@@ -1646,10 +1564,7 @@
                 
                 const myTeam = getTeamForAPI(team);
                 const enemyTeam = getTeamForAPI(team === 'left' ? 'right' : 'left');
-                const lowSampleMethod = lowSampleMethodSelect.value;
                 const minGames = parseInt(minGamesFilter.value) || 0;
-                const datasetKey = `${timePeriodSelect.value}_${rankSelect.value}`;
-                const totalGamesInDataset = metadata.total_games_by_dataset ? (metadata.total_games_by_dataset[datasetKey] || 10000000) : 10000000;
                 
                 const { champion_ratings, matchup_stats } = dataset;
                 const pickComboKey = `${championName},${role}`;
@@ -1658,7 +1573,7 @@
                 const baseWr = pickCombo.win_rate;
 
                 const deltaBreakdown =[];
-                for (const [teamMember, relationship] of [[myTeam, 'teammate'],[enemyTeam, 'enemy']]) {
+                for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
                     for (const [otherRole, otherChamp] of Object.entries(teamMember)) {
                         if (otherChamp && (otherChamp !== championName || otherRole !== role)) {
                             const partnerComboKey = `${otherChamp},${otherRole}`;
@@ -1669,14 +1584,7 @@
                             const games = stats ? (stats.total_games || 0) : 0;
                             let delta = 0;
                             
-                            let weight = 1.0;
-                            if (lowSampleMethod === 'sigmoid') {
-                                weight = calculateGameWeight(games, totalGamesInDataset);
-                            } else {
-                                if (games < minGames) weight = 0;
-                            }
-
-                            if (weight > 0 && stats) {
+                            if (games >= minGames && stats) {
                                 let rawDelta = stats.delta2;
                                 if (rawDelta === undefined) {
                                     const partnerCombo = champion_ratings.get(partnerComboKey);
@@ -1686,7 +1594,7 @@
                                         rawDelta = stats.win_rate - (0.5 + (baseWr - 0.5) + (partnerCombo.win_rate - 0.5));
                                     }
                                 }
-                                delta = rawDelta * weight;
+                                delta = rawDelta;
                             }
                             deltaBreakdown.push({ source: otherChamp, delta: delta, games: games });
                         }
@@ -1777,7 +1685,7 @@
                     rightHTML += buildTooltipRow(rightChamp, 'right', role, breakdownMap, perspective);
                 });
                 
-                const tooltipTitle = "Win Rate Delta Breakdown";
+                const tooltipTitle = "Delta 2 Breakdown";
                 deltaTooltip.innerHTML = `<h4>${tooltipTitle}</h4><div class="tooltip-columns"><div class="tooltip-col">${leftHTML}</div><div class="tooltip-col">${rightHTML}</div></div>`;
             }
 
@@ -1794,7 +1702,7 @@
                     const delta = stats.delta * 100;
                     const deltaClass = delta >= 0 ? 'delta-pos' : 'delta-neg';
                     const gamesHTML = `<span class="games-count">(${formatGames(stats.games)})</span>`;
-                    const deltaSuffix = '%';
+                    const deltaSuffix = '';
                     return `<div><span class="champ-name" title="${champ}">${champ}</span> ${gamesHTML}<span class="${deltaClass}">${delta.toFixed(2)}${deltaSuffix}</span></div>`;
                 } else {
                     return `<div><span class="delta-neutral">${role} MISSING</span></div>`;
