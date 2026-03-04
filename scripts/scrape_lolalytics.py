@@ -24,7 +24,7 @@ LOLALYTICS_TEAM_SYNERGY_API_URL = "https://a1.lolalytics.com/mega/"
 BASE_OUTPUT_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 
 TIME_PERIODS = ["30", "patch"] 
-RANKS = [
+RANKS =[
     "all", "iron", "bronze", "silver", "gold", "platinum", "emerald", "diamond",
     "master", "grandmaster", "challenger", "gold_plus", "platinum_plus", 
     "emerald_plus", "diamond_plus", "d2_plus", "master_plus", "grandmaster_plus", "1trick"
@@ -91,7 +91,7 @@ def parse_qwik_json(text: str):
     except json.JSONDecodeError:
         return None
         
-    objs = json_data.get('objs', [])
+    objs = json_data.get('objs',[])
     if not objs: return None
     
     def get_obj_by_id(obj_id):
@@ -107,7 +107,7 @@ def parse_qwik_json(text: str):
         if isinstance(obj, dict):
             return {key: reconstruct(value) for key, value in obj.items()}
         if isinstance(obj, list):
-            return [reconstruct(item) for item in obj]
+            return[reconstruct(item) for item in obj]
         return obj
 
     main_data_id = None
@@ -179,12 +179,19 @@ def process_and_upload_dataset(results, id_to_name_map, time_period, rank, regio
             if not isinstance(matchups, list): continue
             for matchup in matchups:
                 if not isinstance(matchup, list) or len(matchup) < 6: continue
-                p2_key, wr, _, _, _, n_games = matchup
+                # Extract exact Delta 2 (Normalized Delta) from LoLalytics payload
+                p2_key, wr, d1, d2, pr, n_games = matchup[:6]
                 p2_name = id_to_name_map.get(str(p2_key))
                 if not p2_name: continue
                 
+                d2_val = d2 / 100.0 if isinstance(d2, (int, float)) else 0.0
+                
                 key_tuple = (p1_name, p1_role, p2_name, p2_role_str.upper(), 'enemy')
-                matchup_stats[json.dumps(list(key_tuple), separators=(',', ':'))] = {"win_rate": wr / 100, "total_games": n_games}
+                matchup_stats[json.dumps(list(key_tuple), separators=(',', ':'))] = {
+                    "win_rate": wr / 100, 
+                    "delta2": d2_val,
+                    "total_games": n_games
+                }
 
         if team_data and 'team' in team_data:
             synergies = team_data.get('team', {})
@@ -192,14 +199,21 @@ def process_and_upload_dataset(results, id_to_name_map, time_period, rank, regio
                 if not isinstance(matchups, list): continue
                 for matchup in matchups:
                     if not isinstance(matchup, list) or len(matchup) < 6: continue
-                    p2_key, wr, _, _, _, n_games = matchup
+                    # Extract exact Delta 2 (Normalized Delta) from LoLalytics payload
+                    p2_key, wr, d1, d2, pr, n_games = matchup[:6]
                     p2_name = id_to_name_map.get(str(p2_key))
                     if not p2_name: continue
                     
+                    d2_val = d2 / 100.0 if isinstance(d2, (int, float)) else 0.0
+                    
                     key_tuple = (p1_name, p1_role, p2_name, p2_role_str.upper(), 'teammate')
-                    matchup_stats[json.dumps(list(key_tuple), separators=(',', ':'))] = {"win_rate": wr / 100, "total_games": n_games}
+                    matchup_stats[json.dumps(list(key_tuple), separators=(',', ':'))] = {
+                        "win_rate": wr / 100, 
+                        "delta2": d2_val,
+                        "total_games": n_games
+                    }
 
-    final_champion_stats = []
+    final_champion_stats =[]
     for champion, roles in champion_roles_data.items():
         total_pick_rate = sum(role_data['pick_rate'] for role_data in roles)
         
@@ -270,7 +284,7 @@ async def main():
         cors_configuration = {
             'CORSRules': [{
                 'AllowedHeaders': ['*'],
-                'AllowedMethods': ['GET'],
+                'AllowedMethods':['GET'],
                 'AllowedOrigins': ['*'],
                 'MaxAgeSeconds': 3000
             }]
@@ -294,7 +308,7 @@ async def main():
         scrape_combinations = list(itertools.product(champions_to_scrape, ROLES))
         
         semaphore = asyncio.Semaphore(20)
-        tasks = []
+        tasks =[]
         async with httpx.AsyncClient() as session:
             for champion_name, role in scrape_combinations:
                 task = fetch_champion_data(session, patch_to_use, rank, REGION_TO_SCRAPE, champion_name, role, semaphore)
@@ -307,7 +321,7 @@ async def main():
         if time_period == 'patch' and not valid_results:
             print(f"⚠️  No data found for latest patch ({latest_patch_api}). Falling back to previous patch ({previous_patch_api}).")
             patch_to_use = previous_patch_api
-            tasks = []
+            tasks =[]
             async with httpx.AsyncClient() as session:
                 for champion_name, role in scrape_combinations:
                     task = fetch_champion_data(session, patch_to_use, rank, REGION_TO_SCRAPE, champion_name, role, semaphore)

@@ -226,13 +226,14 @@
                 <li><strong>Analyze Drafts:</strong> Use the "Draft Analysis" tab to see a detailed breakdown of lane matchups and team synergies.</li>
             </ul>
             <h2>How It Works</h2>
-            <p>The app calculates an "Expected Win Rate" for every possible pick. This is based on a champion's base strength, their synergy with your teammates, and their matchups against your enemies. The core logic uses a sophisticated Elo-based rating system to determine how much a champion is expected to over- or under-perform in any given draft.</p>
+            <p>The app calculates an "Expected Win Rate" for every possible pick. The core logic relies on LoLalytics' Normalized Delta (Delta 2) to determine exactly how much a champion over- or under-performs in any given matchup, removing the guesswork.</p>
             <p>All data is scraped from LoLalytics and updated twice daily. The data is fetched directly from a cloud storage bucket, ensuring speed and reliability.</p>
             <h2>Default Settings</h2>
             <p>For first-time users, the app starts with these recommended filter settings:</p>
             <ul>
                 <li><strong>Min Base WR:</strong> 45%</li>
                 <li><strong>Min Role Freq:</strong> 5%</li>
+                <li><strong>Low Sample Method:</strong> Hard Threshold</li>
                 <li><strong>Min Games:</strong> 35</li>
                 <li><strong>Consider Hovers:</strong> Ticked</li>
             </ul>
@@ -300,11 +301,11 @@
                                 <div class="input-group">
                                     <label for="low-sample-method-select">Low Sample Method</label>
                                     <select id="low-sample-method-select">
-                                        <option value="sigmoid">Sigmoid Weight</option>
                                         <option value="threshold">Hard Threshold</option>
+                                        <option value="sigmoid">Sigmoid Weight</option>
                                     </select>
                                 </div>
-                                <div class="input-group hidden" id="min-games-container">
+                                <div class="input-group" id="min-games-container">
                                     <label for="min-games-filter">Min Games</label>
                                     <input type="number" id="min-games-filter" min="0">
                                 </div>
@@ -355,7 +356,7 @@
 
             const roles = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'SUPPORT'];
             
-            let allChampions = [];
+            let allChampions =[];
             let champIdToName = {};
             let roleProbabilities = {};
             let lcuIntervalId = null;
@@ -363,7 +364,7 @@
             let lastKnownDraftState = '';
             let lastKnownPickState = '';
             let swapSourceSlot = null;
-            let lastRecommendations = [];
+            let lastRecommendations =[];
             let favorites = {};
             let unavailableChampions = new Set();
             let pickableChampions = new Set();
@@ -424,7 +425,7 @@
                 favoritesOnly: false,
                 minGames: '35',
                 considerHovers: true,
-                lowSampleMethod: 'sigmoid'
+                lowSampleMethod: 'threshold'
             };
             
             // --- START: Core Logic ---
@@ -458,7 +459,7 @@
             }
 
             function getRecommendations(myTeam, enemyTeam, targetRole, dataset) {
-                const recommendations = [];
+                const recommendations =[];
                 const { champion_stats_list, champion_ratings, matchup_stats } = dataset;
                 const lowSampleMethod = lowSampleMethodSelect.value;
                 const minGames = parseInt(minGamesFilter.value) || 0;
@@ -477,13 +478,13 @@
 
                     const pickCombo = champion_ratings.get(pickComboKey);
                     const baseWr = pickCombo.win_rate;
-                    const deltaBreakdown = [];
+                    const deltaBreakdown =[];
                     
                     let allyDelta = 0.0;
                     let enemyDelta = 0.0;
                     let laneDelta = 0.0;
 
-                    for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
+                    for (const [teamMember, relationship] of [[myTeam, 'teammate'],[enemyTeam, 'enemy']]) {
                         for (const [role, champ] of Object.entries(teamMember)) {
                             if (champ) {
                                 const partnerComboKey = `${champ},${role}`;
@@ -501,18 +502,23 @@
                                     if (games < minGames) weight = 0;
                                 }
 
-                                if (weight > 0) {
-                                    const partnerCombo = champion_ratings.get(partnerComboKey);
-                                    const actualMatchupWr = stats.win_rate;
+                                if (weight > 0 && stats) {
+                                    let rawDelta = stats.delta2;
                                     
-                                    let expectedMatchupWr;
-                                    if (relationship === 'enemy') {
-                                        expectedMatchupWr = 0.5 + (baseWr - 0.5) - (partnerCombo.win_rate - 0.5);
-                                    } else { // teammate
-                                        expectedMatchupWr = 0.5 + (baseWr - 0.5) + (partnerCombo.win_rate - 0.5);
+                                    // Fallback for older dataset formats that don't have delta2
+                                    if (rawDelta === undefined) {
+                                        const partnerCombo = champion_ratings.get(partnerComboKey);
+                                        const actualMatchupWr = stats.win_rate;
+                                        let expectedMatchupWr;
+                                        if (relationship === 'enemy') {
+                                            expectedMatchupWr = 0.5 + (baseWr - 0.5) - (partnerCombo.win_rate - 0.5);
+                                        } else { // teammate
+                                            expectedMatchupWr = 0.5 + (baseWr - 0.5) + (partnerCombo.win_rate - 0.5);
+                                        }
+                                        rawDelta = actualMatchupWr - expectedMatchupWr;
                                     }
                                     
-                                    delta = (actualMatchupWr - expectedMatchupWr) * weight;
+                                    delta = rawDelta * weight;
                                     
                                     if (relationship === 'enemy') {
                                         enemyDelta += delta;
@@ -556,7 +562,7 @@
 
                 let myTeamTotalDelta = 0;
                 let enemyTeamTotalDelta = 0;
-                const analysisResults = [];
+                const analysisResults =[];
 
                 function calculateChampionDeltas(champ, role, friendlyTeam, opposingTeam) {
                     let totalDelta = 0;
@@ -568,7 +574,7 @@
                     const baseWr = champCombo.win_rate;
 
                     // Teammates
-                    for (const [friendlyRole, friendlyChamp] of Object.entries(friendlyTeam)) {
+                    for (const[friendlyRole, friendlyChamp] of Object.entries(friendlyTeam)) {
                         if (friendlyChamp && friendlyChamp !== champ) {
                             const partnerComboKey = `${friendlyChamp},${friendlyRole}`;
                             if (!champion_ratings.has(partnerComboKey)) continue;
@@ -583,11 +589,13 @@
                                 if (games < minGames) weight = 0;
                             }
 
-                            if (weight > 0) {
-                                const partnerCombo = champion_ratings.get(partnerComboKey);
-                                const actualWr = stats.win_rate;
-                                const expectedWr = 0.5 + (baseWr - 0.5) + (partnerCombo.win_rate - 0.5);
-                                totalDelta += (actualWr - expectedWr) * weight;
+                            if (weight > 0 && stats) {
+                                let rawDelta = stats.delta2;
+                                if (rawDelta === undefined) {
+                                    const partnerCombo = champion_ratings.get(partnerComboKey);
+                                    rawDelta = stats.win_rate - (0.5 + (baseWr - 0.5) + (partnerCombo.win_rate - 0.5));
+                                }
+                                totalDelta += rawDelta * weight;
                             }
                         }
                     }
@@ -607,11 +615,13 @@
                                 if (games < minGames) weight = 0;
                             }
 
-                            if (weight > 0) {
-                                const partnerCombo = champion_ratings.get(partnerComboKey);
-                                const actualWr = stats.win_rate;
-                                const expectedWr = 0.5 + (baseWr - 0.5) - (partnerCombo.win_rate - 0.5);
-                                const delta = (actualWr - expectedWr) * weight;
+                            if (weight > 0 && stats) {
+                                let rawDelta = stats.delta2;
+                                if (rawDelta === undefined) {
+                                    const partnerCombo = champion_ratings.get(partnerComboKey);
+                                    rawDelta = stats.win_rate - (0.5 + (baseWr - 0.5) - (partnerCombo.win_rate - 0.5));
+                                }
+                                const delta = rawDelta * weight;
                                 totalDelta += delta;
                                 if (role === opposingRole) {
                                     laneDelta = delta;
@@ -1318,7 +1328,7 @@
 
                 function getPermutations(arr) {
                     if (arr.length === 0) return [[]];
-                    const result = [];
+                    const result =[];
                     for (let i = 0; i < arr.length; i++) {
                         const rest = arr.slice(0, i).concat(arr.slice(i + 1));
                         const perms = getPermutations(rest);
@@ -1328,8 +1338,8 @@
                 }
                 
                 function getCombinations(arr, k) {
-                    if (k > arr.length) return [];
-                    const result = [];
+                    if (k > arr.length) return[];
+                    const result =[];
                     function backtrack(combination, start) {
                         if (combination.length === k) { result.push([...combination]); return; }
                         for (let i = start; i < arr.length; i++) {
@@ -1632,7 +1642,7 @@
 
             async function getBreakdownForChampion(championName, team, role) {
                 const dataset = await getDataset(timePeriodSelect.value, rankSelect.value);
-                if (!dataset) return [];
+                if (!dataset) return[];
                 
                 const myTeam = getTeamForAPI(team);
                 const enemyTeam = getTeamForAPI(team === 'left' ? 'right' : 'left');
@@ -1643,12 +1653,12 @@
                 
                 const { champion_ratings, matchup_stats } = dataset;
                 const pickComboKey = `${championName},${role}`;
-                if (!champion_ratings.has(pickComboKey)) return [];
+                if (!champion_ratings.has(pickComboKey)) return[];
                 const pickCombo = champion_ratings.get(pickComboKey);
                 const baseWr = pickCombo.win_rate;
 
-                const deltaBreakdown = [];
-                for (const [teamMember, relationship] of [[myTeam, 'teammate'], [enemyTeam, 'enemy']]) {
+                const deltaBreakdown =[];
+                for (const [teamMember, relationship] of [[myTeam, 'teammate'],[enemyTeam, 'enemy']]) {
                     for (const [otherRole, otherChamp] of Object.entries(teamMember)) {
                         if (otherChamp && (otherChamp !== championName || otherRole !== role)) {
                             const partnerComboKey = `${otherChamp},${otherRole}`;
@@ -1666,18 +1676,17 @@
                                 if (games < minGames) weight = 0;
                             }
 
-                            if (weight > 0) {
-                                const partnerCombo = champion_ratings.get(partnerComboKey);
-                                const actualMatchupWr = stats.win_rate;
-                                
-                                let expectedMatchupWr;
-                                if (relationship === 'enemy') {
-                                    expectedMatchupWr = 0.5 + (baseWr - 0.5) - (partnerCombo.win_rate - 0.5);
-                                } else { // teammate
-                                    expectedMatchupWr = 0.5 + (baseWr - 0.5) + (partnerCombo.win_rate - 0.5);
+                            if (weight > 0 && stats) {
+                                let rawDelta = stats.delta2;
+                                if (rawDelta === undefined) {
+                                    const partnerCombo = champion_ratings.get(partnerComboKey);
+                                    if (relationship === 'enemy') {
+                                        rawDelta = stats.win_rate - (0.5 + (baseWr - 0.5) - (partnerCombo.win_rate - 0.5));
+                                    } else { // teammate
+                                        rawDelta = stats.win_rate - (0.5 + (baseWr - 0.5) + (partnerCombo.win_rate - 0.5));
+                                    }
                                 }
-                                
-                                delta = (actualMatchupWr - expectedMatchupWr) * weight;
+                                delta = rawDelta * weight;
                             }
                             deltaBreakdown.push({ source: otherChamp, delta: delta, games: games });
                         }
@@ -1750,7 +1759,7 @@
             
             function updateTooltipContent(breakdown, perspective) {
                 if (!breakdown) return;
-                const breakdownMap = Object.fromEntries(breakdown.map(item => [item.source, {delta: item.delta, games: item.games}]));
+                const breakdownMap = Object.fromEntries(breakdown.map(item =>[item.source, {delta: item.delta, games: item.games}]));
                 
                 const leftHeader = 'Left Team';
                 const rightHeader = 'Right Team';
