@@ -34,6 +34,7 @@
         input[type=number] { -moz-appearance: textfield; }
 
         .draft-area { display: flex; justify-content: space-between; gap: 40px; flex-grow: 1; min-height: 0; position: relative; }
+        .contact-footer { text-align: center; padding: 3px 0; font-size: 0.65rem; color: var(--text-secondary); flex-shrink: 0; letter-spacing: 0.03em; }
         #connector-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         .team-panel { width: 150px; display: flex; flex-direction: column; gap: 10px; }
         .team-panel h2 { text-align: center; margin: 0 0 10px 0; color: var(--text-secondary); }
@@ -173,21 +174,28 @@
         .input-group { display: flex; flex-direction: column; }
         .input-group label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: flex; align-items: center; }
         .input-group input[type="number"], .input-group select { width: 120px; font-size: 0.9rem; }
-        .rec-button {
+        .suggest-btn {
             position: absolute;
-            top: 4px;
-            width: 28px;
+            bottom: 0;
+            left: 0;
+            right: 0;
             height: 28px;
-            padding: 0;
-            font-size: 1rem;
+            padding: 0 6px;
+            font-size: 0.7rem;
             line-height: 28px;
             text-align: center;
-            background-color: rgba(15, 23, 42, 0.7);
-            border: 1px solid var(--border-color);
+            background-color: rgba(15, 23, 42, 0.65);
+            border: none;
+            border-top: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 0 0 6px 6px;
+            color: var(--accent-color);
+            letter-spacing: 0.05em;
             z-index: 5;
+            cursor: pointer;
         }
-        .role-slot[data-side="left"] .rec-button { left: 4px; }
-        .role-slot[data-side="right"] .rec-button { right: 4px; }
+        .suggest-btn:hover {
+            background-color: rgba(96, 165, 250, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -235,7 +243,7 @@
                     DraftDiff
                 </div>
                 <div id="download-section">
-                    <a href="https://github.com/Lydig/deltadraft/releases/latest" class="download-button">Download Desktop App</a>
+                    <a href="https://github.com/Lydig/deltadraft/releases/latest" class="download-button">Dekstop App with Auto-Detection</a>
                 </div>
                 <div class="header-meta">
                     <div id="patch-info"></div>
@@ -316,6 +324,7 @@
             </div>
             <div class="team-panel" id="right-team-panel"><h2 id="right-team-header">Right Team</h2></div>
         </div>
+        <footer class="contact-footer">github.com/lydig &nbsp;·&nbsp; discord: lytten</footer>
         <div id="delta-tooltip" class="tooltip"></div>
         <div id="context-menu"></div>
     </div>
@@ -729,8 +738,6 @@
                     populateChampionGrid();
                     resetDraft();
 
-                    championGrid.classList.add('collapsed');
-                    gridToggleIcon.style.transform = 'rotate(-90deg)';
 
                     // Initial data load
                     await getDataset(timePeriodSelect.value, rankSelect.value);
@@ -755,8 +762,8 @@
 
                     const slotHTML = `
                         <div class="role-slot" data-side="SIDE" data-role="${role}">
-                            <button class="rec-button">✨</button>
                             <img class="role-icon" src="${iconSrc}">
+                            <button class="suggest-btn">SUGGEST</button>
                         </div>`;
 
                     leftTeamPanel.innerHTML += slotHTML.replace('SIDE', 'left');
@@ -1031,14 +1038,14 @@
             }
 
             draftArea.addEventListener('click', e => {
-                const recButton = e.target.closest('.rec-button');
+                const suggestBtn = e.target.closest('.suggest-btn');
                 const roleSlotEl = e.target.closest('.role-slot');
                 const championTileEl = e.target.closest('.champion-tile');
 
-                if (recButton) {
+                if (suggestBtn) {
                     e.stopPropagation();
                     clearSelections();
-                    const slot = recButton.closest('.role-slot');
+                    const slot = suggestBtn.closest('.role-slot');
                     document.querySelectorAll('.role-slot').forEach(s => s.classList.remove('selected'));
                     slot.classList.add('selected');
                     recommendationTarget = { side: slot.dataset.side, role: slot.dataset.role };
@@ -1065,10 +1072,6 @@
             });
 
             function updateAvailabilityUI() {
-                document.querySelectorAll('.champion-tile').forEach(tile => {
-                    const champName = tile.dataset.championName;
-                    tile.classList.toggle('unavailable', unavailableChampions.has(champName));
-                });
                 document.querySelectorAll('#recommendation-list li').forEach(li => {
                     const champName = li.dataset.championName;
                     li.classList.toggle('unavailable', unavailableChampions.has(champName));
@@ -1375,6 +1378,17 @@
 
             analysisView.addEventListener('mouseout', () => {
                 deltaTooltip.style.opacity = '0';
+            });
+
+            recommendationList.addEventListener('click', e => {
+                if (!recommendationTarget) return;
+                const li = e.target.closest('li');
+                if (!li || !li.dataset.championName) return;
+                if (li.classList.contains('unavailable')) return;
+                setChampionForSlot(recommendationTarget.side, recommendationTarget.role, li.dataset.championName);
+                refreshUnavailableChampions();
+                updateRecommendations();
+                updateAnalysisView();
             });
 
             recommendationList.addEventListener('mousemove', e => {

@@ -33,6 +33,7 @@
         .live-indicator.active { background-color: var(--red-neg); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
         .draft-area { display: flex; justify-content: space-between; gap: 40px; flex-grow: 1; min-height: 0; position: relative; }
+        .contact-footer { text-align: center; padding: 3px 0; font-size: 0.65rem; color: var(--text-secondary); flex-shrink: 0; letter-spacing: 0.03em; }
         #connector-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         .team-panel { width: 150px; display: flex; flex-direction: column; gap: 10px; }
         .team-panel h2 { text-align: center; margin: 0 0 10px 0; color: var(--text-secondary); }
@@ -122,11 +123,11 @@
         .context-menu-item .star { margin-right: 8px; color: var(--text-secondary); }
         .context-menu-item.favorited .star { color: var(--yellow-warn); }
         .unavailable { filter: grayscale(100%); opacity: 0.5; }
-        .lock-icon { position: absolute; bottom: 4px; cursor: pointer; font-size: 1rem; display: none; color: var(--text-secondary); text-shadow: 0 0 3px black; }
-        .role-slot[data-champion] .lock-icon, .role-slot[data-hover] .lock-icon { display: block; }
-        .role-slot[data-side="left"] .lock-icon { left: 5px; }
-        .role-slot[data-side="right"] .lock-icon { right: 5px; }
-        .lock-icon.locked { color: var(--accent-color); }
+        .lock-btn { position: absolute; bottom: 32px; font-size: 0.9rem; padding: 3px 6px; line-height: 1; background-color: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-secondary); text-shadow: 0 0 3px black; display: none; cursor: pointer; z-index: 5; }
+        .role-slot[data-champion] .lock-btn, .role-slot[data-hover] .lock-btn { display: block; }
+        .role-slot[data-side="left"] .lock-btn { left: 4px; }
+        .role-slot[data-side="right"] .lock-btn { right: 4px; }
+        .lock-btn.locked { color: var(--accent-color); border-color: var(--accent-color); }
         .tabs { display: flex; border-bottom: 1px solid var(--border-color); }
         .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 10px 15px; color: var(--text-secondary); font-size: 1rem; }
         .tab-btn.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
@@ -178,21 +179,28 @@
         .input-group { display: flex; flex-direction: column; }
         .input-group label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: flex; align-items: center; }
         .input-group input[type="number"], .input-group select { width: 120px; font-size: 0.9rem; }
-        .rec-button {
+        .suggest-btn {
             position: absolute;
-            top: 4px;
-            width: 28px;
+            bottom: 0;
+            left: 0;
+            right: 0;
             height: 28px;
-            padding: 0;
-            font-size: 1rem;
+            padding: 0 6px;
+            font-size: 0.7rem;
             line-height: 28px;
             text-align: center;
-            background-color: rgba(15, 23, 42, 0.7);
-            border: 1px solid var(--border-color);
+            background-color: rgba(15, 23, 42, 0.65);
+            border: none;
+            border-top: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 0 0 6px 6px;
+            color: var(--accent-color);
+            letter-spacing: 0.05em;
             z-index: 5;
+            cursor: pointer;
         }
-        .role-slot[data-side="left"] .rec-button { left: 4px; }
-        .role-slot[data-side="right"] .rec-button { right: 4px; }
+        .suggest-btn:hover {
+            background-color: rgba(96, 165, 250, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -321,6 +329,7 @@
             </div>
             <div class="team-panel" id="right-team-panel"><h2 id="right-team-header">Right Team</h2></div>
         </div>
+        <footer class="contact-footer">github.com/lydig &nbsp;·&nbsp; discord: lytten</footer>
         <div id="delta-tooltip" class="tooltip"></div>
         <div id="context-menu"></div>
     </div>
@@ -773,9 +782,9 @@
                     
                     const slotHTML = `
                         <div class="role-slot" data-side="SIDE" data-role="${role}">
-                            <button class="rec-button">✨</button>
                             <img class="role-icon" src="${iconSrc}">
-                            <div class="lock-icon">🔓</div>
+                            <button class="suggest-btn">SUGGEST</button>
+                            <button class="lock-btn">🔓</button>
                         </div>`;
                     
                     leftTeamPanel.innerHTML += slotHTML.replace('SIDE', 'left');
@@ -842,7 +851,7 @@
                 unavailableChampions.clear();
                 pickableChampions.clear();
                 lockedSlots.clear();
-                document.querySelectorAll('.lock-icon').forEach(icon => {
+                document.querySelectorAll('.lock-btn').forEach(icon => {
                     icon.classList.remove('locked');
                     icon.textContent = '🔓';
                 });
@@ -1002,6 +1011,7 @@
 
                 if (selectedChampionFromGrid) {
                     setChampionForSlot(clickedSlotInfo.side, clickedSlotInfo.role, selectedChampionFromGrid);
+                    refreshUnavailableChampions();
                     if (recommendationTarget) updateRecommendations();
                     updateAnalysisView();
                     clearSelections();
@@ -1026,6 +1036,7 @@
                 const champName = tile.dataset.championName;
                 if (swapSourceSlot) {
                     setChampionForSlot(swapSourceSlot.side, swapSourceSlot.role, champName);
+                    refreshUnavailableChampions();
                     if (recommendationTarget) updateRecommendations();
                     updateAnalysisView();
                     clearSelections();
@@ -1068,6 +1079,7 @@
 
                 updateLockIconUI(sourceEl);
                 updateLockIconUI(destEl);
+                refreshUnavailableChampions();
 
                 if (recommendationTarget) updateRecommendations();
                 if (activeTab === 'analysis') updateAnalysisView();
@@ -1076,7 +1088,7 @@
             function updateLockIconUI(slot) {
                 if (!slot) return;
                 const lockId = `${slot.dataset.side}-${slot.dataset.role}`;
-                const icon = slot.querySelector('.lock-icon');
+                const icon = slot.querySelector('.lock-btn');
                 if (lockedSlots.has(lockId)) {
                     icon.classList.add('locked');
                     icon.textContent = '🔒';
@@ -1084,6 +1096,15 @@
                     icon.classList.remove('locked');
                     icon.textContent = '🔓';
                 }
+            }
+
+            function refreshUnavailableChampions() {
+                const newUnavailable = new Set();
+                document.querySelectorAll('.role-slot').forEach(slot => {
+                    if (slot.dataset.champion) newUnavailable.add(slot.dataset.champion);
+                });
+                unavailableChampions = newUnavailable;
+                updateAvailabilityUI();
             }
 
             function clearSelections() {
@@ -1094,23 +1115,23 @@
             }
 
             draftArea.addEventListener('click', e => {
-                const recButton = e.target.closest('.rec-button');
+                const suggestBtn = e.target.closest('.suggest-btn');
                 const roleSlotEl = e.target.closest('.role-slot');
                 const championTileEl = e.target.closest('.champion-tile');
-                const lockIcon = e.target.closest('.lock-icon');
+                const lockBtn = e.target.closest('.lock-btn');
 
-                if (recButton) {
+                if (suggestBtn) {
                     e.stopPropagation();
                     clearSelections();
-                    const slot = recButton.closest('.role-slot');
+                    const slot = suggestBtn.closest('.role-slot');
                     document.querySelectorAll('.role-slot').forEach(s => s.classList.remove('selected'));
                     slot.classList.add('selected');
                     recommendationTarget = { side: slot.dataset.side, role: slot.dataset.role };
                     updateRecommendations();
                     drawConnector(slot);
-                } else if (lockIcon) {
+                } else if (lockBtn) {
                     e.stopPropagation();
-                    toggleLock(lockIcon.closest('.role-slot'));
+                    toggleLock(lockBtn.closest('.role-slot'));
                 } else if (roleSlotEl) {
                     handleRoleSlotClick(roleSlotEl);
                 } else if (championTileEl) {
@@ -1125,6 +1146,7 @@
                 const roleSlot = e.target.closest('.role-slot');
                 if (roleSlot && (roleSlot.dataset.champion || roleSlot.dataset.hover)) {
                     setChampionForSlot(roleSlot.dataset.side, roleSlot.dataset.role, null);
+                    refreshUnavailableChampions();
                     if (recommendationTarget) updateRecommendations();
                     updateAnalysisView();
                 }
@@ -1143,10 +1165,6 @@
             });
 
             function updateAvailabilityUI() {
-                document.querySelectorAll('.champion-tile').forEach(tile => {
-                    const champName = tile.dataset.championName;
-                    tile.classList.toggle('unavailable', unavailableChampions.has(champName));
-                });
                 document.querySelectorAll('#recommendation-list li').forEach(li => {
                     const champName = li.dataset.championName;
                     li.classList.toggle('unavailable', unavailableChampions.has(champName));
@@ -1301,7 +1319,7 @@
                 if (!slot || !champToLock) return;
 
                 const lockId = `${slot.dataset.side}-${slot.dataset.role}`;
-                const icon = slot.querySelector('.lock-icon');
+                const icon = slot.querySelector('.lock-btn');
 
                 if (lockedSlots.has(lockId)) {
                     lockedSlots.delete(lockId);
@@ -1316,7 +1334,7 @@
                             const [side, role] = id.split('-');
                             const oldSlot = document.querySelector(`[data-side="${side}"][data-role="${role}"]`);
                             if (oldSlot) {
-                                const oldIcon = oldSlot.querySelector('.lock-icon');
+                                const oldIcon = oldSlot.querySelector('.lock-btn');
                                 oldIcon.classList.remove('locked');
                                 oldIcon.textContent = '🔓';
                             }
@@ -1633,6 +1651,17 @@
 
             analysisView.addEventListener('mouseout', () => {
                 deltaTooltip.style.opacity = '0';
+            });
+
+            recommendationList.addEventListener('click', e => {
+                if (!recommendationTarget) return;
+                const li = e.target.closest('li');
+                if (!li || !li.dataset.championName) return;
+                if (li.classList.contains('unavailable')) return;
+                setChampionForSlot(recommendationTarget.side, recommendationTarget.role, li.dataset.championName);
+                refreshUnavailableChampions();
+                updateRecommendations();
+                updateAnalysisView();
             });
 
             recommendationList.addEventListener('mousemove', e => {

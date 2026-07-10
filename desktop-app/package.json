@@ -1,6 +1,6 @@
 {
   "name": "draftdiff",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "description": "Real-time League of Legends draft analysis and recommendation tool.",
   "main": "main.js",
   "scripts": {
@@ -10,8 +10,8 @@
   "author": "Lytten",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^25.0.0",
-    "electron-builder": "^24.0.0"
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "com.draftdiff.app",
