@@ -14,21 +14,32 @@ const windowStateFilePath = path.join(userDataPath, 'window-state.json'); // Add
 // --- START: LCU Credential & Champ Select Logic ---
 async function getLeagueCredentials() {
     return new Promise((resolve, reject) => {
-        const command = 'wmic PROCESS WHERE name="LeagueClientUx.exe" GET commandline';
-        exec(command, (error, stdout) => {
-            if (error || !stdout || stdout.includes('No Instance(s) Available.')) {
-                return reject(new Error("League client process not found. Is the client running?"));
-            }
+        const extractCredentials = (stdout) => {
             const portMatch = stdout.match(/--app-port=([0-9]+)/);
             const passwordMatch = stdout.match(/--remoting-auth-token=([\w-]+)/);
 
             if (portMatch && passwordMatch) {
-                const port = portMatch[1];
-                const password = passwordMatch[1];
-                resolve({ port, password });
+                resolve({ port: portMatch[1], password: passwordMatch[1] });
             } else {
                 reject(new Error("Could not find port or password. Please ensure you are logged into the client."));
             }
+        };
+
+        // Attempt 1: WMIC (Standard for Windows 10 / Older Windows 11)
+        exec('wmic PROCESS WHERE name="LeagueClientUx.exe" GET commandline', (error, stdout) => {
+            if (!error && stdout && !stdout.includes('No Instance(s) Available.') && stdout.includes('--app-port')) {
+                return extractCredentials(stdout);
+            }
+
+            // Attempt 2: PowerShell (Required for Windows 11 24H2+ where WMIC is removed)
+            const psCommand = 'powershell.exe -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"Name=\'LeagueClientUx.exe\'\\" | Select-Object -ExpandProperty CommandLine"';
+            exec(psCommand, (psError, psStdout) => {
+                if (!psError && psStdout && psStdout.includes('--app-port')) {
+                    return extractCredentials(psStdout);
+                }
+
+                reject(new Error("League client process not found or credentials missing. Is the client running?"));
+            });
         });
     });
 }
