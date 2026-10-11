@@ -1,5 +1,5 @@
 // desktop-app/main.js
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
@@ -80,6 +80,13 @@ async function lcuRequest(path) {
 }
 
 // --- IPC Handlers ---
+ipcMain.handle('copy-recommendations', (event, text) => {
+    if (typeof text !== 'string' || text.length > 2000) {
+        throw new Error('Invalid recommendation text');
+    }
+    clipboard.writeText(text);
+});
+
 ipcMain.handle("get-champ-select", () => lcuRequest('/lol-champ-select/v1/session'));
 ipcMain.handle("get-pickable-champions", () => lcuRequest('/lol-champ-select/v1/pickable-champion-ids'));
 

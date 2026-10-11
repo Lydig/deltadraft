@@ -196,6 +196,40 @@
         .suggest-btn:hover {
             background-color: rgba(96, 165, 250, 0.2);
         }
+
+        /* Contextual help and recommendation sharing */
+        .label-with-help, .toggle-with-help { display: flex; align-items: center; gap: 5px; }
+        .label-with-help { margin-bottom: 3px; }
+        .label-with-help label { margin: 0; }
+        .help-trigger { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 16px; height: 16px; padding: 0; margin-left: 3px; border: 1px solid #737373; border-radius: 50%; color: var(--text-secondary); background: transparent; font-size: 11px; line-height: 1; vertical-align: middle; }
+        .help-trigger:hover, .help-trigger:focus-visible { color: var(--accent-color); border-color: var(--accent-color); outline: 2px solid transparent; }
+        .help-trigger:focus-visible { outline-color: var(--accent-color); outline-offset: 3px; }
+        #help-tooltip { position: fixed; z-index: 3000; width: 340px; max-width: calc(100vw - 24px); padding: 12px 14px; border: 1px solid #475569; border-radius: 8px; background: #101827; color: var(--text-primary); box-shadow: 0 6px 24px #0008; font-size: 0.85rem; line-height: 1.5; white-space: pre-line; }
+        .recommendation-actions { align-items: center; flex-wrap: wrap; gap: 10px; }
+        .recommendation-actions > .favorite-toggle-label, .recommendation-actions > .toggle-with-help { flex-shrink: 0; }
+        .copy-controls { margin-left: auto; display: flex; align-items: center; flex-shrink: 0; position: relative; }
+        #copy-recommendations-btn { font-size: 0.8rem; padding: 5px 9px; }
+        #copy-status { position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 10; white-space: nowrap; font-size: 0.75rem; color: var(--text-primary); }
+        #copy-status:not(:empty) { padding: 5px 8px; background: #101827; border: 1px solid #475569; border-radius: 5px; }
+        #counterpick-reference { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 5px 8px; margin: 0; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.75rem; color: var(--text-secondary); background: #181818; }
+        .reference-label { color: var(--text-primary); font-weight: 600; white-space: nowrap; }
+        .reference-matchup { white-space: nowrap; }
+        .reference-warning { color: var(--yellow-warn); font-size: 0.7rem; }
+        .modal-content { position: relative; width: min(650px, calc(100vw - 32px)); font-size: 1rem; }
+        .modal-content h2 { padding-right: 20px; }
+        .modal-content details { border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 20px; }
+        .modal-content summary { color: var(--accent-color); cursor: pointer; font-weight: 600; }
+        .modal-content .quick-start { padding-left: 24px; }
+        .quick-start li { margin-bottom: 8px; }
+        .quick-start-note { color: var(--text-secondary) !important; font-size: 0.85rem !important; }
+        #recommendation-header, #recommendation-list li { grid-template-columns: 42px minmax(95px, 1fr) 90px 62px 62px 62px 92px 92px; gap: 8px; }
+        .recommendation-controls-wrapper { margin-bottom: 10px; }
+        @media (max-width: 1150px) {
+            .draft-area { gap: 16px; }
+            .team-panel { width: 115px; flex-shrink: 0; }
+            .recommendation-controls { flex-wrap: wrap; }
+            #recommendation-header, #recommendation-list li { grid-template-columns: 36px minmax(80px, 1fr) 82px 52px 52px 52px 84px 84px; gap: 5px; }
+        }
     </style>
 </head>
 <body>
@@ -203,35 +237,32 @@
         <p id="loading-message">Loading data...</p>
     </div>
 
-    <div id="how-to-use-modal" style="display: none;">
+    <div id="how-to-use-modal" role="dialog" aria-modal="true" aria-labelledby="quick-start-title" style="display: none;">
         <div class="modal-content">
-            <button id="how-to-use-close-btn" class="modal-close-btn">&times;</button>
-            <h2>How to Use DraftDiff</h2>
-            <p>DraftDiff helps you make mathematically sound champion picks by analyzing team compositions.</p>
-            <ul>
-                <li><strong>Select a Role:</strong> Click an empty slot on your team's side to see recommendations for that role.</li>
-                <li><strong>Pick Champions:</strong> Click a champion from the grid to place them in the selected slot. You can also click a champion first, then a slot.</li>
-                <li><strong>Swap Sides:</strong> Use the "Swap Sides" button to indicate which side is yours (Blue or Red).</li>
-                <li><strong>Analyze Drafts:</strong> Use the "Draft Analysis" tab to see a detailed breakdown of lane matchups and team synergies.</li>
-                <li><strong>Get the Desktop App:</strong> For live tracking that automatically syncs with the League client during champion select, download the desktop version.</li>
-            </ul>
-
-            <h3>Understanding the Math (Delta 2)</h3>
-            <p><strong>What is Delta 2?</strong><br>
-            Delta 2 (or Normalized Delta) is the purest isolation of a specific champion-to-champion interaction. It removes all outside noise to answer one question: <em>"How much does picking Champion A into Champion B change the outcome of the game, purely because of how their kits interact?"</em></p>
-
-            <p>It adjusts for three things to ensure accuracy:</p>
-            <ol>
-                <li>Champion A's base win rate (How strong your champion is overall).</li>
-                <li>Champion B's base win rate (How strong the other champion is overall).</li>
-                <li>The average win rate of the tier (e.g., Emerald+ average win rate is usually around 51-52%, not 50%).</li>
+            <button id="how-to-use-close-btn" class="modal-close-btn" aria-label="Close quick start">&times;</button>
+            <h2 id="quick-start-title">Get started with DraftDiff</h2>
+            <p>Find picks that fit your team and the opponents. Use it for your own pick, suggest champions to a teammate, or explore a draft together.</p>
+            <ol class="quick-start">
+                <li><strong>Choose your data.</strong> Select a rank and either the current patch or the last 30 days.</li>
+                <li><strong>Enter the draft.</strong> Click a champion in the grid and then a role slot, or select the slot first. Live tracking is available in the desktop app linked at the top.</li>
+                <li><strong>Choose a role to help.</strong> Press <strong>SUGGEST</strong> on any role, on either team, to see recommendations from that team's perspective.</li>
+                <li><strong>Find and share your picks.</strong> Use filters, search, or role favorites to narrow the list. <strong>Copy top 10</strong> copies the first ten available suggestions in the displayed order for you to paste into chat.</li>
             </ol>
-
-            <p><strong>What a +3.26 value literally means:</strong><br>
-            Based on how strong Champion A is right now, and how strong Champion B is right now, Champion A <em>should</em> beat Champion B X% of the time. However, Champion A actually beats Champion B X + 3.26% of the time. That +3.26 advantage is strictly generated by the specific dynamic between the two champions.</p>
-
-            <p><strong>Trusting the Data (Min Games):</strong><br>
-            Because Delta 2 is trustworthy only when the sample size is high enough, the <strong>Min Games</strong> filter is the most important setting. A matchup with 150 games might show a Delta of +8.00. This is statistical noise, not a true counter. If you set "Min Games" to a reasonable threshold (e.g., 300), you can trust that the math is entirely objective and stripped of meta-bias.</p>
+            <p class="quick-start-note">Click a recommendation to put it in the draft. Click two role slots to swap their contents, or right-click a filled slot to clear it. Right-click a champion in the grid to set role favorites. Use <strong>Draft Analysis</strong> to compare the teams.</p>
+            <details>
+                <summary>Learn more about the numbers</summary>
+                <h3>Delta 2: a matchup's contribution</h3>
+                <p>LoLalytics defines Delta 2 as the matchup win rate minus the normalised champion win rate in that matchup. Positive values mean a champion wins more often than the normalised win rates suggest; negative values mean less often.</p>
+                <p>The values are directional: Viktor into Syndra and Syndra into Viktor are separate statistics, and need not be exact opposites. DraftDiff keeps both values from the source data.</p>
+                <h3>Reading the columns</h3>
+                <p><strong>Ally Δ</strong> sums interactions with teammates. <strong>Enemy Δ</strong> sums interactions with opponents. <strong>Lane Δ</strong> isolates the same-role opponent and is also included in Enemy Δ. <strong>Total Δ</strong> is Ally Δ + Enemy Δ.</p>
+                <p>A single interaction's Δ is shown in percentage points. Total Δ is a comparison score, not a predicted match win rate. Your experience on a champion and the way the game is played still matter.</p>
+                <h3>Sample sizes and filters</h3>
+                <p><strong>Min Games</strong> applies to each individual interaction. If it has too few games, its contribution is treated as zero. Zero can therefore mean excluded or missing data, as well as a neutral interaction. A higher threshold reduces the influence of small samples; it does not guarantee accuracy.</p>
+                <p><strong>Base WR</strong> is the champion's overall win rate in the selected role and dataset. <strong>Role Freq</strong> is the share of that champion's appearances in that role. Their minimum filters hide recommendations below your thresholds.</p>
+                <h3>A familiar counterpick reference</h3>
+                <p>The High Delta 2 reference shows both directional values for Sylas MID versus Malphite MID from your selected dataset, even when you are suggesting another role. It gives context for a strong counterpick, rather than claiming to be the largest value in every dataset. Its raw values remain visible below Min Games, with a low-sample warning.</p>
+            </details>
         </div>
     </div>
 
@@ -288,33 +319,43 @@
                             <div class="recommendation-controls">
                                 <input type="text" id="recommendation-search" placeholder="Search...">
                                 <div class="input-group">
-                                    <label for="base-wr-filter">Min Base WR %</label>
+                                    <div class="label-with-help"><label for="base-wr-filter">Min Base WR %</label><button type="button" class="help-trigger" data-help="min-base-wr" aria-label="Explain Min Base WR %">?</button></div>
                                     <input type="number" id="base-wr-filter" min="0" max="100">
                                 </div>
                                 <div class="input-group">
-                                    <label for="role-rate-filter">Min Role Freq %</label>
+                                    <div class="label-with-help"><label for="role-rate-filter">Min Role Freq %</label><button type="button" class="help-trigger" data-help="min-role-frequency" aria-label="Explain Min Role Freq %">?</button></div>
                                     <input type="number" id="role-rate-filter" min="0" max="100">
                                 </div>
                                 <div class="input-group" id="min-games-container">
-                                    <label for="min-games-filter">Min Games</label>
+                                    <div class="label-with-help"><label for="min-games-filter">Min Games</label><button type="button" class="help-trigger" data-help="min-games" aria-label="Explain Min Games">?</button></div>
                                     <input type="number" id="min-games-filter" min="0">
                                 </div>
                             </div>
-                            <div class="recommendation-controls">
+                            <div class="recommendation-controls recommendation-actions">
                                 <label class="favorite-toggle-label">
                                     <input type="checkbox" id="favorites-only-toggle"> Favorites
                                 </label>
+                                <aside id="counterpick-reference" aria-label="High Delta 2 reference: Sylas MID versus Malphite MID">
+                                    <span class="reference-label">High Delta 2 reference</span>
+                                    <span class="reference-matchup" title="Sylas MID into Malphite MID">Sylas MID <strong id="reference-sylas">Loading…</strong> <span id="reference-sylas-warning" class="reference-warning" role="img" aria-label="Low sample" title="Below Min Games. See reference help for sample counts." hidden>⚠</span></span>
+                                    <span class="reference-matchup" title="Malphite MID into Sylas MID">Malphite MID <strong id="reference-malphite">Loading…</strong> <span id="reference-malphite-warning" class="reference-warning" role="img" aria-label="Low sample" title="Below Min Games. See reference help for sample counts." hidden>⚠</span></span>
+                                    <button type="button" class="help-trigger" data-help="reference" aria-label="About the High Delta 2 reference">?</button>
+                                </aside>
+                                <div class="copy-controls">
+                                    <span id="copy-status" role="status" aria-live="polite"></span>
+                                    <button id="copy-recommendations-btn" type="button" title="Copy the first ten available suggestions in the displayed order" disabled>Copy top 10</button>
+                                </div>
                             </div>
                         </div>
                         <div id="recommendation-header">
                             <div class="sortable-header" data-sort="rank">Rank</div>
                             <div class="sortable-header" data-sort="champion">Champion</div>
-                            <div class="rec-stat-header sortable-header active-sort-desc" data-sort="total_delta">Total Δ</div>
+                            <div class="rec-stat-header sortable-header active-sort-desc" data-sort="total_delta">Total Δ<button type="button" class="help-trigger" data-help="deltas" aria-label="Explain Total, Lane, Ally and Enemy deltas">?</button></div>
                             <div class="rec-stat-header sortable-header" data-sort="lane_delta">Lane Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="ally_delta">Ally Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="enemy_delta">Enemy Δ</div>
-                            <div class="rec-stat-header sortable-header" data-sort="base_win_rate">Base WR</div>
-                            <div class="rec-stat-header sortable-header" data-sort="role_frequency">Role Freq</div>
+                            <div class="rec-stat-header sortable-header" data-sort="base_win_rate">Base WR<button type="button" class="help-trigger" data-help="base-wr" aria-label="Explain Base WR">?</button></div>
+                            <div class="rec-stat-header sortable-header" data-sort="role_frequency">Role Freq<button type="button" class="help-trigger" data-help="role-frequency" aria-label="Explain Role Freq">?</button></div>
                         </div>
                         <ol id="recommendation-list"></ol>
                     </div>
@@ -326,6 +367,7 @@
         </div>
         <footer class="contact-footer">github.com/lydig &nbsp;·&nbsp; discord: lytten</footer>
         <div id="delta-tooltip" class="tooltip"></div>
+        <div id="help-tooltip" role="tooltip" hidden></div>
         <div id="context-menu"></div>
     </div>
 
@@ -402,6 +444,154 @@
                 favoritesOnly: false,
                 minGames: '300',
             };
+
+
+            // Contextual help. Separate from the existing champion breakdown tooltip.
+            const helpText = {
+                hovers: 'Include champions that players are hovering before locking in when calculating recommendations and draft analysis.',
+                'min-base-wr': 'Hide recommendations whose overall win rate in this role is below this percentage, using your selected rank and time period.',
+                'min-role-frequency': 'Hide recommendations rarely played in this role. For example, 20% means one in five appearances for that champion is in this role.',
+                'min-games': 'Each champion-to-champion interaction needs at least this many games to contribute to the calculations. Below this threshold, its contribution is treated as zero. This does not hide the champion itself.',
+                deltas: 'Total Δ: Ally Δ + Enemy Δ.\nLane Δ: the same-role opponent’s contribution, shown separately and also included in Enemy Δ.\nAlly Δ: interactions with teammates.\nEnemy Δ: interactions with all opponents.\n\nHigher is more favorable for the suggested champion. Total Δ is a comparison score, not a predicted match win rate.',
+                'base-wr': 'This champion’s overall win rate in this role, using your selected rank and time period. Min Base WR filters this value.',
+                'role-frequency': 'The share of this champion’s appearances played in this role, using your selected dataset. It is not the champion’s popularity among all champions. Min Role Freq filters this value.',
+                reference: 'Both directions of Sylas MID versus Malphite MID, using your selected rank and time period. A familiar strong counterpick for comparison, not a guaranteed dataset maximum.'
+            };
+            const helpTooltip = document.getElementById('help-tooltip');
+            let activeHelpButton = null;
+            let helpHideTimer;
+
+            function hideHelp() {
+                clearTimeout(helpHideTimer);
+                if (activeHelpButton) activeHelpButton.removeAttribute('aria-describedby');
+                activeHelpButton = null;
+                helpTooltip.hidden = true;
+            }
+
+            function showHelp(button) {
+                clearTimeout(helpHideTimer);
+                if (activeHelpButton && activeHelpButton !== button) activeHelpButton.removeAttribute('aria-describedby');
+                activeHelpButton = button;
+                helpTooltip.textContent = helpText[button.dataset.help];
+                helpTooltip.hidden = false;
+                button.setAttribute('aria-describedby', 'help-tooltip');
+                const anchor = button.getBoundingClientRect();
+                const box = helpTooltip.getBoundingClientRect();
+                const left = Math.max(12, Math.min(anchor.left, window.innerWidth - box.width - 12));
+                const below = anchor.bottom + 8;
+                const top = below + box.height <= window.innerHeight - 12 ? below : Math.max(12, anchor.top - box.height - 8);
+                helpTooltip.style.left = `${left}px`;
+                helpTooltip.style.top = `${top}px`;
+            }
+
+            function scheduleHideHelp() {
+                clearTimeout(helpHideTimer);
+                helpHideTimer = setTimeout(() => {
+                    if (document.activeElement !== activeHelpButton && !helpTooltip.matches(':hover')) hideHelp();
+                }, 120);
+            }
+
+            document.querySelectorAll('.help-trigger').forEach(button => {
+                button.addEventListener('mouseenter', () => showHelp(button));
+                button.addEventListener('mouseleave', scheduleHideHelp);
+                button.addEventListener('focus', () => showHelp(button));
+                button.addEventListener('blur', scheduleHideHelp);
+                button.addEventListener('click', event => {
+                    event.stopPropagation(); // Help must not sort a column or change a draft selection.
+                    showHelp(button);
+                });
+            });
+            helpTooltip.addEventListener('mouseenter', () => clearTimeout(helpHideTimer));
+            helpTooltip.addEventListener('mouseleave', scheduleHideHelp);
+            document.addEventListener('keydown', event => { if (event.key === 'Escape') hideHelp(); });
+            window.addEventListener('resize', hideHelp);
+
+            let referenceRequestId = 0;
+            function getReferenceMatchup(dataset, champion, opponent, minimumGames) {
+                const stats = dataset?.matchup_stats.get(JSON.stringify([champion, 'MIDDLE', opponent, 'MIDDLE', 'enemy']));
+                if (!stats || !Number.isFinite(stats.delta2)) return { text: 'No data', className: '', games: null, lowSample: false };
+                const delta = stats.delta2 * 100;
+                const games = Number.isFinite(stats.total_games) ? stats.total_games : 0;
+                return {
+                    text: `${delta >= 0 ? '+' : ''}${delta.toFixed(2)}`,
+                    className: delta >= 0 ? 'delta-pos' : 'delta-neg',
+                    games,
+                    lowSample: games < minimumGames
+                };
+            }
+
+            async function updateCounterpickReference() {
+                const requestId = ++referenceRequestId;
+                const timePeriod = timePeriodSelect.value;
+                const rank = rankSelect.value;
+                const referenceButton = document.querySelector('[data-help="reference"]');
+                for (const champion of ['sylas', 'malphite']) {
+                    const value = document.getElementById(`reference-${champion}`);
+                    value.textContent = 'Loading…';
+                    value.className = '';
+                    document.getElementById(`reference-${champion}-warning`).hidden = true;
+                }
+                helpText.reference = `Loading the High Delta 2 reference for ${TIME_PERIODS[timePeriod]} · ${RANKS[rank]}…`;
+                if (activeHelpButton === referenceButton) showHelp(referenceButton);
+                const dataset = await getDataset(timePeriod, rank);
+                if (requestId !== referenceRequestId || timePeriod !== timePeriodSelect.value || rank !== rankSelect.value) return;
+                const minimumGames = parseInt(minGamesFilter.value) || 0;
+                const details = [];
+                for (const [champion, opponent] of [['Sylas', 'Malphite'], ['Malphite', 'Sylas']]) {
+                    const result = getReferenceMatchup(dataset, champion, opponent, minimumGames);
+                    const value = document.getElementById(`reference-${champion.toLowerCase()}`);
+                    value.textContent = dataset ? result.text : 'Unavailable';
+                    value.className = result.className;
+                    document.getElementById(`reference-${champion.toLowerCase()}-warning`).hidden = !result.lowSample;
+                    details.push(`${champion} MID into ${opponent} MID: ${result.games === null ? 'no Delta 2 data' : `${result.games.toLocaleString()} games${result.lowSample ? ' — below Min Games' : ''}`}.`);
+                }
+                helpText.reference = `${TIME_PERIODS[timePeriod]} · ${RANKS[rank]}
+${dataset ? details.join('\n') : 'The dataset could not be loaded. Try selecting the dataset again.'}
+
+A familiar strong counterpick for comparison. Each direction keeps its own raw Delta 2, including below Min Games; low samples are flagged. This is always MID versus MID, regardless of your suggested role.`;
+                if (activeHelpButton === referenceButton) showHelp(referenceButton);
+            }
+
+            const copyRecommendationsBtn = document.getElementById('copy-recommendations-btn');
+            const copyStatus = document.getElementById('copy-status');
+            let copyStatusTimer;
+            let recommendationRequestId = 0;
+
+            function getCopyableRecommendations() {
+                if (!recommendationTarget) return [];
+                return Array.from(recommendationList.querySelectorAll('li[data-champion-name]'))
+                    .filter(row => !row.classList.contains('unavailable'))
+                    .slice(0, 10)
+                    .map(row => allChampions.find(champ => champ.id === row.dataset.championName)?.name || row.dataset.championName);
+            }
+
+            function updateCopyButton() {
+                copyRecommendationsBtn.disabled = getCopyableRecommendations().length === 0;
+            }
+
+            function formatRecommendationShare(role, champions) {
+                const roleLabel = { MIDDLE: 'MID', BOTTOM: 'BOT' }[role] || role;
+                return `${roleLabel} recommendations based on current draft: ${champions.join(', ')}`;
+            }
+
+            async function copyRecommendations() {
+                const champions = getCopyableRecommendations();
+                if (!champions.length) return;
+                const text = formatRecommendationShare(recommendationTarget.role, champions);
+                clearTimeout(copyStatusTimer);
+                try {
+                    await navigator.clipboard.writeText(text);
+                    copyStatus.textContent = `Copied ${champions.length} champion${champions.length === 1 ? '' : 's'}`;
+                } catch (error) {
+                    console.error('Could not copy recommendations:', error);
+                    copyStatus.textContent = 'Copy failed. Please try again.';
+                }
+                copyStatusTimer = setTimeout(() => { copyStatus.textContent = ''; }, 4000);
+            }
+            copyRecommendationsBtn.addEventListener('click', event => {
+                event.stopPropagation();
+                copyRecommendations();
+            });
 
             // --- START: Core Logic ---
 
@@ -739,8 +929,8 @@
                     resetDraft();
 
 
-                    // Initial data load
-                    await getDataset(timePeriodSelect.value, rankSelect.value);
+                    // Also populate the reference before a recommendation role is selected.
+                    await updateCounterpickReference();
 
                 } catch (e) {
                     loadingMessage.textContent = `Error: ${e.message}`;
@@ -842,6 +1032,9 @@
             }
 
             async function updateRecommendations() {
+                const requestId = ++recommendationRequestId;
+                copyRecommendationsBtn.disabled = true;
+                copyStatus.textContent = '';
                 if (!recommendationTarget) {
                     recommendationList.innerHTML = '';
                     return;
@@ -850,6 +1043,7 @@
                 recommendationList.innerHTML = '<li>Calculating...</li>';
 
                 const dataset = await getDataset(timePeriodSelect.value, rankSelect.value);
+                if (requestId !== recommendationRequestId) return;
                 if (!dataset) {
                     recommendationList.innerHTML = `<li>No data available for ${timePeriodSelect.value}/${rankSelect.value}</li>`;
                     return;
@@ -873,6 +1067,12 @@
             }
 
             function displayFilteredRecommendations() {
+                copyRecommendationsBtn.disabled = true;
+                copyStatus.textContent = '';
+                if (!recommendationTarget) {
+                    recommendationList.innerHTML = '';
+                    return;
+                }
                 const roleRateThreshold = parseFloat(roleRateFilter.value) || 0;
                 const baseWrThreshold = parseFloat(baseWrFilter.value) || 0;
                 const searchQuery = recommendationSearch.value.toLowerCase();
@@ -972,6 +1172,7 @@
                     `;
                     recommendationList.appendChild(li);
                 });
+                updateCopyButton();
             }
 
             function handleRoleSlotClick(slot) {
@@ -1076,6 +1277,7 @@
                     const champName = li.dataset.championName;
                     li.classList.toggle('unavailable', unavailableChampions.has(champName));
                 });
+                updateCopyButton();
             }
 
             function toggleFavorite(championName, role) {
@@ -1232,6 +1434,10 @@
             }
 
             async function handleFilterChange() {
+                ++recommendationRequestId;
+                recommendationList.innerHTML = '';
+                updateCopyButton();
+                await updateCounterpickReference();
                 saveCurrentSettings();
                 if (recommendationTarget) {
                     await updateRecommendations();
@@ -1464,15 +1670,29 @@
                 }
             }
 
-            howToUseBtn.addEventListener('click', () => {
-                howToUseModal.style.display = 'flex';
-            });
-            howToUseCloseBtn.addEventListener('click', () => {
+            function closeQuickStart() {
                 howToUseModal.style.display = 'none';
+                howToUseBtn.focus();
+            }
+            howToUseBtn.addEventListener('click', () => {
+                hideHelp();
+                howToUseModal.style.display = 'flex';
+                howToUseCloseBtn.focus();
             });
-            howToUseModal.addEventListener('click', (e) => {
-                if (e.target === howToUseModal) {
-                    howToUseModal.style.display = 'none';
+            howToUseCloseBtn.addEventListener('click', closeQuickStart);
+            howToUseModal.addEventListener('click', event => {
+                if (event.target === howToUseModal) closeQuickStart();
+            });
+            howToUseModal.addEventListener('keydown', event => {
+                if (event.key === 'Escape') closeQuickStart();
+                if (event.key !== 'Tab') return;
+                const focusable = Array.from(howToUseModal.querySelectorAll('button, summary, a[href]')).filter(element => element.getClientRects().length);
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault(); last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault(); first.focus();
                 }
             });
 
