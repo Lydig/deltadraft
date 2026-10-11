@@ -1,0 +1,42 @@
+name: Test desktop installation update
+
+# This branch-only job creates downloadable test artifacts, never a release.
+on:
+  push:
+    branches: [codex/update-install-test]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-kit:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install locked desktop dependencies
+        run: npm ci --prefix desktop-app --no-audit --no-fund
+      - name: Run draft, updater and isolation tests
+        run: node --test tests/milestone1.test.cjs tests/updates.test.cjs tests/update-install.test.cjs
+      - name: Build and verify production packaging (do not publish)
+        run: |
+          npm --prefix desktop-app run dist -- --win nsis --x64 --config.directories.output=../workspace/production-package-check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/verify-update-package.cjs workspace/production-package-check
+      - name: Build isolated 0.0.1 and 0.0.2 installers (do not publish)
+        run: node tests/build-update-test.cjs
+      - name: Save test kit
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: DraftDiff-update-install-test
+          path: workspace/update-install-test/kit/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0

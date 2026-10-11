@@ -1,9 +1,14 @@
 // desktop-app/main.js
-const { app, BrowserWindow, ipcMain, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 const https = require('https');
+
+// Update previews use separate preferences and never touch the installed app.
+if (!app.isPackaged && app.commandLine?.hasSwitch('update-preview')) {
+    app.setPath('userData', path.join(app.getPath('temp'), 'DraftDiff-update-preview'));
+}
 
 // Define paths for storing user data
 const userDataPath = app.getPath('userData');
@@ -202,6 +207,8 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
+  const { startDesktopUpdates } = require('./update-service');
+  startDesktopUpdates({ app, ipcMain, BrowserWindow, dialog, shell });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

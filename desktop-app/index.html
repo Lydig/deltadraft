@@ -19,6 +19,16 @@
         .header-controls { display: flex; gap: 10px; align-items: center; }
         .header-controls .input-group { flex-grow: 1; }
         .header-controls .input-group select { width: 100%; }
+        .app-updates { max-width: 430px; margin: 0 18px; text-align: center; }
+        .update-actions { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; }
+        .update-actions button { font-size: 0.8rem; padding: 5px 9px; }
+        #app-version { color: var(--text-secondary); font-size: 0.75rem; }
+        #update-preview-label { color: var(--yellow-warn); font-size: 0.75rem; }
+        #update-message { font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; }
+        #update-message:empty { display: none; }
+        #update-progress { width: 100%; height: 5px; accent-color: var(--accent-color); }
+        .update-actions .update-ready { color: var(--accent-color); border-color: var(--accent-color); }
+        .update-actions .update-ready:disabled { color: var(--text-secondary); border-color: var(--border-color); }
 
         button, input[type="number"], input[type="text"], select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
         button:hover { background-color: #252525; }
@@ -277,6 +287,16 @@
                 <div class="header-title">
                     <img src="assets/logo.png" alt="DraftDiff Logo" class="header-logo">
                     DraftDiff
+                </div>
+                <div class="app-updates" aria-label="Desktop updates">
+                    <div class="update-actions">
+                        <span id="app-version"></span>
+                        <span id="update-preview-label" hidden>Update preview</span>
+                        <button id="update-action" type="button" disabled>Check for updates</button>
+                        <button id="update-downloads" type="button" hidden>Download page</button>
+                    </div>
+                    <div id="update-message" role="status" aria-live="polite"></div>
+                    <progress id="update-progress" max="100" value="0" aria-label="Update download progress" hidden></progress>
                 </div>
                 <div class="header-meta">
                     <div id="patch-info"></div>
@@ -1364,6 +1384,7 @@ A familiar strong counterpick for comparison. Each direction keeps its own raw D
                     updateFromLiveGame(true);
                     lcuIntervalId = setInterval(() => updateFromLiveGame(false), 1000);
                 }
+                window.electronAPI.setUpdateLiveTracking(Boolean(lcuIntervalId)).catch(error => console.warn('Could not update restart availability:', error));
             });
 
             function updateAvailabilityUI() {
@@ -2011,5 +2032,6 @@ A familiar strong counterpick for comparison. Each direction keeps its own raw D
             initializeApp();
         });
     </script>
+    <script src="update-ui.js"></script>
 </body>
 </html>

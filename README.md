@@ -54,6 +54,10 @@ npm run dist
 # Installer will be in /desktop-app/dist/
 ```
 
+Desktop update controls, the safe update preview, validation commands, and release
+requirements are documented in [Desktop updates](docs/desktop-updates.md).
+The build script uses `--publish never`; building locally does not publish a release.
+
 ---
 
 ### 2. Data Pipeline (GitHub Actions)

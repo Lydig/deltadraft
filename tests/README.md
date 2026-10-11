@@ -1,14 +1,22 @@
-# Milestone 1 checks
+# Application checks
 
 Run the automated checks from the repository root:
 
 ```powershell
-node --test tests/milestone1.test.cjs
+node --test tests/milestone1.test.cjs tests/updates.test.cjs tests/update-install.test.cjs
 ```
 
 These exercise both shipped renderer scripts, recommendation sharing, reference
 data races and sample warnings, a simulated desktop draft, and the clipboard IPC
 bridge. They do not establish that a real League client connects successfully.
+
+The updater tests also check download/restart consent, failures, live-tracking
+restart guards, IPC boundaries, isolated test identity and preferences, and the
+local feed's artifact restrictions and byte-range responses. The feed test needs
+loopback network access. See [desktop updates](../docs/desktop-updates.md) for the
+safe UI preview and [the installation test](../docs/update-install-test.md) for the
+real upgrade checklist. Neither automated tests nor the preview proves that an
+installed update has succeeded.
 
 ## Test the desktop changes locally
 
