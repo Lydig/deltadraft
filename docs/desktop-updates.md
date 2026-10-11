@@ -93,15 +93,26 @@ enabled and no current-user code-signing certificate was found. Resolve this
 through an approved signing/build environment before release. The incomplete
 installer outputs must not be distributed.
 
-An [isolated installed-update test kit](update-install-test.md) and branch-only
-GitHub Windows build workflow are prepared for the approved test branch. The kit
-uses separate app identity, preferences, updater cache and a
-loopback feed to test real NSIS upgrades from 0.0.1 to 0.0.2. A hosted build does not
-resolve local trust in an unsigned installer; stop if Windows blocks the test.
-All 25 automated checks pass. An unpacked test build at 0.0.2 was also built and
-inspected: its identity/preferences are isolated, its updater/renderer/bridge
-match the production source, and it contains no update simulation. The actual
-installer and upgrade still need the hosted build and manual test.
+The approved branch `codex/update-install-test` contains an
+[isolated installed-update test kit](update-install-test.md) and a Windows build
+workflow. [GitHub run 38172744945](https://github.com/Lydig/deltadraft/actions/runs/38172744945)
+succeeded for commit `febcdaa`: all 25 automated checks passed, production NSIS
+packaging and update metadata were verified, and both test installers were built
+and verified. No release was published. The kit uses separate app identity,
+preferences, updater cache and a loopback feed for upgrades from 0.0.1 to 0.0.2.
+
+The downloaded kit's SHA-256 matched GitHub's artifact digest. An attempt to run
+its 0.0.1 installer on this workstation was blocked before installation with
+"An Application Control policy has blocked this file." Code Integrity event 3077
+confirmed the block; the test installation directory was not created. No Windows
+security settings were changed. A trusted signing setup or an approved test
+machine that permits the installer is still needed to verify actual installation,
+restart, preferences/favorites preservation and real champion-select tracking.
+
+An unpacked test build at 0.0.2 was also built and inspected locally: its
+identity/preferences are isolated, its updater/renderer/bridge match the
+production source, and it contains no update simulation. This does not establish
+that an installed upgrade works.
 
 Unpacked runtime verification can be performed independently:
 
