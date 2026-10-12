@@ -1,8 +1,8 @@
-# DraftDiff 4.6.0 release preparation
+# DraftDiff 4.6.0 release record
 
-Status: GitHub Windows build succeeded and the downloaded installer was verified
-on 2026-10-12. Awaiting approval to publish. No release or production deployment
-has been made.
+Status: [v4.6.0 was published](https://github.com/Lydig/deltadraft/releases/tag/v4.6.0)
+on 2026-10-12 after the owner's approval. The public installer and checksum were
+verified, and the production website serves the matching web source.
 
 ## Scope
 
@@ -10,9 +10,9 @@ The release includes tested checkpoints `f15ab61` and `8210502`: guidance and
 tooltips, recommendation sharing, the collapsible directional counterpick reference,
 and lightweight desktop update notices. Usage counts remain deferred.
 
-The latest public release checked on 2026-10-12 was `v4.5.1`. Use `v4.6.0` for this
-release. The local package and lockfile now agree on `4.6.0`; the build icon points
-to the existing `desktop-app/build/icon.ico` file.
+The previous public release was `v4.5.1`. This release is `v4.6.0`, targeting build
+commit `0ce9e641f3fc58c2dea0fc176568ecdaf266d7e5`. The package and lockfile agree on
+`4.6.0`; the build icon points to the existing `desktop-app/build/icon.ico` file.
 
 Public-facing release text is in [v4.6.0.md](releases/v4.6.0.md).
 
@@ -57,18 +57,22 @@ This remains an unsigned installer: building on GitHub does not remove the Windo
 installation restriction previously encountered on the owner's PC. It has not
 been installed or run during this preparation.
 
-## Publication is a separate step
+## Publication completed
 
-After candidate review and explicit owner approval:
+- `main` was fast-forwarded to the approved release branch and pushed.
+- GitHub release `v4.6.0` is public and marked latest. Its tag points to the exact
+  build commit above. Uploaded assets are `DraftDiff.Setup.4.6.0.exe` and
+  `SHA256SUMS.txt`; the checksum file uses the public installer's filename.
+- The public installer download returns HTTP 200, and GitHub's asset digest and
+  the public checksum file match the verified candidate's SHA-256 above.
+- [The production website](https://deltadraft.vercel.app/) returns HTTP 200 and its
+  HTML matches `web-app/index.html` after normalizing line endings. It includes
+  COPY TOP 10, the collapsible reference, shared column help and the release link.
+- The update controller, using the live public release response, reports
+  `available` for a simulated 4.5.1 client and `up-to-date` for 4.6.0. Actual older
+  installations do not contain this new controller; they must install 4.6.0
+  manually to gain update notices.
 
-1. Incorporate the release branch into `main`, checking for intervening changes.
-2. Publish the approved installer and release text as GitHub release `v4.6.0`,
-   targeting the built commit `0ce9e641f3fc58c2dea0fc176568ecdaf266d7e5`.
-3. Verify the web deployment for the updated `web-app/index.html` and its desktop
-   download link. The repository contains Vercel configuration, but the deployment
-   linkage and production branch still need confirmation before pushing `main`.
-4. Verify the public download and update-notice behavior against the published
-   release. Existing versions must install 4.6.0 manually to gain update notices.
-
-Do not publish the incomplete local executable, the automatic-updater experiment,
-or any new analytics as part of this release.
+The owner will download and test the published installer and website. The
+incomplete local executable, automatic-updater experiment and analytics are not
+part of the release.
