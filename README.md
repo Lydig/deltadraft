@@ -2,6 +2,9 @@
 
 A real-time League of Legends draft analysis and recommendation tool.
 
+Original DraftDiff code is available under the [MIT license](LICENSE).
+[Third-party material](THIRD_PARTY_NOTICES.md) retains its own terms.
+
 ---
 
 ## 📌 Core Architecture
@@ -53,6 +56,9 @@ cd desktop-app
 npm run dist
 # Installer will be in /desktop-app/dist/
 ```
+
+Desktop [update notices](docs/desktop-updates.md) link to the latest release for
+manual installation. Builds do not publish releases automatically.
 
 ---
 

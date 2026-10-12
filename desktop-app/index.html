@@ -16,6 +16,14 @@
         .header-title { font-size: 2rem; font-weight: bold; display: flex; align-items: center; gap: 15px; }
         .header-logo { height: 40px; }
         .header-meta { font-size: 0.8rem; color: var(--text-secondary); text-align: right; }
+        .app-updates { position: relative; display: flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: normal; color: var(--text-secondary); }
+        #app-version { padding: 3px 0; border: 0; background: transparent; color: var(--text-secondary); font: inherit; white-space: nowrap; }
+        #app-version:hover { color: var(--accent-color); }
+        #app-version:disabled { cursor: wait; }
+        #update-downloads { padding: 4px 7px; border-color: var(--accent-color); color: var(--accent-color); font: inherit; white-space: nowrap; }
+        #update-preview-label { color: var(--yellow-warn); font-size: 0.7rem; }
+        #update-message { position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; width: max-content; max-width: 260px; padding: 6px 9px; border: 1px solid #475569; border-radius: 5px; background: #101827; color: var(--text-primary); }
+        #update-message:empty { display: none; }
         .header-controls { display: flex; gap: 10px; align-items: center; }
         .header-controls .input-group { flex-grow: 1; }
         .header-controls .input-group select { width: 100%; }
@@ -217,7 +225,10 @@
         #copy-status { position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 10; white-space: nowrap; font-size: 0.75rem; color: var(--text-primary); }
         #copy-status:not(:empty) { padding: 5px 8px; background: #101827; border: 1px solid #475569; border-radius: 5px; }
         #counterpick-reference { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 5px 8px; margin: 0; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.75rem; color: var(--text-secondary); background: #181818; }
-        .reference-label { color: var(--text-primary); font-weight: 600; white-space: nowrap; }
+        #reference-toggle { display: inline-flex; align-items: center; gap: 5px; padding: 0; border: 0; background: transparent; font: inherit; color: var(--text-primary); font-weight: 600; white-space: nowrap; }
+        #reference-toggle:hover { color: var(--accent-color); }
+        #reference-values { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+        #reference-values[hidden] { display: none; }
         .reference-matchup { white-space: nowrap; }
         .reference-warning { color: var(--yellow-warn); font-size: 0.7rem; }
         .modal-content { position: relative; width: min(650px, calc(100vw - 32px)); font-size: 1rem; }
@@ -227,13 +238,14 @@
         .modal-content .quick-start { padding-left: 24px; }
         .quick-start li { margin-bottom: 8px; }
         .quick-start-note { color: var(--text-secondary) !important; font-size: 0.85rem !important; }
-        #recommendation-header, #recommendation-list li { grid-template-columns: 42px minmax(95px, 1fr) 90px 62px 62px 62px 92px 92px; gap: 8px; }
+        #recommendation-header, #recommendation-list li { grid-template-columns: 42px minmax(95px, 1fr) 74px 62px 62px 62px 76px 84px 16px; gap: 8px; }
+        #recommendation-header > .help-trigger { margin: 0; align-self: center; }
         .recommendation-controls-wrapper { margin-bottom: 10px; }
         @media (max-width: 1150px) {
             .draft-area { gap: 16px; }
             .team-panel { width: 115px; flex-shrink: 0; }
             .recommendation-controls { flex-wrap: wrap; }
-            #recommendation-header, #recommendation-list li { grid-template-columns: 36px minmax(80px, 1fr) 82px 52px 52px 52px 84px 84px; gap: 5px; }
+            #recommendation-header, #recommendation-list li { grid-template-columns: 36px minmax(80px, 1fr) 70px 52px 52px 52px 74px 80px 16px; gap: 5px; }
         }
     </style>
 </head>
@@ -251,7 +263,7 @@
                 <li><strong>Choose your data.</strong> Select a rank and either the current patch or the last 30 days.</li>
                 <li><strong>Bring in the draft.</strong> Press <strong>Start Live Tracking</strong> during champion select, or enter picks manually. Your live team is on the left. Live tracking sees the champions, not their actual roles. It estimates roles for both teams using role frequency. If it gets a role wrong, move the champion to the correct slot and use the role lock to keep it there.</li>
                 <li><strong>Choose a role to help.</strong> Press <strong>SUGGEST</strong> on any role, on either team, to see recommendations from that team's perspective.</li>
-                <li><strong>Find and share your picks.</strong> Use filters, search, or role favorites to narrow the list. <strong>Copy top 10</strong> copies the first ten available suggestions in the displayed order for you to paste into chat.</li>
+                <li><strong>Find and share your picks.</strong> Use filters, search, or role favorites to narrow the list. <strong>COPY TOP 10</strong> copies the first ten available suggestions in the displayed order for you to paste into chat.</li>
             </ol>
             <p class="quick-start-note">Click a recommendation to put it in the draft. Click two role slots to swap their contents, or right-click a filled slot to clear it. Right-click a champion in the grid to set role favorites. Use <strong>Draft Analysis</strong> to compare the teams.</p>
             <details>
@@ -266,7 +278,7 @@
                 <p><strong>Min Games</strong> applies to each individual interaction. If it has too few games, its contribution is treated as zero. Zero can therefore mean excluded or missing data, as well as a neutral interaction. A higher threshold reduces the influence of small samples; it does not guarantee accuracy.</p>
                 <p><strong>Base WR</strong> is the champion's overall win rate in the selected role and dataset. <strong>Role Freq</strong> is the share of that champion's appearances in that role. Their minimum filters hide recommendations below your thresholds.</p>
                 <h3>A familiar counterpick reference</h3>
-                <p>The High Delta 2 reference shows both directional values for Sylas MID versus Malphite MID from your selected dataset, even when you are suggesting another role. It gives context for a strong counterpick, rather than claiming to be the largest value in every dataset. Its raw values remain visible below Min Games, with a low-sample warning.</p>
+                <p>Expand High Delta 2 reference to see both directional values for Sylas MID versus Malphite MID from your selected dataset, even when you are suggesting another role. Your choice to expand or collapse it is remembered. It gives context for a strong counterpick, rather than claiming to be the largest value in every dataset. Its raw values remain visible below Min Games, with a low-sample warning.</p>
             </details>
         </div>
     </div>
@@ -277,6 +289,12 @@
                 <div class="header-title">
                     <img src="assets/logo.png" alt="DraftDiff Logo" class="header-logo">
                     DraftDiff
+                    <div class="app-updates" aria-label="Application updates">
+                        <button id="app-version" type="button" title="Check for updates" aria-label="Check for updates" disabled></button>
+                        <button id="update-downloads" type="button" title="Open the download page" hidden>Update available</button>
+                        <span id="update-preview-label" hidden>Notice preview</span>
+                        <div id="update-message" role="status" aria-live="polite"></div>
+                    </div>
                 </div>
                 <div class="header-meta">
                     <div id="patch-info"></div>
@@ -342,26 +360,29 @@
                                     <input type="checkbox" id="consider-hovers-toggle"> Hovers
                                 </label><button type="button" class="help-trigger" data-help="hovers" aria-label="Explain Hovers">?</button></div>
                                 <aside id="counterpick-reference" aria-label="High Delta 2 reference: Sylas MID versus Malphite MID">
-                                    <span class="reference-label">High Delta 2 reference</span>
-                                    <span class="reference-matchup" title="Sylas MID into Malphite MID">Sylas MID <strong id="reference-sylas">Loading…</strong> <span id="reference-sylas-warning" class="reference-warning" role="img" aria-label="Low sample" title="Below Min Games. See reference help for sample counts." hidden>⚠</span></span>
-                                    <span class="reference-matchup" title="Malphite MID into Sylas MID">Malphite MID <strong id="reference-malphite">Loading…</strong> <span id="reference-malphite-warning" class="reference-warning" role="img" aria-label="Low sample" title="Below Min Games. See reference help for sample counts." hidden>⚠</span></span>
-                                    <button type="button" class="help-trigger" data-help="reference" aria-label="About the High Delta 2 reference">?</button>
+                                    <button id="reference-toggle" type="button" aria-expanded="false" aria-controls="reference-values"><span id="reference-chevron" aria-hidden="true">▸</span>High Delta 2 reference</button>
+                                    <div id="reference-values" hidden>
+                                        <span class="reference-matchup" title="Sylas MID into Malphite MID">Sylas MID <strong id="reference-sylas">Loading…</strong> <span id="reference-sylas-warning" class="reference-warning" role="img" aria-label="Low sample" title="Below Min Games. See reference help for sample counts." hidden>⚠</span></span>
+                                        <span class="reference-matchup" title="Malphite MID into Sylas MID">Malphite MID <strong id="reference-malphite">Loading…</strong> <span id="reference-malphite-warning" class="reference-warning" role="img" aria-label="Low sample" title="Below Min Games. See reference help for sample counts." hidden>⚠</span></span>
+                                        <button type="button" class="help-trigger" data-help="reference" aria-label="About the High Delta 2 reference">?</button>
+                                    </div>
                                 </aside>
                                 <div class="copy-controls">
                                     <span id="copy-status" role="status" aria-live="polite"></span>
-                                    <button id="copy-recommendations-btn" type="button" title="Copy the first ten available suggestions in the displayed order" disabled>Copy top 10</button>
+                                    <button id="copy-recommendations-btn" type="button" title="Copy the first ten available suggestions in the displayed order" disabled>COPY TOP 10</button>
                                 </div>
                             </div>
                         </div>
                         <div id="recommendation-header">
                             <div class="sortable-header" data-sort="rank">Rank</div>
                             <div class="sortable-header" data-sort="champion">Champion</div>
-                            <div class="rec-stat-header sortable-header active-sort-desc" data-sort="total_delta">Total Δ<button type="button" class="help-trigger" data-help="deltas" aria-label="Explain Total, Lane, Ally and Enemy deltas">?</button></div>
+                            <div class="rec-stat-header sortable-header active-sort-desc" data-sort="total_delta">Total Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="lane_delta">Lane Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="ally_delta">Ally Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="enemy_delta">Enemy Δ</div>
-                            <div class="rec-stat-header sortable-header" data-sort="base_win_rate">Base WR<button type="button" class="help-trigger" data-help="base-wr" aria-label="Explain Base WR">?</button></div>
-                            <div class="rec-stat-header sortable-header" data-sort="role_frequency">Role Freq<button type="button" class="help-trigger" data-help="role-frequency" aria-label="Explain Role Freq">?</button></div>
+                            <div class="rec-stat-header sortable-header" data-sort="base_win_rate">Base WR</div>
+                            <div class="rec-stat-header sortable-header" data-sort="role_frequency">Role Freq</div>
+                            <button type="button" class="help-trigger" data-help="columns" aria-label="Explain Total, Lane, Ally, Enemy, Base WR and Role Freq">?</button>
                         </div>
                         <ol id="recommendation-list"></ol>
                     </div>
@@ -456,6 +477,7 @@
                 baseWr: '45',
                 roleRate: '5',
                 favoritesOnly: false,
+                referenceExpanded: false,
                 minGames: '300',
                 considerHovers: true
             };
@@ -467,9 +489,7 @@
                 'min-base-wr': 'Hide recommendations whose overall win rate in this role is below this percentage, using your selected rank and time period.',
                 'min-role-frequency': 'Hide recommendations rarely played in this role. For example, 20% means one in five appearances for that champion is in this role.',
                 'min-games': 'Each champion-to-champion interaction needs at least this many games to contribute to the calculations. Below this threshold, its contribution is treated as zero. This does not hide the champion itself.',
-                deltas: 'Total Δ: Ally Δ + Enemy Δ.\nLane Δ: the same-role opponent’s contribution, shown separately and also included in Enemy Δ.\nAlly Δ: interactions with teammates.\nEnemy Δ: interactions with all opponents.\n\nHigher is more favorable for the suggested champion. Total Δ is a comparison score, not a predicted match win rate.',
-                'base-wr': 'This champion’s overall win rate in this role, using your selected rank and time period. Min Base WR filters this value.',
-                'role-frequency': 'The share of this champion’s appearances played in this role, using your selected dataset. It is not the champion’s popularity among all champions. Min Role Freq filters this value.',
+                columns: 'Total Δ: Ally Δ + Enemy Δ.\nLane Δ: the same-role opponent’s contribution, shown separately and also included in Enemy Δ.\nAlly Δ: interactions with teammates.\nEnemy Δ: interactions with all opponents.\nBase WR: this champion’s overall win rate in this role.\nRole Freq: the share of this champion’s appearances played in this role, not its popularity among all champions.\n\nAll values use your selected dataset. Higher deltas are more favorable for the suggested champion. Total Δ is a comparison score, not a predicted match win rate.',
                 reference: 'Both directions of Sylas MID versus Malphite MID, using your selected rank and time period. A familiar strong counterpick for comparison, not a guaranteed dataset maximum.'
             };
             const helpTooltip = document.getElementById('help-tooltip');
@@ -520,6 +540,21 @@
             helpTooltip.addEventListener('mouseleave', scheduleHideHelp);
             document.addEventListener('keydown', event => { if (event.key === 'Escape') hideHelp(); });
             window.addEventListener('resize', hideHelp);
+
+            const referenceToggle = document.getElementById('reference-toggle');
+            const referenceValues = document.getElementById('reference-values');
+            let referenceExpanded = false;
+            function setReferenceExpanded(expanded) {
+                referenceExpanded = expanded === true;
+                referenceToggle.setAttribute('aria-expanded', String(referenceExpanded));
+                referenceValues.hidden = !referenceExpanded;
+                document.getElementById('reference-chevron').textContent = referenceExpanded ? '▾' : '▸';
+                hideHelp();
+            }
+            referenceToggle.addEventListener('click', () => {
+                setReferenceExpanded(!referenceExpanded);
+                saveCurrentSettings();
+            });
 
             let referenceRequestId = 0;
             function getReferenceMatchup(dataset, champion, opponent, minimumGames) {
@@ -880,6 +915,7 @@ A familiar strong counterpick for comparison. Each direction keeps its own raw D
                     baseWr: baseWrFilter.value,
                     roleRate: roleRateFilter.value,
                     favoritesOnly: favoritesOnlyToggle.checked,
+                    referenceExpanded,
                     minGames: minGamesFilter.value,
                     considerHovers: considerHoversToggle.checked
                 };
@@ -893,6 +929,7 @@ A familiar strong counterpick for comparison. Each direction keeps its own raw D
                 baseWrFilter.value = effectiveSettings.baseWr;
                 roleRateFilter.value = effectiveSettings.roleRate;
                 favoritesOnlyToggle.checked = effectiveSettings.favoritesOnly;
+                setReferenceExpanded(effectiveSettings.referenceExpanded);
                 minGamesFilter.value = effectiveSettings.minGames;
                 considerHoversToggle.checked = effectiveSettings.considerHovers;
                 considerHovers = effectiveSettings.considerHovers;
@@ -2011,5 +2048,6 @@ A familiar strong counterpick for comparison. Each direction keeps its own raw D
             initializeApp();
         });
     </script>
+    <script src="update-ui.js"></script>
 </body>
 </html>

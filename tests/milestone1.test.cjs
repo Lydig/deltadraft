@@ -11,6 +11,7 @@ class Element {
     constructor() {
         this.dataset = {}; this.style = {}; this.children = []; this.value = ''; this.checked = false;
         this.hidden = false; this.textContent = ''; this.disabled = false;
+        this.events = {}; this.attributes = {};
         const classes = new Set();
         this.classList = {
             contains: value => classes.has(value),
@@ -21,11 +22,11 @@ class Element {
     }
     set innerHTML(value) { this.html = value; this.children = []; }
     get innerHTML() { return this.html || ''; }
-    addEventListener() {}
+    addEventListener(event, callback) { this.events[event] = callback; }
     appendChild(child) { this.children.push(child); }
     querySelectorAll() { return this.children.filter(child => child.dataset.championName); }
-    setAttribute() {}
-    removeAttribute() {}
+    setAttribute(name, value) { this.attributes[name] = value; }
+    removeAttribute(name) { delete this.attributes[name]; }
     matches() { return false; }
 }
 
@@ -46,17 +47,21 @@ function loadRenderer(app) {
         querySelectorAll: selector => selector === '#recommendation-list li' ? element('recommendation-list').children : selector === '.role-slot' ? slots : [],
         addEventListener: (event, callback) => { if (event === 'DOMContentLoaded') document.ready = callback; }
     };
-    let copied = '';
+    let copied = '', savedSettings;
     const context = vm.createContext({
         document, console, setTimeout: () => 1, clearTimeout() {},
-        window: { addEventListener() {}, electronAPI: { copyRecommendations: async text => { copied = text; } } },
+        window: { addEventListener() {}, electronAPI: {
+            copyRecommendations: async text => { copied = text; },
+            saveSettings: async settings => { savedSettings = JSON.parse(JSON.stringify(settings)); }
+        } },
+        localStorage: { setItem(key, value) { if (key === 'draftdiff_settings') savedSettings = JSON.parse(value); } },
         navigator: { clipboard: { writeText: async text => { copied = text; } } },
         ResizeObserver: class { observe() {} }
     });
     let script = fs.readFileSync(path.join(root, app, 'index.html'), 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
     script = script.replace('            initializeApp();', `
         globalThis.api = {
-            getReferenceMatchup, updateCounterpickReference, displayFilteredRecommendations,
+            getReferenceMatchup, updateCounterpickReference, displayFilteredRecommendations, applySettings,
             getCopyableRecommendations, copyRecommendations, updateCopyButton, updateAvailabilityUI,
             formatRecommendationShare, getRecommendations, getAnalysis, updateRecommendations,
             ${app === 'desktop-app' ? 'inferRoles, updateFromLiveGame,' : ''}
@@ -88,7 +93,7 @@ function loadRenderer(app) {
     document.ready();
     element('time-period-select').value = 'patch'; element('rank-select').value = 'platinum_plus';
     element('min-games-filter').value = '300';
-    return { api: context.api, element, slots, copied: () => copied };
+    return { api: context.api, element, slots, copied: () => copied, savedSettings: () => savedSettings };
 }
 
 function dataset(sylas = 0.0966, malphite = -0.0964, games = 299) {
@@ -105,6 +110,26 @@ const recommendation = (name, score, wr = 0.52, frequency = 0.8) => ({
 });
 
 for (const app of ['desktop-app', 'web-app']) {
+    test(`${app}: reference starts collapsed and remembers expansion and collapse across reloads`, () => {
+        let harness = loadRenderer(app);
+        harness.api.applySettings({ minGames: '150' });
+        assert.equal(harness.element('reference-values').hidden, true);
+        harness.element('reference-toggle').events.click();
+        assert.equal(harness.element('reference-values').hidden, false);
+        assert.equal(harness.element('reference-toggle').attributes['aria-expanded'], 'true');
+        const expanded = harness.savedSettings();
+        assert.equal(expanded.minGames, '150');
+        harness = loadRenderer(app);
+        harness.api.applySettings(expanded);
+        assert.equal(harness.element('reference-values').hidden, false);
+        harness.element('reference-toggle').events.click();
+        const collapsed = harness.savedSettings();
+        harness = loadRenderer(app);
+        harness.api.applySettings(collapsed);
+        assert.equal(harness.element('reference-values').hidden, true);
+        assert.equal(harness.element('reference-toggle').attributes['aria-expanded'], 'false');
+    });
+
     test(`${app}: reference preserves both directions and flags samples without zeroing values`, () => {
         const { api } = loadRenderer(app);
         const forward = api.getReferenceMatchup(dataset(), 'Sylas', 'Malphite', 300);
@@ -213,7 +238,7 @@ test('desktop: preload routes recommendation copies through the native clipboard
     const handlers = new Map();
     let exposed, copied;
     const electron = {
-        app: { getPath: () => root, whenReady: () => ({ then() {} }), on() {} },
+        app: { commandLine: { hasSwitch: () => false }, getPath: () => root, whenReady: () => ({ then() {} }), on() {} },
         ipcMain: { handle: (channel, handler) => handlers.set(channel, handler) },
         clipboard: { writeText: text => { copied = text; } },
         contextBridge: { exposeInMainWorld: (name, api) => { assert.equal(name, 'electronAPI'); exposed = api; } },

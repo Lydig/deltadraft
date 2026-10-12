@@ -5,10 +5,11 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder"
+    "start:update-preview": "electron . --update-preview",
+    "dist": "electron-builder --publish never"
   },
   "author": "Lytten",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "electron": "^43.1.0",
     "electron-builder": "^26.15.3"
@@ -16,6 +17,10 @@
   "build": {
     "appId": "com.draftdiff.app",
     "productName": "DraftDiff",
+    "files": [
+      "index.html", "main.js", "preload.js", "updates.js", "update-ui.js", "assets/**/*",
+      { "from": "..", "to": ".", "filter": ["LICENSE", "THIRD_PARTY_NOTICES.md"] }
+    ],
     "win": {
       "target": "nsis",
       "icon": "build/icon.png"

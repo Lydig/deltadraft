@@ -1,9 +1,14 @@
 // desktop-app/main.js
-const { app, BrowserWindow, ipcMain, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard, shell, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 const https = require('https');
+
+// The notice preview uses separate preferences for UI testing.
+if (!app.isPackaged && app.commandLine.hasSwitch('update-preview')) {
+    app.setPath('userData', path.join(app.getPath('temp'), 'DraftDiff-notice-preview'));
+}
 
 // Define paths for storing user data
 const userDataPath = app.getPath('userData');
@@ -202,6 +207,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
+  require('./updates').startUpdateNotice({ app, ipcMain, BrowserWindow, shell, net });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
