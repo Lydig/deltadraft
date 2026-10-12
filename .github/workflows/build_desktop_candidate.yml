@@ -1,0 +1,52 @@
+name: Build desktop release candidate
+
+# Build artifacts for review. This workflow cannot publish a release or deploy the web app.
+on:
+  push:
+    branches: [codex/update-notice]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install locked desktop dependencies
+        run: npm ci --prefix desktop-app --no-audit --no-fund
+      - name: Check draft features and update notices
+        run: node --test tests/milestone1.test.cjs tests/update-notice.test.cjs
+      - name: Build Windows installer without publishing
+        run: npm --prefix desktop-app run dist -- --win nsis --x64 --config.directories.output=../workspace/release-candidate
+      - name: Verify packaged source and license files
+        run: node tests/verify-release-package.cjs workspace/release-candidate
+      - name: Prepare candidate download
+        shell: pwsh
+        run: |
+          $version = (Get-Content desktop-app/package.json -Raw | ConvertFrom-Json).version
+          $installer = Get-Item -LiteralPath "workspace/release-candidate/DraftDiff Setup $version.exe"
+          $hash = (Get-FileHash -LiteralPath $installer.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $($installer.Name)" | Set-Content workspace/release-candidate/SHA256SUMS.txt -Encoding utf8
+          "Source commit: $env:GITHUB_SHA" | Set-Content workspace/release-candidate/SOURCE.txt -Encoding utf8
+          Copy-Item -LiteralPath "docs/releases/v$version.md" -Destination workspace/release-candidate/RELEASE-NOTES.md
+      - name: Save installer and release notes for review
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: DraftDiff-windows-x64-candidate
+          path: |
+            workspace/release-candidate/*.exe
+            workspace/release-candidate/SHA256SUMS.txt
+            workspace/release-candidate/SOURCE.txt
+            workspace/release-candidate/RELEASE-NOTES.md
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

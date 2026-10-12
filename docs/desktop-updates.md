@@ -56,7 +56,8 @@ Control blocked the unsigned test installer on the owner's PC. A manual download
 link does not remove that Windows installation restriction. No signing service
 or new release infrastructure is part of this milestone.
 
-The app version remains 4.5.1 until an approved release. This notice needs only an
+The local release candidate is version 4.6.0; changing this number does not publish
+a release. This notice needs only an
 ordinary published GitHub release tagged `vMAJOR.MINOR.PATCH`; it does not need
 updater metadata, blockmaps or a private update server. Run local builds with
 `npm --prefix desktop-app run dist`; `--publish never` prevents build-time publishing.
