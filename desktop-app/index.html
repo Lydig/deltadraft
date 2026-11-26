@@ -238,14 +238,14 @@
         .modal-content .quick-start { padding-left: 24px; }
         .quick-start li { margin-bottom: 8px; }
         .quick-start-note { color: var(--text-secondary) !important; font-size: 0.85rem !important; }
-        #recommendation-header, #recommendation-list li { grid-template-columns: 42px minmax(95px, 1fr) 74px 62px 62px 62px 76px 84px 16px; gap: 8px; }
+        #recommendation-header, #recommendation-list li { grid-template-columns: 42px minmax(95px, 1fr) 80px 74px 62px 62px 62px 76px 84px 16px; gap: 8px; }
         #recommendation-header > .help-trigger { margin: 0; align-self: center; }
         .recommendation-controls-wrapper { margin-bottom: 10px; }
         @media (max-width: 1150px) {
             .draft-area { gap: 16px; }
             .team-panel { width: 115px; flex-shrink: 0; }
             .recommendation-controls { flex-wrap: wrap; }
-            #recommendation-header, #recommendation-list li { grid-template-columns: 36px minmax(80px, 1fr) 70px 52px 52px 52px 74px 80px 16px; gap: 5px; }
+            #recommendation-header, #recommendation-list li { grid-template-columns: 36px minmax(80px, 1fr) 74px 70px 52px 52px 52px 74px 80px 16px; gap: 5px; }
         }
     </style>
 </head>
@@ -272,7 +272,7 @@
                 <p>LoLalytics defines Delta 2 as the matchup win rate minus the normalised champion win rate in that matchup. Positive values mean a champion wins more often than the normalised win rates suggest; negative values mean less often.</p>
                 <p>The values are directional: Viktor into Syndra and Syndra into Viktor are separate statistics, and need not be exact opposites. DraftDiff keeps both values from the source data.</p>
                 <h3>Reading the columns</h3>
-                <p><strong>Ally Δ</strong> sums interactions with teammates. <strong>Enemy Δ</strong> sums interactions with opponents. <strong>Lane Δ</strong> isolates the same-role opponent and is also included in Enemy Δ. <strong>Total Δ</strong> is Ally Δ + Enemy Δ.</p>
+                <p><strong>Ally Δ</strong> sums interactions with teammates. <strong>Enemy Δ</strong> sums interactions with opponents. <strong>Lane Δ</strong> isolates the same-role opponent and is also included in Enemy Δ. <strong>Total Δ</strong> is Ally Δ + Enemy Δ. <strong>Total WR</strong> is Base WR + Total Δ.</p>
                 <p>A single interaction's Δ is shown in percentage points. Total Δ is a comparison score, not a predicted match win rate. Your experience on a champion and the way the game is played still matter.</p>
                 <h3>Sample sizes and filters</h3>
                 <p><strong>Min Games</strong> applies to each individual interaction. If it has too few games, its contribution is treated as zero. Zero can therefore mean excluded or missing data, as well as a neutral interaction. A higher threshold reduces the influence of small samples; it does not guarantee accuracy.</p>
@@ -376,13 +376,14 @@
                         <div id="recommendation-header">
                             <div class="sortable-header" data-sort="rank">Rank</div>
                             <div class="sortable-header" data-sort="champion">Champion</div>
+                            <div class="rec-stat-header sortable-header" data-sort="total_win_rate">Total WR</div>
                             <div class="rec-stat-header sortable-header active-sort-desc" data-sort="total_delta">Total Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="lane_delta">Lane Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="ally_delta">Ally Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="enemy_delta">Enemy Δ</div>
                             <div class="rec-stat-header sortable-header" data-sort="base_win_rate">Base WR</div>
                             <div class="rec-stat-header sortable-header" data-sort="role_frequency">Role Freq</div>
-                            <button type="button" class="help-trigger" data-help="columns" aria-label="Explain Total, Lane, Ally, Enemy, Base WR and Role Freq">?</button>
+                            <button type="button" class="help-trigger" data-help="columns" aria-label="Explain Total WR, Total Δ, Lane Δ, Ally Δ, Enemy Δ, Base WR and Role Freq">?</button>
                         </div>
                         <ol id="recommendation-list"></ol>
                     </div>
@@ -489,7 +490,7 @@
                 'min-base-wr': 'Hide recommendations whose overall win rate in this role is below this percentage, using your selected rank and time period.',
                 'min-role-frequency': 'Hide recommendations rarely played in this role. For example, 20% means one in five appearances for that champion is in this role.',
                 'min-games': 'Each champion-to-champion interaction needs at least this many games to contribute to the calculations. Below this threshold, its contribution is treated as zero. This does not hide the champion itself.',
-                columns: 'Total Δ: Ally Δ + Enemy Δ.\nLane Δ: the same-role opponent’s contribution, shown separately and also included in Enemy Δ.\nAlly Δ: interactions with teammates.\nEnemy Δ: interactions with all opponents.\nBase WR: this champion’s overall win rate in this role.\nRole Freq: the share of this champion’s appearances played in this role, not its popularity among all champions.\n\nAll values use your selected dataset. Higher deltas are more favorable for the suggested champion. Total Δ is a comparison score, not a predicted match win rate.',
+                columns: 'Total WR: Base WR + Total Δ.\nTotal Δ: Ally Δ + Enemy Δ.\nLane Δ: the same-role opponent’s contribution, shown separately and also included in Enemy Δ.\nAlly Δ: interactions with teammates.\nEnemy Δ: interactions with all opponents.\nBase WR: this champion’s overall win rate in this role.\nRole Freq: the share of this champion’s appearances played in this role, not its popularity among all champions.\n\nAll values use your selected dataset. Higher deltas are more favorable for the suggested champion. Total Δ is a comparison score, not a predicted match win rate.',
                 reference: 'Both directions of Sylas MID versus Malphite MID, using your selected rank and time period. A familiar strong counterpick for comparison, not a guaranteed dataset maximum.'
             };
             const helpTooltip = document.getElementById('help-tooltip');
@@ -717,6 +718,7 @@ A familiar strong counterpick for comparison. Each direction keeps its own raw D
                     recommendations.push({
                         champion: pickChamp, 
                         total_delta: totalDelta,
+                        total_win_rate: baseWr + totalDelta,
                         base_win_rate: baseWr,
                         pick_rate: pickCombo.pick_rate, 
                         role_frequency: pickCombo.role_frequency,
@@ -1206,6 +1208,7 @@ A familiar strong counterpick for comparison. Each direction keeps its own raw D
                         li.classList.add('unavailable');
                     }
 
+                    const totalWrStr = (pick.total_win_rate * 100).toFixed(2) + '%';
                     const baseWrStr = (pick.base_win_rate * 100).toFixed(2) + '%';
                     const roleFreqStr = (pick.role_frequency * 100).toFixed(1) + '%';
                     
@@ -1233,6 +1236,7 @@ A familiar strong counterpick for comparison. Each direction keeps its own raw D
                             <img class="rec-img" src="${DDRAGON_BASE_URL}/cdn/${latestPatch}/img/champion/${champData.image.full}">
                             <div class="rec-name">${pick.champion}${favoriteStar}</div>
                         </div>
+                        <div class="rec-cell-stat ${totalDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}">${totalWrStr}</div>
                         <div class="rec-cell-stat ${totalDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}"><b>${totalDeltaStr}</b></div>
                         <div class="rec-cell-stat ${laneDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}">${laneDeltaStr}</div>
                         <div class="rec-cell-stat ${allyDeltaVal >= 0 ? 'delta-pos' : 'delta-neg'}">${allyDeltaStr}</div>

@@ -39,12 +39,16 @@ function loadRenderer(app) {
     const slots = ['left', 'right'].flatMap(side => ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'SUPPORT'].map(role => {
         const slot = new Element(); slot.dataset = { side, role }; return slot;
     }));
+    const html = fs.readFileSync(path.join(root, app, 'index.html'), 'utf8');
+    const headers = Array.from(html.matchAll(/<div class="[^"]*sortable-header[^"]*" data-sort="([^"]+)">([^<]+)<\/div>/g), match => {
+        const header = new Element(); header.dataset.sort = match[1]; header.textContent = match[2]; return header;
+    });
     const document = {
         body: element('body'), activeElement: null,
         getElementById: element,
         createElement: () => new Element(),
         querySelector: selector => element(selector),
-        querySelectorAll: selector => selector === '#recommendation-list li' ? element('recommendation-list').children : selector === '.role-slot' ? slots : [],
+        querySelectorAll: selector => selector === '#recommendation-list li' ? element('recommendation-list').children : selector === '.role-slot' ? slots : selector === '.sortable-header' ? headers : [],
         addEventListener: (event, callback) => { if (event === 'DOMContentLoaded') document.ready = callback; }
     };
     let copied = '', savedSettings;
@@ -58,7 +62,7 @@ function loadRenderer(app) {
         navigator: { clipboard: { writeText: async text => { copied = text; } } },
         ResizeObserver: class { observe() {} }
     });
-    let script = fs.readFileSync(path.join(root, app, 'index.html'), 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+    let script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
     script = script.replace('            initializeApp();', `
         globalThis.api = {
             getReferenceMatchup, updateCounterpickReference, displayFilteredRecommendations, applySettings,
@@ -93,7 +97,7 @@ function loadRenderer(app) {
     document.ready();
     element('time-period-select').value = 'patch'; element('rank-select').value = 'platinum_plus';
     element('min-games-filter').value = '300';
-    return { api: context.api, element, slots, copied: () => copied, savedSettings: () => savedSettings };
+    return { api: context.api, element, slots, headers, copied: () => copied, savedSettings: () => savedSettings };
 }
 
 function dataset(sylas = 0.0966, malphite = -0.0964, games = 299) {
@@ -106,10 +110,57 @@ function dataset(sylas = 0.0966, malphite = -0.0964, games = 299) {
 const champion = (id, name = id, key = id) => ({ id, name, key, image: { full: `${id}.png` } });
 const recommendation = (name, score, wr = 0.52, frequency = 0.8) => ({
     champion: name, total_delta: score, lane_delta: score, ally_delta: 0, enemy_delta: score,
-    base_win_rate: wr, role_frequency: frequency, breakdown: []
+    total_win_rate: wr + score, base_win_rate: wr, role_frequency: frequency, breakdown: []
 });
 
 for (const app of ['desktop-app', 'web-app']) {
+    test(`${app}: Total WR is sortable while delta columns and default ranking stay unchanged`, () => {
+        const { api, element, headers } = loadRenderer(app);
+        const picks = [recommendation('Ahri', 0.04, 0.46), {
+            ...recommendation('Sylas', 0.01, 0.54), lane_delta: -0.02, ally_delta: 0.03, enemy_delta: -0.02
+        }];
+        api.setState({ champions: [champion('Ahri'), champion('Sylas')], recommendations: picks });
+        const rows = () => element('recommendation-list').children;
+        const order = () => rows().map(row => row.dataset.championName);
+        const stats = row => Array.from(row.innerHTML.matchAll(/<div class="rec-cell-stat[^"]*">(?:<b>)?([^<]+)/g), match => match[1]);
+        api.displayFilteredRecommendations();
+        assert.deepEqual(order(), ['Ahri', 'Sylas']);
+        assert.deepEqual(headers.slice(0, 4).map(header => header.textContent), ['Rank', 'Champion', 'Total WR', 'Total Δ']);
+        assert.deepEqual(stats(rows()[0]), ['1/2', '50.00%', '+4.00', '+4.00', '+0.00', '+4.00', '46.00%', '80.0%']);
+
+        headers[2].events.click();
+        assert.deepEqual(order(), ['Sylas', 'Ahri']);
+        assert.deepEqual(stats(rows()[0]), ['2/2', '55.00%', '+1.00', '-2.00', '+3.00', '-2.00', '54.00%', '80.0%']);
+        assert.equal(Array.from(api.getCopyableRecommendations()).join(','), 'Sylas,Ahri');
+        headers[2].events.click();
+        assert.deepEqual(order(), ['Ahri', 'Sylas']);
+        headers.find(header => header.dataset.sort === 'total_delta').events.click();
+        assert.deepEqual(order(), ['Ahri', 'Sylas']);
+
+        for (const delta of [-0.01, 0, 0.01]) {
+            api.setState({ champions: [champion('Ahri')], recommendations: [recommendation('Ahri', delta)] });
+            api.displayFilteredRecommendations();
+            const color = delta >= 0 ? 'delta-pos' : 'delta-neg';
+            const value = ((0.52 + delta) * 100).toFixed(2) + '%';
+            assert.ok(rows()[0].innerHTML.includes(`<div class="rec-cell-stat ${color}">${value}</div>`));
+        }
+    });
+
+    test(`${app}: Total WR includes the base win rate and total delta`, () => {
+        const { api } = loadRenderer(app);
+        const data = dataset(0.04, -0.02, 1000);
+        data.champion_stats_list = [{champion: 'Sylas', role: 'middle'}, {champion: 'Malphite', role: 'middle'}];
+        data.champion_ratings = new Map([
+            ['Sylas,MIDDLE', {win_rate: 0.46}], ['Malphite,MIDDLE', {win_rate: 0.54}]
+        ]);
+        const picks = api.getRecommendations({}, {MIDDLE: 'Malphite'}, 'MIDDLE', data);
+        assert.equal(picks[0].total_win_rate, 0.5);
+        assert.equal(picks[0].total_delta, 0.04);
+        assert.equal(picks[1].total_win_rate, 0.54); // no interaction: base win rate
+        const reverse = api.getRecommendations({}, {MIDDLE: 'Sylas'}, 'MIDDLE', data);
+        assert.equal(reverse[1].total_win_rate, 0.52); // negative delta
+    });
+
     test(`${app}: reference starts collapsed and remembers expansion and collapse across reloads`, () => {
         let harness = loadRenderer(app);
         harness.api.applySettings({ minGames: '150' });

@@ -27,7 +27,7 @@ An already-installed DraftDiff version will not include these source changes.
 1. Open **How To Use**. Check the quick start, expandable explanation, keyboard
    navigation, and Escape to close.
 2. Hover or focus the question marks. The single question mark after Role Freq
-   explains all six metrics; clicking it should not change the sort.
+   explains all seven metrics; clicking it should not change the sort.
 3. Expand **High Delta 2 reference**, then reopen the app: it should stay expanded.
    Collapse and reopen: it should stay collapsed. New preferences start collapsed.
    Change rank and time period. Both MID reference values should update. Raise
@@ -39,6 +39,9 @@ An already-installed DraftDiff version will not include these source changes.
 5. In real League champion select, start live tracking. Check new picks, bans,
    hovers with the toggle on/off, teammate recommendations, and manual role locks.
    Stop and restart tracking and confirm the draft continues updating.
+6. Check **Total WR** after Champion: Base WR + Total Δ. Click its header to
+   sort both ways, then Total Δ to restore the default order. Delta columns and
+   rank numbers should remain unchanged.
 
 Also review the web version's manual drafting, help, reference, and clipboard
 behavior. It retains the desktop download link and has no live tracking.
